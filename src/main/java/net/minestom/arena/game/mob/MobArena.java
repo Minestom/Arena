@@ -5,13 +5,11 @@ import net.kyori.adventure.title.Title;
 import net.minestom.arena.combat.CombatEvent;
 import net.minestom.arena.game.Arena;
 import net.minestom.arena.mob.RandomMob;
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
-import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
@@ -49,8 +47,7 @@ public final class MobArena implements Arena {
 
     public MobArena() {
 
-        // Register this arena
-        MinecraftServer.getInstanceManager().registerInstance(this.arenaInstance);
+        init();
 
         CombatEvent.hook(arenaInstance.eventNode(), false);
 
@@ -63,24 +60,6 @@ public final class MobArena implements Arena {
             }
 
             nextStage();
-        });
-
-        arenaInstance.eventNode().addListener(RemoveEntityFromInstanceEvent.class, (event) -> {
-            // We don't care about entities, only players.
-            if ((event.getEntity() instanceof Player)) return;
-
-            // If a player leaves the instance, remove the tag from them.
-            event.getEntity().removeTag(arenaTag);
-
-            for (Player player : arenaInstance.getPlayers()) {
-                // There is still a player in this instance which is not scheduled to be removed.
-                if (player != event.getEntity()) {
-                    return;
-                }
-            }
-
-            // All players have left. We can remove this instance.
-            MinecraftServer.getInstanceManager().unregisterInstance(arenaInstance);
         });
     }
 
@@ -97,7 +76,6 @@ public final class MobArena implements Arena {
     @Override
     public CompletableFuture<Void> join(@NotNull Player player) {
         CompletableFuture<Void> future = player.setInstance(arenaInstance, new Pos(0, 41, 0));
-        player.setTag(arenaTag, arenaInstance.getUniqueId());
         return future;
     }
 
