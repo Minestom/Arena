@@ -1,10 +1,11 @@
 package net.minestom.arena;
 
-import net.minestom.arena.team.TeamCommand;
 import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
-import net.minestom.arena.game.ArenaCommand;
 import net.minestom.arena.command.StopCommand;
+import net.minestom.arena.game.ArenaCommand;
+import net.minestom.arena.team.TeamCommand;
+import net.minestom.arena.team.TeamEvent;
 import net.minestom.arena.utils.ServerProperties;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandManager;
@@ -13,9 +14,9 @@ import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerLoginEvent;
-import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
+import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.potion.Potion;
 import net.minestom.server.potion.PotionEffect;
 
@@ -53,6 +54,8 @@ public class Main {
                 MessageUtils.sendInfoMessage(player, "Welcome to the Minestom Arena!");
             }
         });
+
+        TeamEvent.hook(MinecraftServer.getGlobalEventHandler());
 
         final String forwardingSecret = ServerProperties.getForwardingSecret();
         if (forwardingSecret != null) {
