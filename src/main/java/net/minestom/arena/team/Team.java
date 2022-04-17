@@ -24,8 +24,8 @@ public class Team {
 
     public void removePlayer(Player player) {
         if (players.contains(player)) {
-            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your team."))));
             players.remove(player);
+            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your team."))));
         }
     }
 
