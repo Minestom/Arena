@@ -37,8 +37,7 @@ public class ArenaCommand extends Command {
 
                 Arena suppliedArena = arena.get();
 
-                suppliedArena.join(player);
-                suppliedArena.start();
+                suppliedArena.join(player).thenRun(suppliedArena::start);
 
             }, Literal(name));
         });

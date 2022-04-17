@@ -4,6 +4,8 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.CompletableFuture;
+
 public abstract class Arena {
 
     protected final @NotNull Instance arenaInstance;
@@ -12,7 +14,7 @@ public abstract class Arena {
         this.arenaInstance = arenaInstance;
     }
 
-    abstract public void join(@NotNull Player player);
+    abstract public CompletableFuture<Void> join(@NotNull Player player);
     abstract public void start();
 
 }

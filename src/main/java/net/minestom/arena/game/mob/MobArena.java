@@ -16,6 +16,7 @@ import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public final class MobArena extends Arena {
 
@@ -53,7 +54,6 @@ public final class MobArena extends Arena {
             // If a player leaves the instance, remove the tag from them.
             event.getEntity().removeTag(arenaTag);
 
-
             for (Player player : arenaInstance.getPlayers()) {
                 // There is still a player in this instance which is not scheduled to be removed.
                 if (player != event.getEntity()) {
@@ -67,7 +67,7 @@ public final class MobArena extends Arena {
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, (event) -> {
             for (Entity entity : this.arenaInstance.getEntities()) {
-                if (entity instanceof EntityCreature) {
+                if (entity instanceof EntityCreature creature && !(creature.isDead())) {
                     // TODO give money;
                     return; // round hasn't ended yet
                 }
@@ -83,9 +83,10 @@ public final class MobArena extends Arena {
     }
 
     @Override
-    public void join(@NotNull Player player) {
-        player.setInstance(arenaInstance, new Pos(0, 41, 0));
+    public CompletableFuture<Void> join(@NotNull Player player) {
+        CompletableFuture<Void> future = player.setInstance(arenaInstance, new Pos(0, 41, 0));
         player.setTag(arenaTag, arenaInstance.getUniqueId());
+        return future;
     }
 
 }
