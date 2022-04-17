@@ -29,7 +29,7 @@ public class TeamManager {
 
     public static boolean transferOwnership(Player player) {
         Team team = teams.get(player);
-        Optional<Player> newOwner = team.getPlayers().stream().findFirst();
+        Optional<Player> newOwner = team.getPlayers().stream().filter(p -> p != player).findFirst();
 
         if (newOwner.isPresent()) {
             team.setOwner(newOwner.get());
