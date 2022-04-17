@@ -5,6 +5,7 @@ import net.minestom.server.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class TeamManager {
     private static final Map<Player, Team> teams = new HashMap<>();
@@ -30,16 +31,21 @@ public class TeamManager {
         Team team = teams.get(player);
         team.removePlayer(player);
 
-        if (team.getPlayers().size() != 0) {
-            Player newOwner = team.getPlayers().get(0);
-            team.setOwner(newOwner);
+        Optional<Player> newOwner = team.getPlayers().stream().findFirst();
+
+        if (newOwner.isPresent()) {
+            team.setOwner(newOwner.get());
 
             team.getPlayers().forEach(member -> {
-                member.sendMessage(Component.text("Team ownership has been transferred to ").append(newOwner.getName()));
+                member.sendMessage(Component.text("Team ownership has been transferred to ").append(newOwner.get().getName()));
             });
-            
+
             teams.remove(player);
-            teams.put(newOwner, team);
+            teams.put(newOwner.get(), team);
         }
+    }
+
+    public static void removePlayer(Player player) {
+        teams.values().forEach(team -> team.removePlayer(player));
     }
 }

@@ -7,14 +7,14 @@ import net.minestom.server.entity.Player;
 import java.util.*;
 
 public class Team {
-    private final List<Player> players = new ArrayList<>();
+    private final Set<Player> players = new HashSet<>();
     private Player owner;
 
     public Team(Player owner) {
         this.owner = owner;
     }
 
-    public List<Player> getPlayers() {
+    public Set<Player> getPlayers() {
         return players;
     }
 
@@ -23,7 +23,10 @@ public class Team {
     }
 
     public void removePlayer(Player player) {
-        players.remove(player);
+        if (players.contains(player)) {
+            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your team."))));
+            players.remove(player);
+        }
     }
 
     public UUID getTeamUUID() {
