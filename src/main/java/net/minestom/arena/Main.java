@@ -7,6 +7,8 @@ import net.minestom.arena.command.GroupCommand;
 import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
 import net.minestom.arena.game.ArenaCommand;
+import net.minestom.arena.command.StopCommand;
+import net.minestom.arena.utils.ServerProperties;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandManager;
 import net.minestom.server.coordinate.Pos;
@@ -14,6 +16,7 @@ import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerLoginEvent;
+import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.potion.Potion;
@@ -28,8 +31,7 @@ public class Main {
         commandManager.register(new LobbyCommand());
         commandManager.register(new ArenaCommand());
         commandManager.register(new InstancesCommand());
-
-        OpenToLAN.open();
+        commandManager.register(new StopCommand());
 
         GlobalEventHandler globalEventHandler = MinecraftServer.getGlobalEventHandler();
         globalEventHandler.addListener(PlayerLoginEvent.class, event -> {
@@ -57,6 +59,16 @@ public class Main {
             }
         });
 
-        minecraftServer.start("0.0.0.0", 25565);
+        final String forwardingSecret = ServerProperties.getForwardingSecret();
+        if (forwardingSecret != null) {
+            VelocityProxy.enable(forwardingSecret);
+        } else {
+            OpenToLAN.open();
+        }
+
+        final String address = ServerProperties.getServerAddress("0.0.0.0");
+        final int port = ServerProperties.getServerPort(25565);
+        minecraftServer.start(address, port);
+        System.out.println("Server startup done! Listening on "+address+":"+port);
     }
 }
