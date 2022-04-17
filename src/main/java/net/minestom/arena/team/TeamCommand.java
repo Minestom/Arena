@@ -1,6 +1,7 @@
 package net.minestom.arena.team;
 
 import net.kyori.adventure.text.Component;
+import net.minestom.arena.MessageUtils;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.condition.Conditions;
 import net.minestom.server.entity.Player;
@@ -18,9 +19,9 @@ public final class TeamCommand extends Command {
             if (sender instanceof Player player) {
                 if (TeamManager.getTeam(player) == null) {
                     TeamManager.createTeam(player);
-                    sender.sendMessage("Team created");
+                    MessageUtils.sendInfoMessage(player, "Team created");
                 } else {
-                    sender.sendMessage("You are in a team");
+                    MessageUtils.sendInfoMessage(player, "You are in a team");
                 }
             }
         }, Literal("create"));

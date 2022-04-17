@@ -1,7 +1,10 @@
 package net.minestom.arena.team;
 
 import net.kyori.adventure.text.Component;
+import net.minestom.arena.MessageUtils;
 import net.minestom.server.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,15 +13,15 @@ import java.util.Optional;
 public class TeamManager {
     private static final Map<Player, Team> teams = new HashMap<>();
 
-    public static Team getTeam(Player player) {
+    public static @Nullable Team getTeam(@NotNull Player player) {
         return teams.get(player);
     }
 
-    public static void createTeam(Player player) {
+    public static void createTeam(@NotNull Player player) {
         teams.put(player, new Team(player));
     }
 
-    public static void removeTeam(Player player) {
+    public static void removeTeam(@NotNull Player player) {
         Team team = teams.get(player);
 
         if (team != null) {
@@ -34,9 +37,7 @@ public class TeamManager {
         if (newOwner.isPresent()) {
             team.setOwner(newOwner.get());
 
-            team.getPlayers().forEach(member -> {
-                member.sendMessage(Component.text("Team ownership has been transferred to ").append(newOwner.get().getName()));
-            });
+            team.getPlayersAsAudience().sendMessage(Component.text("Team ownership has been transferred to ").append(newOwner.get().getName()));
 
             teams.remove(player);
             teams.put(newOwner.get(), team);
@@ -52,12 +53,12 @@ public class TeamManager {
 
         if (teams.containsKey(player)) {
             if (transferOwnership(player)) {
-                player.sendMessage("You have left your team and ownership has been transferred");
+                MessageUtils.sendInfoMessage(player, "You have left your team and ownership has been transferred");
             } else {
-                player.sendMessage("Your team has been disbanded");
+                MessageUtils.sendInfoMessage(player, "Your team has been disbanded");
             }
         } else {
-            player.sendMessage("You have left your team");
+            MessageUtils.sendInfoMessage(player, "You have left your team");
         }
     }
 }
