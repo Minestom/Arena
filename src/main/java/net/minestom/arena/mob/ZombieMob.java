@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.List;
 
 public class ZombieMob extends EntityCreature {
-
     public ZombieMob(int level) {
         super(EntityType.ZOMBIE);
 
@@ -24,5 +23,4 @@ public class ZombieMob extends EntityCreature {
                 List.of(new ClosestEntityTarget(this, 20, Player.class))
         );
     }
-
 }
