@@ -37,4 +37,8 @@ public class Team {
                 ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/team accept " + owner.getName())
         ));
     }
+
+    public Component getOwner() {
+        return owner.getName();
+    }
 }
