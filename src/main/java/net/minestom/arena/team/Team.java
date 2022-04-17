@@ -4,19 +4,17 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.minestom.server.entity.Player;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class Team {
-    private final Set<Player> players = new HashSet<>();
-    private final Player owner;
+    private final List<Player> players = new ArrayList<>();
+    private Player owner;
 
     public Team(Player owner) {
         this.owner = owner;
     }
 
-    public Set<Player> getPlayers() {
+    public List<Player> getPlayers() {
         return players;
     }
 
@@ -42,6 +40,10 @@ public class Team {
 
     public Component getOwner() {
         return owner.getName();
+    }
+
+    public void setOwner(Player player) {
+        this.owner = player;
     }
 
     public void disband() {
