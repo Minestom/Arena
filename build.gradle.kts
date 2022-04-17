@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Minestom:Minestom:0f767da5f0")
+    implementation("com.github.Minestom:Minestom:ff7098a083")
 }
 
 tasks.getByName<Test>("test") {
