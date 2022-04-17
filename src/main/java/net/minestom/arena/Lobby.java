@@ -17,5 +17,6 @@ public final class Lobby extends InstanceContainer {
     private Lobby() {
         super(UUID.randomUUID(), DimensionType.OVERWORLD);
         setGenerator(unit -> unit.modifier().fillHeight(0, 40, Block.GRASS_BLOCK));
+        getWorldBorder().setDiameter(100);
     }
 }
