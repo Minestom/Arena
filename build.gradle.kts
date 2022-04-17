@@ -27,6 +27,12 @@ tasks.getByName<Test>("test") {
 
 tasks {
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+        manifest {
+            attributes (
+                "Main-Class" to "world.cepi.sabre.SabreLoader",
+                "Multi-Release" to true
+            )
+        }
         archiveBaseName.set("arena")
         mergeServiceFiles()
     }
