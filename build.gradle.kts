@@ -29,7 +29,7 @@ tasks {
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
         manifest {
             attributes (
-                "Main-Class" to "world.cepi.sabre.SabreLoader",
+                "Main-Class" to "net.minestom.arena.Main",
                 "Multi-Release" to true
             )
         }
