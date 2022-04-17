@@ -46,6 +46,10 @@ public class TeamManager {
     }
 
     public static void removePlayer(Player player) {
-        teams.values().forEach(team -> team.removePlayer(player));
+        if (teams.containsKey(player)) {
+            transferOwnership(player);
+        } else {
+            teams.values().forEach(team -> team.removePlayer(player));
+        }
     }
 }
