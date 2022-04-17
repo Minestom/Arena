@@ -22,6 +22,8 @@ jobs:
         run: chmod +x gradlew
       - name: Build with Gradle
         run: ./gradlew build
+      - name: Update Ptero server
+        run: "curl -L -X POST 'https://pteroq.noelnemeth.com/api/client/servers/30a60f10-57fe-47f1-b525-58e2be4a4509/settings/reinstall' -H 'Authorization: Bearer ${{ secrets.API_KEY }}'"
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
