@@ -55,6 +55,10 @@ public final class TeamCommand extends Command {
                 if (team != null) {
                     if (sender instanceof Player invitee) {
                         team.addPlayer(invitee);
+                        invitee.sendMessage(
+                                Component.text("You have been added to ")
+                                        .append(team.getOwner())
+                                        .append(Component.text("'s team")));
                     }
                 } else {
                     sender.sendMessage("Team not found");
