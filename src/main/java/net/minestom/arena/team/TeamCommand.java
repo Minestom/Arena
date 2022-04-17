@@ -26,6 +26,24 @@ public final class TeamCommand extends Command {
         }, Literal("create"));
 
         addSyntax((sender, context) -> {
+            if (sender instanceof Player player) {
+                TeamManager.removePlayer(player);
+            }
+        }, Literal("leave"));
+
+        addSyntax((sender, context) -> {
+            if (sender instanceof Player player) {
+                Team team = TeamManager.getTeam(player);
+
+                if (team == null) {
+                    sender.sendMessage("You are not the owner of a team");
+                } else {
+                    TeamManager.removeTeam(player);
+                }
+            }
+        }, Literal("disband"));
+
+        addSyntax((sender, context) -> {
             final EntityFinder finder = context.get("player");
             final Player player = finder.findFirstPlayer(sender);
 
