@@ -1,9 +1,6 @@
 package net.minestom.arena;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.minestom.arena.combat.CombatEvent;
-import net.minestom.arena.command.GroupCommand;
+import net.minestom.arena.team.TeamCommand;
 import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
 import net.minestom.arena.game.ArenaCommand;
@@ -27,7 +24,7 @@ public class Main {
         MinecraftServer minecraftServer = MinecraftServer.init();
 
         CommandManager commandManager = MinecraftServer.getCommandManager();
-        commandManager.register(new GroupCommand());
+        commandManager.register(new TeamCommand());
         commandManager.register(new LobbyCommand());
         commandManager.register(new ArenaCommand());
         commandManager.register(new InstancesCommand());
