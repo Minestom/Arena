@@ -33,12 +33,19 @@ public class Team {
     }
 
     public Component getInvite() {
-        return owner.getName().append(Component.text(" Has invited you to join his team.")).append(Component.text("Accept?").clickEvent(
-                ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/team accept " + owner.getName())
-        ));
+        return owner.getName()
+                .append(Component.text(" Has invited you to join his team. "))
+                .append(Component.text("[Accept]").clickEvent(
+                    ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/team accept " + owner.getUsername())
+                ));
     }
 
     public Component getOwner() {
         return owner.getName();
+    }
+
+    public void disband() {
+        players.forEach(player -> player.sendMessage(Component.text("Your team has been disbanded.")));
+        players.clear();
     }
 }
