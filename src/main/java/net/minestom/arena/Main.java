@@ -1,5 +1,8 @@
 package net.minestom.arena;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.combat.CombatEvent;
 import net.minestom.arena.command.GroupCommand;
 import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
@@ -7,6 +10,7 @@ import net.minestom.arena.game.ArenaCommand;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandManager;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerLoginEvent;
@@ -34,16 +38,23 @@ public class Main {
             player.setRespawnPoint(new Pos(0, 42, 0));
         });
 
+        CombatEvent.hook(globalEventHandler);
+
         // Until lighting is implemented, give players night vision.
         globalEventHandler.addListener(PlayerSpawnEvent.class, event -> {
-            final Player player = event.getPlayer();
+            if (event.isFirstSpawn()) {
+                final Player player = event.getPlayer();
+                player.setGameMode(GameMode.ADVENTURE);
 
-            player.addEffect(
-                    new Potion(PotionEffect.NIGHT_VISION,
-                            (byte) 1, Integer.MAX_VALUE,
-                            (byte) (Potion.AMBIENT_FLAG + Potion.ICON_FLAG + Potion.PARTICLES_FLAG)
-                    )
-            );
+                player.addEffect(
+                        new Potion(PotionEffect.NIGHT_VISION,
+                                (byte) 1, Integer.MAX_VALUE,
+                                (byte) (Potion.AMBIENT_FLAG + Potion.ICON_FLAG + Potion.PARTICLES_FLAG)
+                        )
+                );
+
+                player.sendMessage(Component.text("Welcome to the Minestom Arena!", NamedTextColor.GRAY));
+            }
         });
 
         minecraftServer.start("0.0.0.0", 25565);

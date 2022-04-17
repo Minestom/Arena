@@ -1,5 +1,7 @@
 package net.minestom.arena.command;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.Lobby;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.builder.Command;
@@ -13,7 +15,15 @@ public class InstancesCommand extends Command {
 
         setDefaultExecutor((sender, context) -> {
             for (Instance instance : MinecraftServer.getInstanceManager().getInstances()) {
-                sender.sendMessage(instance.getUniqueId() + (instance == Lobby.INSTANCE ? " (Lobby)" : ""));
+
+                if (instance == Lobby.INSTANCE) {
+                    sender.sendMessage(
+                            Component.text(instance.getUniqueId().toString(), NamedTextColor.GREEN)
+                                    .append(Component.text(" (Lobby)", NamedTextColor.GRAY))
+                    );
+                } else {
+                    sender.sendMessage(Component.text(instance.getUniqueId().toString(), NamedTextColor.BLUE));
+                }
             }
         });
     }

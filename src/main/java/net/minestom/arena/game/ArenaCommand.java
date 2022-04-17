@@ -22,6 +22,7 @@ public class ArenaCommand extends Command {
             Arena arena = new Arena();
 
             arena.join(player);
+            arena.start();
 
         });
 
