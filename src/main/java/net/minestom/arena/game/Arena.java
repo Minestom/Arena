@@ -25,7 +25,6 @@ public final class Arena {
     private static final ConcurrentHashMap<UUID, Arena> arenaList = new ConcurrentHashMap<>();
     private static final Tag<UUID> arenaTag = Tag.UUID("arena");
 
-    private final @NotNull EventNode<InstanceEvent> node;
     private final @NotNull ArenaInstance arenaInstance;
     private int stage = 0;
 
@@ -47,17 +46,12 @@ public final class Arena {
 
     public Arena() {
         this.arenaInstance = new ArenaInstance();
-        this.node = EventNode.event(
-                "arena-" + arenaInstance.getUniqueId(),
-                EventFilter.INSTANCE,
-                event -> event.getInstance() == arenaInstance
-        );
 
         // Register this
         arenaList.put(arenaInstance.getUniqueId(), this);
         MinecraftServer.getInstanceManager().registerInstance(this.arenaInstance);
 
-        node.addListener(RemoveEntityFromInstanceEvent.class, (event) -> {
+        arenaInstance.eventNode().addListener(RemoveEntityFromInstanceEvent.class, (event) -> {
             // We don't care about entities, only players.
             if ((event.getEntity() instanceof Player)) return;
 
@@ -74,10 +68,9 @@ public final class Arena {
 
             // All players have left. We can remove this instance.
             MinecraftServer.getInstanceManager().unregisterInstance(arenaInstance);
-            MinecraftServer.getGlobalEventHandler().removeChild(node);
         });
 
-        node.addListener(EntityDeathEvent.class, (event) -> {
+        arenaInstance.eventNode().addListener(EntityDeathEvent.class, (event) -> {
             for (Entity entity : this.arenaInstance.getEntities()) {
                 if (!(entity instanceof Player)) {
                     // TODO give money;
@@ -87,8 +80,6 @@ public final class Arena {
 
             nextStage();
         });
-
-        MinecraftServer.getGlobalEventHandler().addChild(node);
     }
 
     public void start() {
