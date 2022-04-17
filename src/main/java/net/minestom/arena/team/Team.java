@@ -8,6 +8,8 @@ import java.util.*;
 
 public class Team {
     private final Set<Player> players = new HashSet<>();
+    private final Set<Player> pendingInvites = Collections.newSetFromMap(new WeakHashMap<>());
+
     private Player owner;
 
     public Team(Player owner) {
@@ -18,8 +20,17 @@ public class Team {
         return players;
     }
 
+    public void addPendingInvite(Player player) {
+        pendingInvites.add(player);
+    }
+
+    public Set<Player> getPendingInvites() {
+        return pendingInvites;
+    }
+
     public void addPlayer(Player player) {
         players.add(player);
+        pendingInvites.remove(player);
     }
 
     public void removePlayer(Player player) {
