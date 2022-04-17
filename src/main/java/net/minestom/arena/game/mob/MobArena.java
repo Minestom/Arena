@@ -46,9 +46,7 @@ public final class MobArena implements Arena {
     }
 
     public MobArena() {
-
         init();
-
         CombatEvent.hook(arenaInstance.eventNode(), false);
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, (event) -> {
@@ -75,8 +73,7 @@ public final class MobArena implements Arena {
 
     @Override
     public CompletableFuture<Void> join(@NotNull Player player) {
-        CompletableFuture<Void> future = player.setInstance(arenaInstance, new Pos(0, 41, 0));
-        return future;
+        return player.setInstance(arenaInstance, new Pos(0, 41, 0));
     }
 
 }

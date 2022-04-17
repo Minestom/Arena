@@ -42,7 +42,6 @@ public class ArenaCommand extends Command {
             }, Literal(name));
         });
 
-
     }
 
 }

@@ -3,7 +3,7 @@ package net.minestom.arena.combat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.entity.EntityCreature;
+import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.hologram.Hologram;
@@ -18,9 +18,10 @@ public class CombatEvent {
 
     public static void hook(EventNode<InstanceEvent> node, boolean playerCombat) {
         node.addListener(EntityAttackEvent.class, event -> {
-            if (event.getTarget() instanceof EntityCreature target) {
+            if (event.getTarget() instanceof LivingEntity target) {
 
-                if (!playerCombat && (event.getTarget() instanceof Player)) return;
+                // PVP is disabled and two players have attempted to hit each other
+                if (!playerCombat && event.getTarget() instanceof Player && event.getEntity() instanceof Player) return;
 
                 int damage = 1;
 

@@ -11,7 +11,6 @@ import java.util.concurrent.CompletableFuture;
 public interface Arena {
 
     @NotNull Instance getArenaInstance();
-
     CompletableFuture<Void> join(@NotNull Player player);
 
     default void init() {
@@ -35,5 +34,4 @@ public interface Arena {
     }
 
     void start();
-
 }
