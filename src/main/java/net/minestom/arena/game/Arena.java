@@ -2,19 +2,19 @@ package net.minestom.arena.game;
 
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public abstract class Arena {
+public interface Arena {
 
-    protected final @NotNull Instance arenaInstance;
+    @NotNull Tag<UUID> arenaTag = Tag.UUID("arena");
 
-    protected Arena(@NotNull Instance arenaInstance) {
-        this.arenaInstance = arenaInstance;
-    }
+    @NotNull Instance getArenaInstance();
 
-    abstract public CompletableFuture<Void> join(@NotNull Player player);
-    abstract public void start();
+    CompletableFuture<Void> join(@NotNull Player player);
+    void start();
 
 }

@@ -11,18 +11,15 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
-import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
-import net.minestom.server.tag.Tag;
+import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public final class MobArena extends Arena {
-
-    private static final Tag<UUID> arenaTag = Tag.UUID("arena");
+public final class MobArena implements Arena {
 
     private int stage = 0;
+    private final Instance arenaInstance = new MobArenaInstance();
 
     public void nextStage() {
         stage++;
@@ -40,30 +37,10 @@ public final class MobArena extends Arena {
 
     public MobArena() {
 
-        super(new MobArenaInstance());
-
         // Register this arena
         MinecraftServer.getInstanceManager().registerInstance(this.arenaInstance);
 
         CombatEvent.hook(arenaInstance.eventNode(), false);
-
-        arenaInstance.eventNode().addListener(RemoveEntityFromInstanceEvent.class, (event) -> {
-            // We don't care about entities, only players.
-            if ((event.getEntity() instanceof Player)) return;
-
-            // If a player leaves the instance, remove the tag from them.
-            event.getEntity().removeTag(arenaTag);
-
-            for (Player player : arenaInstance.getPlayers()) {
-                // There is still a player in this instance which is not scheduled to be removed.
-                if (player != event.getEntity()) {
-                    return;
-                }
-            }
-
-            // All players have left. We can remove this instance.
-            MinecraftServer.getInstanceManager().unregisterInstance(arenaInstance);
-        });
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, (event) -> {
             for (Entity entity : this.arenaInstance.getEntities()) {
@@ -80,6 +57,11 @@ public final class MobArena extends Arena {
     @Override
     public void start() {
         nextStage();
+    }
+
+    @Override
+    public @NotNull Instance getArenaInstance() {
+        return arenaInstance;
     }
 
     @Override
