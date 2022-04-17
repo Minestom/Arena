@@ -2,6 +2,12 @@ plugins {
     id("java")
 }
 
+tasks {
+    jar {
+        archiveFileName.set("server.jar")
+    }
+}
+
 group = "net.minestom"
 version = "1.0-SNAPSHOT"
 
