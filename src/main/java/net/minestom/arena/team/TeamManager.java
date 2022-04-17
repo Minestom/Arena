@@ -29,7 +29,6 @@ public class TeamManager {
 
     public static void transferOwnership(Player player) {
         Team team = teams.get(player);
-        team.removePlayer(player);
 
         Optional<Player> newOwner = team.getPlayers().stream().findFirst();
 
@@ -46,10 +45,10 @@ public class TeamManager {
     }
 
     public static void removePlayer(Player player) {
+        teams.values().forEach(team -> team.removePlayer(player));
+        
         if (teams.containsKey(player)) {
             transferOwnership(player);
-        } else {
-            teams.values().forEach(team -> team.removePlayer(player));
         }
     }
 }
