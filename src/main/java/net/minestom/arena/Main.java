@@ -40,8 +40,6 @@ public class Main {
             player.setRespawnPoint(new Pos(0, 42, 0));
         });
 
-        CombatEvent.hook(globalEventHandler);
-
         // Until lighting is implemented, give players night vision.
         globalEventHandler.addListener(PlayerSpawnEvent.class, event -> {
             if (event.isFirstSpawn()) {
@@ -55,7 +53,7 @@ public class Main {
                         )
                 );
 
-                player.sendMessage(Component.text("Welcome to the Minestom Arena!", NamedTextColor.GRAY));
+                MessageUtils.sendInfoMessage(player, "Welcome to the Minestom Arena!");
             }
         });
 

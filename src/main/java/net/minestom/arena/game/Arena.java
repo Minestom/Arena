@@ -2,6 +2,7 @@ package net.minestom.arena.game;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
+import net.minestom.arena.combat.CombatEvent;
 import net.minestom.arena.mob.RandomMob;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.audience.Audiences;
@@ -50,6 +51,8 @@ public final class Arena {
         // Register this
         arenaList.put(arenaInstance.getUniqueId(), this);
         MinecraftServer.getInstanceManager().registerInstance(this.arenaInstance);
+
+        CombatEvent.hook(arenaInstance.eventNode(), false);
 
         arenaInstance.eventNode().addListener(RemoveEntityFromInstanceEvent.class, (event) -> {
             // We don't care about entities, only players.
