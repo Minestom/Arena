@@ -2,6 +2,7 @@ package net.minestom.arena.feature;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.event.PreDeathEvent;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
@@ -24,7 +25,18 @@ record CombatFeature(boolean playerCombat) implements Feature {
                 if (!playerCombat && event.getTarget() instanceof Player && event.getEntity() instanceof Player) return;
 
                 int damage = 1;
-                target.damage(DamageType.fromEntity(event.getEntity()), damage);
+
+                if (damage >= target.getHealth()) {
+                    PreDeathEvent preDeathEvent = new PreDeathEvent(target);
+
+                    node.call(preDeathEvent);
+
+                    if (!preDeathEvent.isCancelled()) {
+                        target.damage(DamageType.fromEntity(event.getEntity()), damage);
+                    }
+                } else {
+                    target.damage(DamageType.fromEntity(event.getEntity()), damage);
+                }
 
                 Hologram hologram = new Hologram(
                         target.getInstance(),

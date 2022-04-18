@@ -84,7 +84,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.combat());
+        return List.of(Features.combat(), Features.death(() -> Component.text("You died! Your last stage was " + stage)));
     }
 
     static EntityCreature findMob(int level) {
