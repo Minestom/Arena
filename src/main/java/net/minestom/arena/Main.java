@@ -1,6 +1,5 @@
 package net.minestom.arena;
 
-import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
 import net.minestom.arena.command.StopCommand;
 import net.minestom.arena.game.ArenaCommand;
@@ -26,7 +25,6 @@ public final class Main {
             manager.register(new GroupCommand());
             manager.register(new LobbyCommand());
             manager.register(new ArenaCommand());
-            manager.register(new InstancesCommand());
             manager.register(new StopCommand());
         }
 
