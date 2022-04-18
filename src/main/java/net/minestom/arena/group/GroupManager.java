@@ -33,7 +33,7 @@ final class GroupManager {
 
     public static void removePlayer(@NotNull Player player) {
         groups.values().forEach(group -> group.removePlayer(player));
-        
+
         if (groups.containsKey(player)) {
             Optional<Player> newLeader = groups.get(player).members().stream().findFirst();
 

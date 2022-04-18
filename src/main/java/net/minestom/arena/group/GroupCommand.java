@@ -28,8 +28,6 @@ public final class GroupCommand extends Command {
                 if (player != null) {
                     GroupImpl group = GroupManager.getGroup(inviter);
 
-                    System.out.println(group.members());
-
                     if (group.members().contains(player)) {
                         sender.sendMessage(player.getName().append(Component.text(" is already in this group.")));
                     } else {
