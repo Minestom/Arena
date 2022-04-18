@@ -63,14 +63,16 @@ public final class Main {
                 final TickMonitor tickMonitor = lastTick.get();
                 final long ramUsage = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024;
 
-                final Component header = Component.text("Minestom demo")
+                final Component header = Component.newline()
+                        .append(Component.text("Minestom Arena Demo", Messenger.PINK_COLOR))
                         .append(Component.newline()).append(Component.text("Players: " + players.size()))
                         .append(Component.newline()).append(Component.newline())
                         .append(Component.text("RAM USAGE: " + ramUsage + " MB").append(Component.newline())
                                 .append(Component.text("TICK TIME: " + MathUtils.round(tickMonitor.getTickTime(), 2) + "ms"))).append(Component.newline());
                 final Component footer = Component.newline().append(Component.text("Project: minestom.net").append(Component.newline())
                         .append(Component.text("Source: github.com/Minestom/Minestom")).append(Component.newline())
-                        .append(Component.text("Arena: github.com/Minestom/Arena")));
+                        .append(Component.text("Arena: github.com/Minestom/Arena")))
+                        .append(Component.newline());
 
                 Audiences.players().sendPlayerListHeaderAndFooter(header, footer);
 

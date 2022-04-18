@@ -1,6 +1,8 @@
 package net.minestom.arena.game.mob;
 
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
@@ -13,20 +15,23 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
+import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public final class MobArena implements SingleInstanceArena {
-    private static final List<Function<Integer, EntityCreature>> MOB_GENERATION_LAMBDAS = List.of(
+    private static final List<BiFunction<Integer, EventNode<InstanceEvent>, EntityCreature>> MOB_GENERATION_LAMBDAS = List.of(
             ZombieMob::new
     );
 
@@ -45,11 +50,17 @@ public final class MobArena implements SingleInstanceArena {
     public void nextStage() {
         stage++;
         for (int i = 0; i < stage; i++) {
-            EntityCreature creature = findMob(stage);
+            EntityCreature creature = findMob(stage, arenaInstance.eventNode());
             creature.setInstance(arenaInstance, new Pos(0, 42, 0));
         }
-        arenaInstance.showTitle(Title.title(Component.text("Stage " + stage), Component.empty()));
-        arenaInstance.sendMessage(Component.text("Stage " + stage));
+        arenaInstance.showTitle(Title.title(
+                Component.text("Stage " + stage, NamedTextColor.GREEN),
+                Component.text(stage + " mob" + (stage == 1 ? "" : "s") + ".")
+        ));
+
+        arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f));
+
+        Messenger.info(arenaInstance, "Stage " + stage);
     }
 
     public MobArena(Group group) {
@@ -95,10 +106,10 @@ public final class MobArena implements SingleInstanceArena {
         return List.of(Features.combat());
     }
 
-    static EntityCreature findMob(int level) {
-        Function<Integer, EntityCreature> randomMobGenerator = MOB_GENERATION_LAMBDAS.get(
+    static EntityCreature findMob(int level, EventNode<InstanceEvent> node) {
+        BiFunction<Integer, EventNode<InstanceEvent>, EntityCreature> randomMobGenerator = MOB_GENERATION_LAMBDAS.get(
                 ThreadLocalRandom.current().nextInt(MOB_GENERATION_LAMBDAS.size()) % MOB_GENERATION_LAMBDAS.size()
         );
-        return randomMobGenerator.apply(level);
+        return randomMobGenerator.apply(level, node);
     }
 }
