@@ -28,12 +28,14 @@ public final class GroupCommand extends Command {
                 if (player != null) {
                     GroupImpl group = GroupManager.getMemberGroup(inviter);
 
-                    if (group == null) {
-                        GroupManager.getGroup(inviter);
-                        sender.sendMessage("Group created");
-                    } else if (group.members().contains(player)) {
+                    if (group != null && group.members().contains(player)) {
                         sender.sendMessage(player.getName().append(Component.text(" is already in this group.")));
                     } else {
+                        if (group == null) {
+                            group = GroupManager.getGroup(inviter);
+                            sender.sendMessage("Group created");
+                        }
+
                         Component invite = group.getInviteMessage();
                         group.addPendingInvite(player);
                         player.sendMessage(invite);
