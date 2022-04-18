@@ -14,7 +14,6 @@ public class PreDeathEvent implements EntityInstanceEvent, CancellableEvent {
         this.entity = entity;
     }
 
-
     @Override
     public @NotNull Entity getEntity() {
         return entity;

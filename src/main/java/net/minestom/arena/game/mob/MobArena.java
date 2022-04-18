@@ -2,6 +2,9 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
+import net.minestom.arena.Lobby;
+import net.minestom.arena.Messenger;
+import net.minestom.arena.event.PreDeathEvent;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
@@ -60,6 +63,15 @@ public final class MobArena implements SingleInstanceArena {
             }
             nextStage();
         });
+
+        arenaInstance.eventNode().addListener(PreDeathEvent.class, event -> {
+            if (event.getEntity() instanceof Player player) {
+                event.setCancelled(true);
+                player.heal();
+                player.setInstance(Lobby.INSTANCE);
+                Messenger.info(player, "You died. Your last stage was " + stage);
+            }
+        });
     }
 
     @Override
@@ -84,7 +96,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.combat(), Features.death(() -> Component.text("You died! Your last stage was " + stage)));
+        return List.of(Features.combat());
     }
 
     static EntityCreature findMob(int level) {
