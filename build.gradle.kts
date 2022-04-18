@@ -21,6 +21,10 @@ dependencies {
     implementation("com.github.Minestom:Minestom:ff7098a083")
 }
 
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
 }
