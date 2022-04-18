@@ -1,4 +1,4 @@
-package net.minestom.arena.team;
+package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
 import net.minestom.server.command.builder.Command;
@@ -9,36 +9,36 @@ import net.minestom.server.utils.entity.EntityFinder;
 import static net.minestom.server.command.builder.arguments.ArgumentType.Entity;
 import static net.minestom.server.command.builder.arguments.ArgumentType.Literal;
 
-public final class TeamCommand extends Command {
-    public TeamCommand() {
-        super("team");
+public final class GroupCommand extends Command {
+    public GroupCommand() {
+        super("group");
         setCondition(Conditions::playerOnly);
 
         addSyntax((sender, context) -> {
             if (sender instanceof Player player) {
-                if (TeamManager.getTeam(player) == null) {
-                    TeamManager.createTeam(player);
-                    sender.sendMessage("Team created");
+                if (GroupManager.getGroup(player) == null) {
+                    GroupManager.createGroup(player);
+                    sender.sendMessage("Group created");
                 } else {
-                    sender.sendMessage("You are in a team");
+                    sender.sendMessage("You are in a group");
                 }
             }
         }, Literal("create"));
 
         addSyntax((sender, context) -> {
             if (sender instanceof Player player) {
-                TeamManager.removePlayer(player);
+                GroupManager.removePlayer(player);
             }
         }, Literal("leave"));
 
         addSyntax((sender, context) -> {
             if (sender instanceof Player player) {
-                Team team = TeamManager.getTeam(player);
+                Group group = GroupManager.getGroup(player);
 
-                if (team == null) {
-                    sender.sendMessage("You are not the owner of a team");
+                if (group == null) {
+                    sender.sendMessage("You are not the owner of a group");
                 } else {
-                    TeamManager.removeTeam(player);
+                    GroupManager.removeGroup(player);
                 }
             }
         }, Literal("disband"));
@@ -49,13 +49,13 @@ public final class TeamCommand extends Command {
 
             if (sender instanceof Player inviter) {
                 if (player != null) {
-                    Team team = TeamManager.getTeam(inviter);
+                    Group group = GroupManager.getGroup(inviter);
 
-                    if (team != null) {
-                        Component invite = team.getInvite();
+                    if (group != null) {
+                        Component invite = group.getInvite();
                         player.sendMessage(invite);
                     } else {
-                        sender.sendMessage("You are not in a team. Use /team create");
+                        sender.sendMessage("You are not in a group. Use /group create");
                     }
                 } else {
                     sender.sendMessage("Player not found");
@@ -68,29 +68,29 @@ public final class TeamCommand extends Command {
             final Player player = finder.findFirstPlayer(sender);
 
             if (player != null) {
-                Team team = TeamManager.getTeam(player);
+                Group group = GroupManager.getGroup(player);
 
-                if (team != null) {
+                if (group != null) {
                     if (sender instanceof Player invitee) {
-                        boolean wasInvited = team.getPendingInvites().contains(invitee);
+                        boolean wasInvited = group.getPendingInvites().contains(invitee);
 
                         if (wasInvited) {
-                            team.addPlayer(invitee);
+                            group.addPlayer(invitee);
                             invitee.sendMessage(
                                     Component.text("You have been added to ")
-                                            .append(team.getOwner())
-                                            .append(Component.text("'s team")));
+                                            .append(group.getOwner())
+                                            .append(Component.text("'s group")));
                         } else {
                             invitee.sendMessage(
                                     Component.text("You have not been invited to ")
-                                            .append(team.getOwner()).append(Component.text("'s team")));
+                                            .append(group.getOwner()).append(Component.text("'s group")));
                         }
                     }
                 } else {
-                    sender.sendMessage("Team not found");
+                    sender.sendMessage("Group not found");
                 }
             } else {
-                sender.sendMessage("Team not found");
+                sender.sendMessage("Group not found");
             }
         }, Literal("accept"), Entity("player").onlyPlayers(true).singleEntity(true));
     }

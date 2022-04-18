@@ -1,4 +1,4 @@
-package net.minestom.arena.team;
+package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -6,13 +6,13 @@ import net.minestom.server.entity.Player;
 
 import java.util.*;
 
-public class Team {
+public class Group {
     private final Set<Player> players = new HashSet<>();
     private final Set<Player> pendingInvites = Collections.newSetFromMap(new WeakHashMap<>());
 
     private Player owner;
 
-    public Team(Player owner) {
+    public Group(Player owner) {
         this.owner = owner;
     }
 
@@ -36,19 +36,15 @@ public class Team {
     public void removePlayer(Player player) {
         if (players.contains(player)) {
             players.remove(player);
-            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your team."))));
+            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your group."))));
         }
-    }
-
-    public UUID getTeamUUID() {
-        return owner.getUuid();
     }
 
     public Component getInvite() {
         return owner.getName()
-                .append(Component.text(" Has invited you to join his team. "))
+                .append(Component.text(" Has invited you to join their group. "))
                 .append(Component.text("[Accept]").clickEvent(
-                    ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/team accept " + owner.getUsername())
+                    ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/group accept " + owner.getUsername())
                 ));
     }
 
@@ -61,7 +57,7 @@ public class Team {
     }
 
     public void disband() {
-        players.forEach(player -> player.sendMessage(Component.text("Your team has been disbanded.")));
+        players.forEach(player -> player.sendMessage(Component.text("Your group has been disbanded.")));
         players.clear();
     }
 }

@@ -4,8 +4,8 @@ import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
 import net.minestom.arena.command.StopCommand;
 import net.minestom.arena.game.ArenaCommand;
-import net.minestom.arena.team.TeamCommand;
-import net.minestom.arena.team.TeamEvent;
+import net.minestom.arena.group.GroupCommand;
+import net.minestom.arena.group.GroupEvent;
 import net.minestom.arena.utils.ServerProperties;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandManager;
@@ -25,7 +25,7 @@ public class Main {
         MinecraftServer minecraftServer = MinecraftServer.init();
 
         CommandManager commandManager = MinecraftServer.getCommandManager();
-        commandManager.register(new TeamCommand());
+        commandManager.register(new GroupCommand());
         commandManager.register(new LobbyCommand());
         commandManager.register(new ArenaCommand());
         commandManager.register(new InstancesCommand());
@@ -55,7 +55,7 @@ public class Main {
             }
         });
 
-        TeamEvent.hook(MinecraftServer.getGlobalEventHandler());
+        GroupEvent.hook(MinecraftServer.getGlobalEventHandler());
 
         final String forwardingSecret = ServerProperties.getForwardingSecret();
         if (forwardingSecret != null) {
