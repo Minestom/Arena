@@ -1,7 +1,5 @@
 package net.minestom.arena;
 
-import net.minestom.arena.command.LobbyCommand;
-import net.minestom.arena.command.StopCommand;
 import net.minestom.arena.game.ArenaCommand;
 import net.minestom.arena.group.GroupCommand;
 import net.minestom.arena.group.GroupEvent;
@@ -23,7 +21,6 @@ public final class Main {
         {
             CommandManager manager = MinecraftServer.getCommandManager();
             manager.register(new GroupCommand());
-            manager.register(new LobbyCommand());
             manager.register(new ArenaCommand());
             manager.register(new StopCommand());
         }

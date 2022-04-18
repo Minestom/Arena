@@ -1,4 +1,4 @@
-package net.minestom.arena.command;
+package net.minestom.arena;
 
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.ConsoleSender;

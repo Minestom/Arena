@@ -2,7 +2,7 @@ package net.minestom.arena.game;
 
 import net.minestom.arena.CommandUtils;
 import net.minestom.arena.Lobby;
-import net.minestom.arena.MessageUtils;
+import net.minestom.arena.Messenger;
 import net.minestom.arena.game.mob.MobArena;
 import net.minestom.arena.group.Group;
 import net.minestom.server.command.builder.Command;
@@ -21,7 +21,7 @@ public final class ArenaCommand extends Command {
         setCondition(CommandUtils::lobbyOnly);
 
         setDefaultExecutor((sender, context) ->
-                MessageUtils.sendWarnMessage(sender, "Usage: /arena <name>. Choices are: " + String.join(", ", ARENAS.keySet())));
+                Messenger.warn(sender, "Usage: /arena <name>. Choices are: " + String.join(", ", ARENAS.keySet())));
 
         addSyntax((sender, context) -> {
             final Player player = (Player) sender;
