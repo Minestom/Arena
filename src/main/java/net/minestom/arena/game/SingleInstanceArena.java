@@ -1,9 +1,11 @@
 package net.minestom.arena.game;
 
+import net.minestom.arena.feature.Feature;
 import net.minestom.arena.group.Group;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.EventNode;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +17,8 @@ public interface SingleInstanceArena extends Arena {
     @NotNull Instance instance();
 
     @NotNull Pos spawnPosition();
+
+    @NotNull List<Feature> features();
 
     void start();
 
@@ -32,6 +36,10 @@ public interface SingleInstanceArena extends Arena {
             // All players have left. We can remove this instance once the player is removed.
             instance.scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
         });
+
+        for (var feature : features()) {
+            feature.hook(EventNode.class.cast(instance.eventNode()));
+        }
 
         final List<Player> members = group.members();
         @SuppressWarnings("rawtypes") CompletableFuture[] futures = new CompletableFuture[members.size()];

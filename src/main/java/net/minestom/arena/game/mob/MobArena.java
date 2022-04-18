@@ -2,7 +2,8 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
-import net.minestom.arena.combat.CombatEvent;
+import net.minestom.arena.feature.Feature;
+import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.mob.RandomMob;
 import net.minestom.arena.utils.FullbrightDimension;
@@ -15,6 +16,7 @@ import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.UUID;
 
 public final class MobArena implements SingleInstanceArena {
@@ -40,7 +42,6 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public MobArena() {
-        CombatEvent.hook(arenaInstance.eventNode(), false);
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, (event) -> {
             for (Entity entity : this.arenaInstance.getEntities()) {
                 if (entity instanceof EntityCreature creature && !(creature.isDead())) {
@@ -65,5 +66,10 @@ public final class MobArena implements SingleInstanceArena {
     @Override
     public @NotNull Pos spawnPosition() {
         return new Pos(0, 41, 0);
+    }
+
+    @Override
+    public @NotNull List<Feature> features() {
+        return List.of(Features.combat());
     }
 }
