@@ -82,12 +82,24 @@ public final class GroupCommand extends Command {
                     GroupImpl group = GroupManager.getMemberGroup(player);
 
                     if (group == null) {
-                        Messenger.info(sender, "You are not in a group");
+                        Messenger.warn(sender, "You are not in a group");
                     } else if (group.leader() == player) {
                         if (toKick == player) {
                             GroupManager.removePlayer(player);
                         } else {
                             group.removeMember(toKick);
+                            group.members().forEach(p -> {
+                                if (p == player) {
+                                    Messenger.info(p, Component.text("You kicked ")
+                                            .append(toKick.getName()).append(Component.text(" from the group")));
+                                } else {
+                                    Messenger.info(p, toKick.getName().append(Component.text(" was kicked from your group")));
+                                }
+                            });
+
+                            Messenger.info(toKick, Component.text("You have been kicked from")
+                                    .append(player.getName())
+                                    .append(Component.text("'s group")));
                         }
                     } else {
                         Messenger.warn(player, "You are not the leader of this group");
