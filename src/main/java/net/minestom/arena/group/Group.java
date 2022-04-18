@@ -12,5 +12,5 @@ public sealed interface Group permits GroupImpl {
 
     @NotNull Player leader();
 
-    @NotNull Set<Player> members();
+    @NotNull Set<@NotNull Player> members();
 }
