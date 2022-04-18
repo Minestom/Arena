@@ -22,15 +22,13 @@ public interface SingleInstanceArena extends Arena {
 
         instance.eventNode().addListener(RemoveEntityFromInstanceEvent.class, (event) -> {
             // We don't care about entities, only players.
-            if ((event.getEntity() instanceof Player)) return;
-            for (Player p : instance.getPlayers()) {
-                // There is still a player in this instance which is not scheduled to be removed.
-                if (p != event.getEntity()) {
-                    return;
-                }
-            }
-            // All players have left. We can remove this instance.
-            MinecraftServer.getInstanceManager().unregisterInstance(instance);
+            if (!(event.getEntity() instanceof Player)) return;
+
+            // Ensure there is only this player in the instance
+            if (instance.getPlayers().size() > 1) return;
+
+            // All players have left. We can remove this instance once the player is removed.
+            instance.scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
         });
         player.setInstance(instance, spawnPosition()).thenRun(this::start);
     }
