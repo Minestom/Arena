@@ -16,31 +16,9 @@ public final class GroupCommand extends Command {
 
         addSyntax((sender, context) -> {
             if (sender instanceof Player player) {
-                if (GroupManager.getGroup(player) == null) {
-                    GroupManager.createGroup(player);
-                    sender.sendMessage("Group created");
-                } else {
-                    sender.sendMessage("You are in a group");
-                }
-            }
-        }, Literal("create"));
-
-        addSyntax((sender, context) -> {
-            if (sender instanceof Player player) {
                 GroupManager.removePlayer(player);
             }
         }, Literal("leave"));
-
-        addSyntax((sender, context) -> {
-            if (sender instanceof Player player) {
-                Group group = GroupManager.getGroup(player);
-                if (group == null) {
-                    sender.sendMessage("You are not the owner of a group");
-                } else {
-                    GroupManager.removeGroup(player);
-                }
-            }
-        }, Literal("disband"));
 
         addSyntax((sender, context) -> {
             final EntityFinder finder = context.get("player");
@@ -49,11 +27,13 @@ public final class GroupCommand extends Command {
             if (sender instanceof Player inviter) {
                 if (player != null) {
                     GroupImpl group = GroupManager.getGroup(inviter);
-                    if (group != null) {
-                        Component invite = group.getInvite();
-                        player.sendMessage(invite);
+
+                    if (group.members().contains(player)) {
+                        sender.sendMessage(player.getName().append(Component.text(" is already in this group.")));
                     } else {
-                        sender.sendMessage("You are not in a group. Use /group create");
+                        Component invite = group.getInviteMessage();
+                        group.addPendingInvite(player);
+                        player.sendMessage(invite);
                     }
                 } else {
                     sender.sendMessage("Player not found");
@@ -63,24 +43,46 @@ public final class GroupCommand extends Command {
 
         addSyntax((sender, context) -> {
             final EntityFinder finder = context.get("player");
+            final Player newLeader = finder.findFirstPlayer(sender);
+
+            if (sender instanceof Player player) {
+                if (newLeader != null) {
+                    GroupImpl group = GroupManager.getMemberGroup(player);
+
+                    if (group == null) {
+                        sender.sendMessage("You are not in a group.");
+                    } else if (group.leader() == newLeader) {
+                        sender.sendMessage("You are already the leader");
+                    } else if (group.leader() != player) {
+                        sender.sendMessage("You are not the leader of this group.");
+                    } else {
+                        group.setLeader(newLeader);
+                    }
+                } else {
+                    sender.sendMessage("Player not found");
+                }
+            }
+            // TODO: only show players in the group
+        }, Literal("leader"), Entity("player").onlyPlayers(true).singleEntity(true));
+
+        addSyntax((sender, context) -> {
+            final EntityFinder finder = context.get("player");
             final Player player = finder.findFirstPlayer(sender);
             if (player != null) {
                 GroupImpl group = GroupManager.getGroup(player);
-                if (group != null) {
-                    if (sender instanceof Player invitee) {
-                        boolean wasInvited = group.getPendingInvites().contains(invitee);
-                        if (wasInvited) {
-                            group.addPlayer(invitee);
-                            invitee.sendMessage(Component.text("You have been added to ")
-                                    .append(group.getOwner())
-                                    .append(Component.text("'s group")));
-                        } else {
-                            invitee.sendMessage(Component.text("You have not been invited to ")
-                                    .append(group.getOwner()).append(Component.text("'s group")));
-                        }
+                if (sender instanceof Player invitee) {
+                    boolean wasInvited = group.getPendingInvites().contains(invitee);
+                    if (wasInvited) {
+                        GroupManager.removePlayer(invitee); // Remove from old group
+                        group.addPlayer(invitee);
+                        Component accepted = group.getAcceptedMessage();
+                        invitee.sendMessage(accepted);
+                    } else if (group.members().contains(invitee)) {
+                        invitee.sendMessage(Component.text("You have already joined this group"));
+                    } else {
+                        invitee.sendMessage(Component.text("You have not been invited to ")
+                                .append(group.leader().getName()).append(Component.text("'s group")));
                     }
-                } else {
-                    sender.sendMessage("Group not found");
                 }
             } else {
                 sender.sendMessage("Group not found");
