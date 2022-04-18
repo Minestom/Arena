@@ -1,6 +1,5 @@
 package net.minestom.arena;
 
-import net.minestom.arena.command.GroupCommand;
 import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
 import net.minestom.arena.command.StopCommand;
