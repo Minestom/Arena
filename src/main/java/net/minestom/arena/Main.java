@@ -1,5 +1,6 @@
 package net.minestom.arena;
 
+import net.minestom.arena.command.GroupCommand;
 import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
 import net.minestom.arena.command.StopCommand;
@@ -20,7 +21,7 @@ import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.potion.Potion;
 import net.minestom.server.potion.PotionEffect;
 
-public class Main {
+public final class Main {
     public static void main(String[] args) {
         MinecraftServer minecraftServer = MinecraftServer.init();
 
@@ -44,12 +45,9 @@ public class Main {
                 final Player player = event.getPlayer();
                 player.setGameMode(GameMode.ADVENTURE);
 
-                player.addEffect(
-                        new Potion(PotionEffect.NIGHT_VISION,
-                                (byte) 1, Integer.MAX_VALUE,
-                                (byte) (Potion.AMBIENT_FLAG + Potion.ICON_FLAG + Potion.PARTICLES_FLAG)
-                        )
-                );
+                player.addEffect(new Potion(PotionEffect.NIGHT_VISION,
+                        (byte) 1, Integer.MAX_VALUE,
+                        (byte) (Potion.AMBIENT_FLAG + Potion.ICON_FLAG + Potion.PARTICLES_FLAG)));
 
                 MessageUtils.sendInfoMessage(player, "Welcome to the Minestom Arena!");
             }
@@ -67,6 +65,6 @@ public class Main {
         final String address = ServerProperties.getServerAddress("0.0.0.0");
         final int port = ServerProperties.getServerPort(25565);
         minecraftServer.start(address, port);
-        System.out.println("Server startup done! Listening on "+address+":"+port);
+        System.out.println("Server startup done! Listening on " + address + ":" + port);
     }
 }
