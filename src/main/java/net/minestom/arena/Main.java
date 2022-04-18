@@ -9,6 +9,7 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.audience.Audiences;
 import net.minestom.server.command.CommandManager;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerLoginEvent;
@@ -45,6 +46,7 @@ public final class Main {
             handler.addListener(PlayerLoginEvent.class, event -> {
                 final Player player = event.getPlayer();
                 event.setSpawningInstance(Lobby.INSTANCE);
+                player.setGameMode(GameMode.ADVENTURE);
                 player.setRespawnPoint(new Pos(0, 42, 0));
             });
 
@@ -72,7 +74,7 @@ public final class Main {
 
                 Audiences.players().sendPlayerListHeaderAndFooter(header, footer);
 
-            }, TaskSchedule.tick(5), TaskSchedule.tick(5));
+            }, TaskSchedule.tick(10), TaskSchedule.tick(10));
         }
 
         final String forwardingSecret = ServerProperties.getForwardingSecret();
