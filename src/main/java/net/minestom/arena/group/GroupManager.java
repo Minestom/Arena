@@ -23,35 +23,26 @@ final class GroupManager {
         return group;
     }
 
-    public static void removeGroup(@NotNull Player player) {
-        GroupImpl group = groups.get(player);
-        if (group != null) {
-            group.disband();
-            groups.remove(player);
-        }
-    }
-
-    public static boolean transferOwnership(@NotNull Player player) {
-        GroupImpl group = groups.get(player);
-        Optional<Player> newOwner = group.members().stream().filter(p -> p != player).findFirst();
-        if (newOwner.isPresent()) {
-            group.setOwner(newOwner.get());
-            group.members().forEach(member ->
-                    member.sendMessage(Component.text("Group ownership has been transferred to ").append(newOwner.get().getName())));
-            groups.remove(player);
-            groups.put(newOwner.get(), group);
-            return true;
-        }
-        return false;
+    public static void transferOwnership(@NotNull GroupImpl group, @NotNull Player newLeader) {
+        groups.remove(group.leader());
+        group.setLeader(newLeader);
+        group.members().forEach(member ->
+                member.sendMessage(Component.text("Group ownership has been transferred to ").append(newLeader.getName())));
+        groups.put(newLeader, group);
     }
 
     public static void removePlayer(@NotNull Player player) {
         groups.values().forEach(group -> group.removePlayer(player));
+        
         if (groups.containsKey(player)) {
-            if (transferOwnership(player)) {
+            Optional<Player> newLeader = groups.get(player).members().stream().findFirst();
+
+            if (newLeader.isPresent()) {
+                transferOwnership(groups.get(player), newLeader.get());
                 player.sendMessage("You have left your group and ownership has been transferred");
             } else {
                 player.sendMessage("Your group has been disbanded");
+                groups.remove(player);
             }
         } else {
             player.sendMessage("You have left your group");

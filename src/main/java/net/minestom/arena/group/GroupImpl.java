@@ -11,16 +11,16 @@ final class GroupImpl implements Group {
     private final Set<Player> players = new HashSet<>();
     private final Set<Player> pendingInvites = Collections.newSetFromMap(new WeakHashMap<>());
 
-    private Player owner;
+    private Player leader;
 
     @Override
     public @NotNull Player leader() {
-        return owner;
+        return leader;
     }
 
-    GroupImpl(@NotNull Player owner) {
-        this.owner = owner;
-        players.add(owner);
+    GroupImpl(@NotNull Player leader) {
+        this.leader = leader;
+        players.add(leader);
     }
 
     @Override
@@ -37,6 +37,7 @@ final class GroupImpl implements Group {
     }
 
     public void addPlayer(@NotNull Player player) {
+        players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has joined your group"))));
         players.add(player);
         pendingInvites.remove(player);
     }
@@ -44,28 +45,25 @@ final class GroupImpl implements Group {
     public void removePlayer(@NotNull Player player) {
         if (players.contains(player)) {
             players.remove(player);
-            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your group."))));
+            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your group"))));
         }
     }
 
-    public @NotNull Component getInvite() {
-        return owner.getName()
+    public @NotNull Component getInviteMessage() {
+        return leader.getName()
                 .append(Component.text(" Has invited you to join their group. "))
                 .append(Component.text("[Accept]").clickEvent(
-                        ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/group accept " + owner.getUsername())
+                        ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/group accept " + leader.getUsername())
                 ));
     }
 
-    public Component getOwner() {
-        return owner.getName();
+    public Component getAcceptedMessage() {
+        return (Component.text("You have been added to ")
+                .append(leader.getName())
+                .append(Component.text("'s group")));
     }
 
-    public void setOwner(@NotNull Player player) {
-        this.owner = player;
-    }
-
-    public void disband() {
-        players.forEach(player -> player.sendMessage(Component.text("Your group has been disbanded.")));
-        players.clear();
+    public void setLeader(@NotNull Player player) {
+        this.leader = player;
     }
 }
