@@ -3,7 +3,7 @@ package net.minestom.arena.group;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.Set;
 
 public sealed interface Group permits GroupImpl {
     static Group findGroup(@NotNull Player player) {
@@ -12,5 +12,5 @@ public sealed interface Group permits GroupImpl {
 
     @NotNull Player leader();
 
-    @NotNull List<@NotNull Player> members();
+    @NotNull Set<Player> members();
 }

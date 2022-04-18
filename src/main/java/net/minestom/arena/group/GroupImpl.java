@@ -2,14 +2,20 @@ package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.minestom.arena.group.displays.GroupDisplay;
+import net.minestom.arena.group.displays.GroupSidebarDisplay;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 final class GroupImpl implements Group {
     private final Set<Player> players = new HashSet<>();
     private final Set<Player> pendingInvites = Collections.newSetFromMap(new WeakHashMap<>());
+    private final GroupDisplay displayManager = new GroupSidebarDisplay();
 
     private Player leader;
 
@@ -21,11 +27,12 @@ final class GroupImpl implements Group {
     GroupImpl(@NotNull Player leader) {
         this.leader = leader;
         players.add(leader);
+        displayManager.update(this);
     }
 
     @Override
-    public @NotNull List<Player> members() {
-        return List.copyOf(players);
+    public @NotNull Set<Player> members() {
+        return Set.copyOf(players);
     }
 
     public void addPendingInvite(@NotNull Player player) {
@@ -36,10 +43,11 @@ final class GroupImpl implements Group {
         return pendingInvites;
     }
 
-    public void addPlayer(@NotNull Player player) {
+    public void addMember(@NotNull Player player) {
         players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has joined your group"))));
         players.add(player);
         pendingInvites.remove(player);
+        displayManager.update(this);
     }
 
     public void removeMember(@NotNull Player player) {
@@ -47,6 +55,7 @@ final class GroupImpl implements Group {
             players.remove(player);
             players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your group"))));
         }
+        displayManager.update(this);
     }
 
     public @NotNull Component getInviteMessage() {
@@ -66,5 +75,6 @@ final class GroupImpl implements Group {
     public void setLeader(@NotNull Player player) {
         this.leader = player;
         players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has become the group leader"))));
+        displayManager.update(this);
     }
 }
