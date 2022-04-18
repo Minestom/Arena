@@ -75,6 +75,32 @@ public final class GroupCommand extends Command {
 
         addSyntax((sender, context) -> {
             final EntityFinder finder = context.get("player");
+            final Player toKick = finder.findFirstPlayer(sender);
+
+            if (sender instanceof Player player) {
+                if (toKick != null) {
+                    GroupImpl group = GroupManager.getMemberGroup(player);
+
+                    if (group == null) {
+                        Messenger.info(sender, "You are not in a group");
+                    } else if (group.leader() == player) {
+                        if (toKick == player) {
+                            GroupManager.removePlayer(player);
+                        } else {
+                            group.removeMember(toKick);
+                        }
+                    } else {
+                        Messenger.warn(player, "You are not the leader of this group");
+                    }
+                } else {
+                    Messenger.warn(sender, "Player not found");
+                }
+            }
+            // TODO: only show players in the group
+        }, Literal("kick"), Entity("player").onlyPlayers(true).singleEntity(true));
+
+        addSyntax((sender, context) -> {
+            final EntityFinder finder = context.get("player");
             final Player player = finder.findFirstPlayer(sender);
             if (player != null) {
                 GroupImpl group = GroupManager.getGroup(player);
