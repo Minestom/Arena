@@ -2,6 +2,7 @@ package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
 import net.minestom.arena.CommandUtils;
+import net.minestom.arena.Messenger;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.entity.Player;
 import net.minestom.server.utils.entity.EntityFinder;
@@ -28,21 +29,21 @@ public final class GroupCommand extends Command {
                 if (player != null) {
                     GroupImpl group = GroupManager.getMemberGroup(inviter);
 
-                    if (group != null && group.members().contains(player)) {
-                        sender.sendMessage(player.getName().append(Component.text(" is already in this group.")));
-                    } else {
-                        if (group == null) {
-                            group = GroupManager.getGroup(inviter);
-                            sender.sendMessage("Group created");
-                        }
+                    if (group == null) {
+                        group = GroupManager.getGroup(inviter);
+                        Messenger.info(sender, "Group created");
+                    } else if (group.members().contains(player)) {
+                        Messenger.warn(sender, player.getName().append(Component.text(" is already in this group.")));
+                    }
 
+                    if (!group.members().contains(player)) {
                         Component invite = group.getInviteMessage();
                         group.addPendingInvite(player);
-                        player.sendMessage(invite);
-                        inviter.sendMessage(Component.text("Invite sent to ").append(player.getName()));
+                        Messenger.info(player, invite);
+                        Messenger.info(inviter, Component.text("Invite sent to ").append(player.getName()));
                     }
                 } else {
-                    sender.sendMessage("Player not found");
+                    Messenger.warn(sender, "Player not found");
                 }
             }
         }, Literal("invite"), Entity("player").onlyPlayers(true).singleEntity(true));
@@ -57,16 +58,16 @@ public final class GroupCommand extends Command {
 
                     if (group == null) {
                         GroupManager.getGroup(newLeader);
-                        sender.sendMessage("Group created");
+                        Messenger.info(sender, "Group created");
                     } else if (group.leader() == newLeader) {
-                        sender.sendMessage("You are already the leader");
+                        Messenger.warn(sender, "You are already the leader");
                     } else if (group.leader() != player) {
-                        sender.sendMessage("You are not the leader of this group.");
+                        Messenger.warn(sender, "You are not the leader of this group");
                     } else {
                         group.setLeader(newLeader);
                     }
                 } else {
-                    sender.sendMessage("Player not found");
+                    Messenger.warn(sender, "Player not found");
                 }
             }
             // TODO: only show players in the group
@@ -77,6 +78,7 @@ public final class GroupCommand extends Command {
             final Player player = finder.findFirstPlayer(sender);
             if (player != null) {
                 GroupImpl group = GroupManager.getGroup(player);
+
                 if (sender instanceof Player invitee) {
                     boolean wasInvited = group.getPendingInvites().contains(invitee);
                     if (wasInvited) {
@@ -85,14 +87,14 @@ public final class GroupCommand extends Command {
                         Component accepted = group.getAcceptedMessage();
                         invitee.sendMessage(accepted);
                     } else if (group.members().contains(invitee)) {
-                        invitee.sendMessage(Component.text("You have already joined this group"));
+                        Messenger.warn(invitee, "You are already in this group");
                     } else {
-                        invitee.sendMessage(Component.text("You have not been invited to ")
+                        Messenger.warn(invitee, Component.text("You have not been invited to ")
                                 .append(group.leader().getName()).append(Component.text("'s group")));
                     }
                 }
             } else {
-                sender.sendMessage("Group not found");
+                Messenger.warn(sender, "Group not found");
             }
         }, Literal("accept"), Entity("player").onlyPlayers(true).singleEntity(true));
     }
