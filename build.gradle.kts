@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Minestom:Minestom:ff7098a083")
+    implementation("com.github.Minestom:Minestom:f0fa81b712")
 }
 
 tasks.withType<JavaCompile> {
