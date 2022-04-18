@@ -26,14 +26,18 @@ public final class GroupCommand extends Command {
 
             if (sender instanceof Player inviter) {
                 if (player != null) {
-                    GroupImpl group = GroupManager.getGroup(inviter);
+                    GroupImpl group = GroupManager.getMemberGroup(inviter);
 
-                    if (group.members().contains(player)) {
+                    if (group == null) {
+                        GroupManager.getGroup(inviter);
+                        sender.sendMessage("Group created");
+                    } else if (group.members().contains(player)) {
                         sender.sendMessage(player.getName().append(Component.text(" is already in this group.")));
                     } else {
                         Component invite = group.getInviteMessage();
                         group.addPendingInvite(player);
                         player.sendMessage(invite);
+                        inviter.sendMessage(Component.text("Invite sent to ").append(player.getName()));
                     }
                 } else {
                     sender.sendMessage("Player not found");
@@ -50,7 +54,8 @@ public final class GroupCommand extends Command {
                     GroupImpl group = GroupManager.getMemberGroup(player);
 
                     if (group == null) {
-                        sender.sendMessage("You are not in a group.");
+                        GroupManager.getGroup(newLeader);
+                        sender.sendMessage("Group created");
                     } else if (group.leader() == newLeader) {
                         sender.sendMessage("You are already the leader");
                     } else if (group.leader() != player) {
@@ -74,7 +79,7 @@ public final class GroupCommand extends Command {
                     boolean wasInvited = group.getPendingInvites().contains(invitee);
                     if (wasInvited) {
                         GroupManager.removePlayer(invitee); // Remove from old group
-                        group.addPlayer(invitee);
+                        group.addMember(invitee);
                         Component accepted = group.getAcceptedMessage();
                         invitee.sendMessage(accepted);
                     } else if (group.members().contains(invitee)) {

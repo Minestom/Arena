@@ -40,12 +40,11 @@ public interface SingleInstanceArena extends Arena {
             feature.hook(EventNode.class.cast(instance.eventNode()));
         }
 
-        final List<Player> members = group().members();
-        @SuppressWarnings("rawtypes") CompletableFuture[] futures = new CompletableFuture[members.size()];
-        for (int i = 0; i < members.size(); i++) {
-            Player player = members.get(i);
-            futures[i] = player.setInstance(instance, spawnPosition(player));
-        }
+        @SuppressWarnings("rawtypes") CompletableFuture[] futures =
+                group().members().stream()
+                    .map(player -> player.setInstance(instance, spawnPosition(player)))
+                    .toArray(CompletableFuture[]::new);
+
         return CompletableFuture.allOf(futures).thenRun(this::start);
     }
 }
