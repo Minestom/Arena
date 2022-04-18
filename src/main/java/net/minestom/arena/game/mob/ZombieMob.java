@@ -1,4 +1,4 @@
-package net.minestom.arena.mob;
+package net.minestom.arena.game.mob;
 
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.EntityType;
@@ -11,15 +11,12 @@ import net.minestom.server.utils.time.TimeUnit;
 import java.time.Duration;
 import java.util.List;
 
-public class ZombieMob extends EntityCreature {
+public final class ZombieMob extends EntityCreature {
     public ZombieMob(int level) {
         super(EntityType.ZOMBIE);
-
         addAIGroup(
-                List.of(
-                        new MeleeAttackGoal(this, 2, 20, TimeUnit.SERVER_TICK),
-                        new FollowTargetGoal(this, Duration.of(3, TimeUnit.SERVER_TICK))
-                ),
+                List.of(new MeleeAttackGoal(this, 2, 20, TimeUnit.SERVER_TICK),
+                        new FollowTargetGoal(this, Duration.of(3, TimeUnit.SERVER_TICK))),
                 List.of(new ClosestEntityTarget(this, 20, Player.class))
         );
     }

@@ -6,7 +6,6 @@ import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
-import net.minestom.arena.mob.RandomMob;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
@@ -20,8 +19,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 public final class MobArena implements SingleInstanceArena {
+    private static final List<Function<Integer, EntityCreature>> MOB_GENERATION_LAMBDAS = List.of(
+            ZombieMob::new
+    );
+
     public static final class MobArenaInstance extends InstanceContainer {
         public MobArenaInstance() {
             super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
@@ -30,14 +35,14 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     private final Group group;
-    private int stage = 0;
     private final Instance arenaInstance = new MobArenaInstance();
+
+    private int stage = 0;
 
     public void nextStage() {
         stage++;
         for (int i = 0; i < stage; i++) {
-            EntityCreature creature = RandomMob.random(stage);
-
+            EntityCreature creature = findMob(stage);
             creature.setInstance(arenaInstance, new Pos(0, 42, 0));
         }
         arenaInstance.showTitle(Title.title(Component.text("Stage " + stage), Component.empty()));
@@ -80,5 +85,12 @@ public final class MobArena implements SingleInstanceArena {
     @Override
     public @NotNull List<Feature> features() {
         return List.of(Features.combat());
+    }
+
+    static EntityCreature findMob(int level) {
+        Function<Integer, EntityCreature> randomMobGenerator = MOB_GENERATION_LAMBDAS.get(
+                ThreadLocalRandom.current().nextInt(MOB_GENERATION_LAMBDAS.size()) % MOB_GENERATION_LAMBDAS.size()
+        );
+        return randomMobGenerator.apply(level);
     }
 }
