@@ -3,6 +3,7 @@ package net.minestom.arena.game;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.MessageUtils;
 import net.minestom.arena.game.mob.MobArena;
+import net.minestom.arena.group.Group;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.arguments.ArgumentType;
 import net.minestom.server.command.builder.condition.Conditions;
@@ -29,8 +30,14 @@ public final class ArenaCommand extends Command {
                 return;
             }
             final String type = context.get("type");
+            final Group group = Group.findGroup(player);
+            if (group.leader() != player) {
+                player.sendMessage("You are not the leader of your group!");
+                return;
+            }
             Arena arena = ARENAS.get(type).get();
-            arena.join(player);
+            arena.join(group);
+            group.members().forEach(Player::refreshCommands);
         }, ArgumentType.Word("type").from(ARENAS.keySet().toArray(new String[0])));
     }
 }

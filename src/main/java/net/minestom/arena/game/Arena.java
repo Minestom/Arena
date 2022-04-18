@@ -1,8 +1,8 @@
 package net.minestom.arena.game;
 
-import net.minestom.server.entity.Player;
+import net.minestom.arena.group.Group;
 import org.jetbrains.annotations.NotNull;
 
 public interface Arena {
-    void join(@NotNull Player player);
+    void join(@NotNull Group group);
 }

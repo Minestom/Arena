@@ -34,7 +34,6 @@ public final class GroupCommand extends Command {
         addSyntax((sender, context) -> {
             if (sender instanceof Player player) {
                 Group group = GroupManager.getGroup(player);
-
                 if (group == null) {
                     sender.sendMessage("You are not the owner of a group");
                 } else {
@@ -49,8 +48,7 @@ public final class GroupCommand extends Command {
 
             if (sender instanceof Player inviter) {
                 if (player != null) {
-                    Group group = GroupManager.getGroup(inviter);
-
+                    GroupImpl group = GroupManager.getGroup(inviter);
                     if (group != null) {
                         Component invite = group.getInvite();
                         player.sendMessage(invite);
@@ -66,24 +64,19 @@ public final class GroupCommand extends Command {
         addSyntax((sender, context) -> {
             final EntityFinder finder = context.get("player");
             final Player player = finder.findFirstPlayer(sender);
-
             if (player != null) {
-                Group group = GroupManager.getGroup(player);
-
+                GroupImpl group = GroupManager.getGroup(player);
                 if (group != null) {
                     if (sender instanceof Player invitee) {
                         boolean wasInvited = group.getPendingInvites().contains(invitee);
-
                         if (wasInvited) {
                             group.addPlayer(invitee);
-                            invitee.sendMessage(
-                                    Component.text("You have been added to ")
-                                            .append(group.getOwner())
-                                            .append(Component.text("'s group")));
+                            invitee.sendMessage(Component.text("You have been added to ")
+                                    .append(group.getOwner())
+                                    .append(Component.text("'s group")));
                         } else {
-                            invitee.sendMessage(
-                                    Component.text("You have not been invited to ")
-                                            .append(group.getOwner()).append(Component.text("'s group")));
+                            invitee.sendMessage(Component.text("You have not been invited to ")
+                                    .append(group.getOwner()).append(Component.text("'s group")));
                         }
                     }
                 } else {
