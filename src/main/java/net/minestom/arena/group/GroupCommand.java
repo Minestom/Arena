@@ -37,6 +37,7 @@ public final class GroupCommand extends Command {
                         Component invite = group.getInviteMessage();
                         group.addPendingInvite(player);
                         player.sendMessage(invite);
+                        inviter.sendMessage(Component.text("Invite sent to ").append(player.getName()));
                     }
                 } else {
                     sender.sendMessage("Player not found");
