@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 public interface SingleInstanceArena extends Arena {
     @NotNull Instance instance();
 
-    @NotNull Pos spawnPosition();
+    @NotNull Pos spawnPosition(@NotNull Player player);
 
     @NotNull List<Feature> features();
 
@@ -45,7 +45,7 @@ public interface SingleInstanceArena extends Arena {
         @SuppressWarnings("rawtypes") CompletableFuture[] futures = new CompletableFuture[members.size()];
         for (int i = 0; i < members.size(); i++) {
             Player player = members.get(i);
-            futures[i] = player.setInstance(instance, spawnPosition());
+            futures[i] = player.setInstance(instance, spawnPosition(player));
         }
         CompletableFuture.allOf(futures).thenRun(this::start);
     }

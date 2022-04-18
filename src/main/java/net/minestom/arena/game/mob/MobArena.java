@@ -10,6 +10,7 @@ import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
+import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -64,7 +65,7 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     @Override
-    public @NotNull Pos spawnPosition() {
+    public @NotNull Pos spawnPosition(@NotNull Player player) {
         return new Pos(0, 41, 0);
     }
 

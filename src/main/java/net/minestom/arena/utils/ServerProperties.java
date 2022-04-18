@@ -4,45 +4,53 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
-public class ServerProperties {
+public final class ServerProperties {
+    private static final Path PROPERTIES_PATH = Path.of("server.properties");
     private static final Logger LOG = LoggerFactory.getLogger(ServerProperties.class);
-    private static final Map<String, String> properties = new HashMap<>();
+    private static final Map<String, String> PROPERTIES = new HashMap<>();
 
     static {
-        final File file = new File("server.properties");
-
-        if (file.exists()) {
+        if (Files.exists(PROPERTIES_PATH)) {
             LOG.info("Found server.properties file, loading values...");
-            try {
-                new BufferedReader(new FileReader(file)).lines().forEach(line -> {
+            try (Stream<String> lines = Files.lines(PROPERTIES_PATH)) {
+                lines.forEach(line -> {
                     final String[] split = line.split("=", 2);
                     if (split.length < 2) return;
-                    properties.put(split[0], split[1]);
+                    PROPERTIES.put(split[0], split[1]);
                 });
-                LOG.info("Loaded {} properties", properties.size());
-            } catch (FileNotFoundException e) {
+                LOG.info("Loaded {} properties", PROPERTIES.size());
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
     public static int getServerPort(int fallback) {
-        final String port = properties.get("server-port");
-        return port == null ? fallback : Integer.parseInt(port);
+        return getInt("server-port", fallback);
     }
 
     public static String getServerAddress(String fallback) {
-        return properties.getOrDefault("server-address", fallback);
+        return getString("server-address", fallback);
     }
 
     public static @Nullable String getForwardingSecret() {
-        return properties.get("forwarding-secret");
+        return getString("forwarding-secret", null);
+    }
+
+    private static int getInt(String key, int fallback) {
+        final String value = PROPERTIES.get(key);
+        return value == null ? fallback : Integer.parseInt(value);
+    }
+
+    private static String getString(String key, String fallback) {
+        final String value = PROPERTIES.get(key);
+        return value == null ? fallback : value;
     }
 }
