@@ -2,6 +2,8 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
+import net.minestom.arena.Lobby;
+import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
@@ -12,6 +14,7 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
@@ -59,6 +62,11 @@ public final class MobArena implements SingleInstanceArena {
                 }
             }
             nextStage();
+        });
+
+        arenaInstance.eventNode().addListener(PlayerDeathEvent.class, event -> {
+            event.getPlayer().setInstance(Lobby.INSTANCE);
+            Messenger.info(event.getPlayer(), "You died. Your last stage was " + stage);
         });
     }
 

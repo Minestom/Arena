@@ -24,6 +24,7 @@ record CombatFeature(boolean playerCombat) implements Feature {
                 if (!playerCombat && event.getTarget() instanceof Player && event.getEntity() instanceof Player) return;
 
                 int damage = 1;
+
                 target.damage(DamageType.fromEntity(event.getEntity()), damage);
 
                 Hologram hologram = new Hologram(
