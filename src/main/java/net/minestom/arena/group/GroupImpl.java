@@ -42,7 +42,7 @@ final class GroupImpl implements Group {
         pendingInvites.remove(player);
     }
 
-    public void removePlayer(@NotNull Player player) {
+    public void removeMember(@NotNull Player player) {
         if (players.contains(player)) {
             players.remove(player);
             players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your group"))));
@@ -65,5 +65,6 @@ final class GroupImpl implements Group {
 
     public void setLeader(@NotNull Player player) {
         this.leader = player;
+        players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has become the group leader"))));
     }
 }

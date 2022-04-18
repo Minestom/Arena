@@ -47,14 +47,16 @@ public final class GroupCommand extends Command {
 
             if (sender instanceof Player player) {
                 if (newLeader != null) {
-                    GroupImpl group = GroupManager.getGroup(player);
+                    GroupImpl group = GroupManager.getMemberGroup(player);
 
-                    if (group.leader() == newLeader) {
+                    if (group == null) {
+                        sender.sendMessage("You are not in a group.");
+                    } else if (group.leader() == newLeader) {
                         sender.sendMessage("You are already the leader");
-                    } else if (group.members().contains(newLeader)) {
-                        group.setLeader(newLeader);
+                    } else if (group.leader() != player) {
+                        sender.sendMessage("You are not the leader of this group.");
                     } else {
-                        sender.sendMessage("Player not in group");
+                        group.setLeader(newLeader);
                     }
                 } else {
                     sender.sendMessage("Player not found");

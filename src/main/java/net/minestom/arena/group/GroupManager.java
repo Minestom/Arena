@@ -32,8 +32,12 @@ final class GroupManager {
     }
 
     public static void removePlayer(@NotNull Player player) {
-        groups.values().forEach(group -> group.removePlayer(player));
+        GroupImpl foundGroup = getMemberGroup(player);
+        if (foundGroup == null) return;
 
+        foundGroup.removeMember(player);
+
+        // If the leader is removed, change the leader
         if (groups.containsKey(player)) {
             Optional<Player> newLeader = groups.get(player).members().stream().findFirst();
 
@@ -47,5 +51,12 @@ final class GroupManager {
         } else {
             player.sendMessage("You have left your group");
         }
+    }
+
+    public static GroupImpl getMemberGroup(@NotNull Player player) {
+        for (GroupImpl group : groups.values())
+            if (group.members().contains(player))
+                return group;
+        return null;
     }
 }
