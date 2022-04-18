@@ -2,6 +2,8 @@ package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.Messenger;
 import net.minestom.arena.group.displays.GroupDisplay;
 import net.minestom.arena.group.displays.GroupSidebarDisplay;
 import net.minestom.server.entity.Player;
@@ -44,7 +46,7 @@ final class GroupImpl implements Group {
     }
 
     public void addMember(@NotNull Player player) {
-        players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has joined your group"))));
+        players.forEach(p -> Messenger.info(p, player.getName().append(Component.text(" has joined your group"))));
         players.add(player);
         pendingInvites.remove(player);
         displayManager.update(this);
@@ -53,7 +55,7 @@ final class GroupImpl implements Group {
     public void removeMember(@NotNull Player player) {
         if (players.contains(player)) {
             players.remove(player);
-            players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your group"))));
+            players.forEach(p -> Messenger.info(p, player.getName().append(Component.text(" has left your group"))));
         }
         displayManager.update(this);
     }
@@ -61,20 +63,20 @@ final class GroupImpl implements Group {
     public @NotNull Component getInviteMessage() {
         return leader.getName()
                 .append(Component.text(" Has invited you to join their group. "))
-                .append(Component.text("[Accept]").clickEvent(
+                .append(Component.text("[Accept]").color(NamedTextColor.GREEN).clickEvent(
                         ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/group accept " + leader.getUsername())
                 ));
     }
 
     public Component getAcceptedMessage() {
-        return (Component.text("You have been added to ")
+        return Component.text("You have been added to ")
                 .append(leader.getName())
-                .append(Component.text("'s group")));
+                .append(Component.text("'s group"));
     }
 
     public void setLeader(@NotNull Player player) {
         this.leader = player;
-        players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has become the group leader"))));
+        players.forEach(p -> Messenger.info(p, player.getName().append(Component.text(" has become the group leader"))));
         displayManager.update(this);
     }
 }

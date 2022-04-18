@@ -2,6 +2,7 @@ package net.minestom.arena.group.displays;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.Messenger;
 import net.minestom.arena.group.Group;
 import net.minestom.server.entity.Player;
 import net.minestom.server.scoreboard.Sidebar;
@@ -20,9 +21,9 @@ public class GroupSidebarDisplay implements GroupDisplay {
         List<Sidebar.ScoreboardLine> lines = new java.util.ArrayList<>();
         for (Player player : players) {
             if (player.equals(leader)) {
-                lines.add(new Sidebar.ScoreboardLine(player.getUuid().toString(), Component.text("☆ ").color(NamedTextColor.WHITE).append(player.getName().color(NamedTextColor.LIGHT_PURPLE)), 0));
+                lines.add(new Sidebar.ScoreboardLine(player.getUuid().toString(), Component.text("☆ ").color(NamedTextColor.WHITE).append(player.getName().color(Messenger.ORANGE_COLOR)), 1));
             } else {
-                lines.add(new Sidebar.ScoreboardLine(player.getUuid().toString(), player.getName(), 1));
+                lines.add(new Sidebar.ScoreboardLine(player.getUuid().toString(), player.getName(), 0));
             }
         }
 

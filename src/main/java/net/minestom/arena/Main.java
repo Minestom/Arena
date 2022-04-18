@@ -13,6 +13,7 @@ import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerLoginEvent;
+import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
@@ -46,8 +47,14 @@ public final class Main {
             handler.addListener(PlayerLoginEvent.class, event -> {
                 final Player player = event.getPlayer();
                 event.setSpawningInstance(Lobby.INSTANCE);
-                player.setGameMode(GameMode.ADVENTURE);
                 player.setRespawnPoint(new Pos(0, 42, 0));
+            });
+
+            handler.addListener(PlayerSpawnEvent.class, event -> {
+                if (!event.isFirstSpawn()) return;
+                final Player player = event.getPlayer();
+                player.setGameMode(GameMode.ADVENTURE);
+                player.setEnableRespawnScreen(false);
             });
 
             // Monitoring
