@@ -10,12 +10,20 @@ public final class Messenger {
     public static final TextColor ORANGE_COLOR = TextColor.color(232, 175, 53);
 
     public static void info(Audience audience, String message) {
+        info(audience, Component.text(message));
+    }
+
+    public static void info(Audience audience, Component message) {
         audience.sendMessage(Component.text("! ", PINK_COLOR)
-                .append(Component.text(message, NamedTextColor.GRAY)));
+                .append(message.color(NamedTextColor.GRAY)));
     }
 
     public static void warn(Audience audience, String message) {
+        warn(audience, Component.text(message));
+    }
+
+    public static void warn(Audience audience, Component message) {
         audience.sendMessage(Component.text("* ", ORANGE_COLOR)
-                .append(Component.text(message, NamedTextColor.GRAY)));
+                .append(message.color(NamedTextColor.GRAY)));
     }
 }
