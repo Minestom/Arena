@@ -1,10 +1,11 @@
 package net.minestom.arena;
 
-import net.minestom.arena.command.GroupCommand;
 import net.minestom.arena.command.InstancesCommand;
 import net.minestom.arena.command.LobbyCommand;
 import net.minestom.arena.command.StopCommand;
 import net.minestom.arena.game.ArenaCommand;
+import net.minestom.arena.group.GroupCommand;
+import net.minestom.arena.group.GroupEvent;
 import net.minestom.arena.utils.ServerProperties;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandManager;
@@ -50,6 +51,8 @@ public final class Main {
                 MessageUtils.sendInfoMessage(player, "Welcome to the Minestom Arena!");
             }
         });
+
+        GroupEvent.hook(MinecraftServer.getGlobalEventHandler());
 
         final String forwardingSecret = ServerProperties.getForwardingSecret();
         if (forwardingSecret != null) {
