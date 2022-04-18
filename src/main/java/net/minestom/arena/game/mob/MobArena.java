@@ -5,6 +5,7 @@ import net.kyori.adventure.title.Title;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
+import net.minestom.arena.group.Group;
 import net.minestom.arena.mob.RandomMob;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Pos;
@@ -28,6 +29,7 @@ public final class MobArena implements SingleInstanceArena {
         }
     }
 
+    private final Group group;
     private int stage = 0;
     private final Instance arenaInstance = new MobArenaInstance();
 
@@ -42,7 +44,8 @@ public final class MobArena implements SingleInstanceArena {
         arenaInstance.sendMessage(Component.text("Stage " + stage));
     }
 
-    public MobArena() {
+    public MobArena(Group group) {
+        this.group = group;
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, (event) -> {
             for (Entity entity : this.arenaInstance.getEntities()) {
                 if (entity instanceof EntityCreature creature && !(creature.isDead())) {
@@ -57,6 +60,11 @@ public final class MobArena implements SingleInstanceArena {
     @Override
     public void start() {
         nextStage();
+    }
+
+    @Override
+    public @NotNull Group group() {
+        return group;
     }
 
     @Override

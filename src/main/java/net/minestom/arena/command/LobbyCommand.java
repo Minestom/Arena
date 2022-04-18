@@ -1,15 +1,15 @@
 package net.minestom.arena.command;
 
+import net.minestom.arena.CommandUtils;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.MessageUtils;
 import net.minestom.server.command.builder.Command;
-import net.minestom.server.command.builder.condition.Conditions;
 import net.minestom.server.entity.Player;
 
 public final class LobbyCommand extends Command {
     public LobbyCommand() {
         super("lobby");
-        setCondition(Conditions::playerOnly);
+        setCondition(CommandUtils::lobbyOnly);
 
         setDefaultExecutor((sender, context) -> {
             final Player player = (Player) sender;

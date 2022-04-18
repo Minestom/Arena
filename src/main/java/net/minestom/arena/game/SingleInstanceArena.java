@@ -1,7 +1,6 @@
 package net.minestom.arena.game;
 
 import net.minestom.arena.feature.Feature;
-import net.minestom.arena.group.Group;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
@@ -23,7 +22,7 @@ public interface SingleInstanceArena extends Arena {
     void start();
 
     @Override
-    default void join(@NotNull Group group) {
+    default @NotNull CompletableFuture<Void> init() {
         Instance instance = instance();
         // Register this arena
         MinecraftServer.getInstanceManager().registerInstance(instance);
@@ -41,12 +40,12 @@ public interface SingleInstanceArena extends Arena {
             feature.hook(EventNode.class.cast(instance.eventNode()));
         }
 
-        final List<Player> members = group.members();
+        final List<Player> members = group().members();
         @SuppressWarnings("rawtypes") CompletableFuture[] futures = new CompletableFuture[members.size()];
         for (int i = 0; i < members.size(); i++) {
             Player player = members.get(i);
             futures[i] = player.setInstance(instance, spawnPosition(player));
         }
-        CompletableFuture.allOf(futures).thenRun(this::start);
+        return CompletableFuture.allOf(futures).thenRun(this::start);
     }
 }

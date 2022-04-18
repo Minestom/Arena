@@ -1,24 +1,24 @@
 package net.minestom.arena.game;
 
+import net.minestom.arena.CommandUtils;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.MessageUtils;
 import net.minestom.arena.game.mob.MobArena;
 import net.minestom.arena.group.Group;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.arguments.ArgumentType;
-import net.minestom.server.command.builder.condition.Conditions;
 import net.minestom.server.entity.Player;
 
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 public final class ArenaCommand extends Command {
-    private static final Map<String, Supplier<Arena>> ARENAS = Map.of(
+    private static final Map<String, Function<Group, Arena>> ARENAS = Map.of(
             "mob", MobArena::new);
 
     public ArenaCommand() {
         super("arena");
-        setCondition(Conditions::playerOnly);
+        setCondition(CommandUtils::lobbyOnly);
 
         setDefaultExecutor((sender, context) ->
                 MessageUtils.sendWarnMessage(sender, "Usage: /arena <name>. Choices are: " + String.join(", ", ARENAS.keySet())));
@@ -35,9 +35,8 @@ public final class ArenaCommand extends Command {
                 player.sendMessage("You are not the leader of your group!");
                 return;
             }
-            Arena arena = ARENAS.get(type).get();
-            arena.join(group);
-            group.members().forEach(Player::refreshCommands);
+            Arena arena = ARENAS.get(type).apply(group);
+            arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
         }, ArgumentType.Word("type").from(ARENAS.keySet().toArray(new String[0])));
     }
 }

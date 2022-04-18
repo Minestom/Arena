@@ -1,8 +1,8 @@
 package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
+import net.minestom.arena.CommandUtils;
 import net.minestom.server.command.builder.Command;
-import net.minestom.server.command.builder.condition.Conditions;
 import net.minestom.server.entity.Player;
 import net.minestom.server.utils.entity.EntityFinder;
 
@@ -12,7 +12,7 @@ import static net.minestom.server.command.builder.arguments.ArgumentType.Literal
 public final class GroupCommand extends Command {
     public GroupCommand() {
         super("group");
-        setCondition(Conditions::playerOnly);
+        setCondition(CommandUtils::lobbyOnly);
 
         addSyntax((sender, context) -> {
             if (sender instanceof Player player) {
