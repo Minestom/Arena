@@ -10,49 +10,40 @@ import net.minestom.arena.utils.ServerProperties;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.command.CommandManager;
 import net.minestom.server.coordinate.Pos;
-import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerLoginEvent;
-import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
-import net.minestom.server.potion.Potion;
-import net.minestom.server.potion.PotionEffect;
 
 public final class Main {
     public static void main(String[] args) {
         MinecraftServer minecraftServer = MinecraftServer.init();
 
-        CommandManager commandManager = MinecraftServer.getCommandManager();
-        commandManager.register(new GroupCommand());
-        commandManager.register(new LobbyCommand());
-        commandManager.register(new ArenaCommand());
-        commandManager.register(new InstancesCommand());
-        commandManager.register(new StopCommand());
+        // Commands
+        {
+            CommandManager manager = MinecraftServer.getCommandManager();
+            manager.register(new GroupCommand());
+            manager.register(new LobbyCommand());
+            manager.register(new ArenaCommand());
+            manager.register(new InstancesCommand());
+            manager.register(new StopCommand());
+        }
 
-        GlobalEventHandler globalEventHandler = MinecraftServer.getGlobalEventHandler();
-        globalEventHandler.addListener(PlayerLoginEvent.class, event -> {
-            final Player player = event.getPlayer();
-            event.setSpawningInstance(Lobby.INSTANCE);
-            player.setRespawnPoint(new Pos(0, 42, 0));
-        });
+        // Events
+        {
+            GlobalEventHandler handler = MinecraftServer.getGlobalEventHandler();
 
-        // Until lighting is implemented, give players night vision.
-        globalEventHandler.addListener(PlayerSpawnEvent.class, event -> {
-            if (event.isFirstSpawn()) {
+            // Group events
+            GroupEvent.hook(handler);
+
+            // Login
+            handler.addListener(PlayerLoginEvent.class, event -> {
                 final Player player = event.getPlayer();
-                player.setGameMode(GameMode.ADVENTURE);
-
-                player.addEffect(new Potion(PotionEffect.NIGHT_VISION,
-                        (byte) 1, Integer.MAX_VALUE,
-                        (byte) (Potion.AMBIENT_FLAG + Potion.ICON_FLAG + Potion.PARTICLES_FLAG)));
-
-                MessageUtils.sendInfoMessage(player, "Welcome to the Minestom Arena!");
-            }
-        });
-
-        GroupEvent.hook(MinecraftServer.getGlobalEventHandler());
+                event.setSpawningInstance(Lobby.INSTANCE);
+                player.setRespawnPoint(new Pos(0, 42, 0));
+            });
+        }
 
         final String forwardingSecret = ServerProperties.getForwardingSecret();
         if (forwardingSecret != null) {

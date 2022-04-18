@@ -5,6 +5,7 @@ import net.kyori.adventure.title.Title;
 import net.minestom.arena.combat.CombatEvent;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.mob.RandomMob;
+import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
@@ -12,7 +13,6 @@ import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
-import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -20,7 +20,7 @@ import java.util.UUID;
 public final class MobArena implements SingleInstanceArena {
     public static final class MobArenaInstance extends InstanceContainer {
         public MobArenaInstance() {
-            super(UUID.randomUUID(), DimensionType.OVERWORLD);
+            super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
             setGenerator(unit -> unit.modifier().fillHeight(0, 40, Block.SAND));
         }
     }

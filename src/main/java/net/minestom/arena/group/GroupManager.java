@@ -2,6 +2,7 @@ package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
 import net.minestom.server.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,19 +11,19 @@ import java.util.Optional;
 final class GroupManager {
     private static final Map<Player, GroupImpl> groups = new HashMap<>();
 
-    public static GroupImpl getGroup(Player player) {
+    public static @NotNull GroupImpl getGroup(@NotNull Player player) {
         GroupImpl group = groups.get(player);
         if (group == null) group = createGroup(player);
         return group;
     }
 
-    public static GroupImpl createGroup(Player player) {
+    public static @NotNull GroupImpl createGroup(@NotNull Player player) {
         GroupImpl group = new GroupImpl(player);
         groups.put(player, group);
         return group;
     }
 
-    public static void removeGroup(Player player) {
+    public static void removeGroup(@NotNull Player player) {
         GroupImpl group = groups.get(player);
         if (group != null) {
             group.disband();
@@ -30,7 +31,7 @@ final class GroupManager {
         }
     }
 
-    public static boolean transferOwnership(Player player) {
+    public static boolean transferOwnership(@NotNull Player player) {
         GroupImpl group = groups.get(player);
         Optional<Player> newOwner = group.members().stream().filter(p -> p != player).findFirst();
         if (newOwner.isPresent()) {
@@ -44,7 +45,7 @@ final class GroupManager {
         return false;
     }
 
-    public static void removePlayer(Player player) {
+    public static void removePlayer(@NotNull Player player) {
         groups.values().forEach(group -> group.removePlayer(player));
         if (groups.containsKey(player)) {
             if (transferOwnership(player)) {

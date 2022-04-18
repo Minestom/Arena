@@ -1,9 +1,9 @@
 package net.minestom.arena;
 
+import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
-import net.minestom.server.world.DimensionType;
 
 import java.util.UUID;
 
@@ -15,7 +15,7 @@ public final class Lobby extends InstanceContainer {
     }
 
     private Lobby() {
-        super(UUID.randomUUID(), DimensionType.OVERWORLD);
+        super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
         setGenerator(unit -> unit.modifier().fillHeight(0, 40, Block.GRASS_BLOCK));
         getWorldBorder().setDiameter(100);
     }

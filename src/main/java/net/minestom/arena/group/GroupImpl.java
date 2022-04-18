@@ -18,7 +18,7 @@ final class GroupImpl implements Group {
         return owner;
     }
 
-    GroupImpl(Player owner) {
+    GroupImpl(@NotNull Player owner) {
         this.owner = owner;
         players.add(owner);
     }
@@ -28,27 +28,27 @@ final class GroupImpl implements Group {
         return List.copyOf(players);
     }
 
-    public void addPendingInvite(Player player) {
+    public void addPendingInvite(@NotNull Player player) {
         pendingInvites.add(player);
     }
 
-    public Set<Player> getPendingInvites() {
+    public @NotNull Set<Player> getPendingInvites() {
         return pendingInvites;
     }
 
-    public void addPlayer(Player player) {
+    public void addPlayer(@NotNull Player player) {
         players.add(player);
         pendingInvites.remove(player);
     }
 
-    public void removePlayer(Player player) {
+    public void removePlayer(@NotNull Player player) {
         if (players.contains(player)) {
             players.remove(player);
             players.forEach(p -> p.sendMessage(player.getName().append(Component.text(" has left your group."))));
         }
     }
 
-    public Component getInvite() {
+    public @NotNull Component getInvite() {
         return owner.getName()
                 .append(Component.text(" Has invited you to join their group. "))
                 .append(Component.text("[Accept]").clickEvent(
@@ -60,7 +60,7 @@ final class GroupImpl implements Group {
         return owner.getName();
     }
 
-    public void setOwner(Player player) {
+    public void setOwner(@NotNull Player player) {
         this.owner = player;
     }
 
