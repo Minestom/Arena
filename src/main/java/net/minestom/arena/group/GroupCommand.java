@@ -1,11 +1,17 @@
 package net.minestom.arena.group;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.CommandUtils;
 import net.minestom.arena.Messenger;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.entity.Player;
 import net.minestom.server.utils.entity.EntityFinder;
+
+import java.util.StringJoiner;
 
 import static net.minestom.server.command.builder.arguments.ArgumentType.Entity;
 import static net.minestom.server.command.builder.arguments.ArgumentType.Literal;
@@ -14,6 +20,33 @@ public final class GroupCommand extends Command {
     public GroupCommand() {
         super("group");
         setCondition(CommandUtils::lobbyOnly);
+
+        addSyntax((sender, context) -> {
+            if (sender instanceof Player player) {
+                GroupImpl group = GroupManager.getMemberGroup(player);
+
+                if (group == null || group.members().size() == 1) {
+                    Messenger.info(sender, Component.text("You aren't in a group. Begin by inviting another player (click).")
+                            .clickEvent(ClickEvent.suggestCommand("/group invite "))
+                            .hoverEvent(HoverEvent.showText(Component.text("/group invite <player>", NamedTextColor.GREEN)))
+                    );
+                } else {
+                    boolean isLeader = group.leader().equals(player);
+                    TextComponent.Builder builder = Component.text()
+                            .append(Component.text((isLeader ? "Your" : group.leader().getUsername() + "'s") + " party"))
+                            .append(Component.newline())
+                            .append(Component.text("Members (" + group.members().size() + "): "));
+
+                    StringJoiner joiner = new StringJoiner(", ");
+                    for (Player member : group.members()) {
+                        joiner.add(member.getUsername());
+                    }
+                    builder.append(Component.text(joiner.toString()));
+
+                    Messenger.info(sender, builder.build());
+                }
+            }
+        });
 
         addSyntax((sender, context) -> {
             if (sender instanceof Player player) {
