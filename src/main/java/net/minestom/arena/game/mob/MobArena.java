@@ -10,6 +10,7 @@ import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.Player;
@@ -27,13 +28,23 @@ import java.util.function.Function;
 
 public final class MobArena implements SingleInstanceArena {
     private static final List<Function<Integer, EntityCreature>> MOB_GENERATION_LAMBDAS = List.of(
-            ZombieMob::new
+            ZombieMob::new,
+            SkeletonMob::new
     );
 
     public static final class MobArenaInstance extends InstanceContainer {
         public MobArenaInstance() {
             super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
-            setGenerator(unit -> unit.modifier().fillHeight(0, 40, Block.SAND));
+            setGenerator(unit -> {
+                unit.modifier().fillHeight(0, 40, Block.SAND);
+                unit.modifier().fill(new Vec(-10, 40, -10), new Vec(10, 40, 10), Block.SMOOTH_QUARTZ);
+            });
+
+            for (int x = -10; x < 10; x++) {
+                for (int z = -10; z < 10; z++) {
+                    setBlock(x, 39, z, Block.RED_SAND);
+                }
+            }
         }
     }
 
@@ -45,8 +56,12 @@ public final class MobArena implements SingleInstanceArena {
     public void nextStage() {
         stage++;
         for (int i = 0; i < stage; i++) {
-            EntityCreature creature = findMob(stage);
-            creature.setInstance(arenaInstance, new Pos(0, 42, 0));
+            EntityCreature creature = findMob(stage, arenaInstance.eventNode());
+            creature.setInstance(arenaInstance, new Pos(
+                    ThreadLocalRandom.current().nextInt(-10, 10),
+                    41,
+                    ThreadLocalRandom.current().nextInt(-10, 10)
+            ));
         }
         arenaInstance.showTitle(Title.title(Component.text("Stage " + stage), Component.empty()));
         arenaInstance.sendMessage(Component.text("Stage " + stage));

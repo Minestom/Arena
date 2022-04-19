@@ -1,5 +1,6 @@
 package net.minestom.arena;
 
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.minestom.arena.game.ArenaCommand;
 import net.minestom.arena.group.GroupCommand;
@@ -12,6 +13,7 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
+import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.server.ServerListPingEvent;
@@ -20,6 +22,7 @@ import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.monitoring.TickMonitor;
 import net.minestom.server.ping.ResponseData;
+import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 
@@ -61,6 +64,7 @@ public final class Main {
                 if (!event.isFirstSpawn()) return;
                 final Player player = event.getPlayer();
                 player.setGameMode(GameMode.ADVENTURE);
+                player.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1f, 1f));
                 player.setEnableRespawnScreen(false);
             });
 
@@ -80,6 +84,13 @@ public final class Main {
                 ResponseData responseData = event.getResponseData();
                 responseData.setDescription(Component.text("Minestom Arena").color(Messenger.ORANGE_COLOR));
                 responseData.setFavicon(finalFavicon);
+            });
+            
+            // Chat
+            handler.addListener(PlayerChatEvent.class, chatEvent -> {
+                chatEvent.setChatFormat((event) -> Component.text(event.getEntity().getUsername())
+                        .append(Component.text(" | ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text(event.getMessage(), NamedTextColor.WHITE))));
             });
 
             // Monitoring
