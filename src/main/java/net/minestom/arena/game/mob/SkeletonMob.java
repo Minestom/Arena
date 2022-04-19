@@ -6,8 +6,6 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.ai.goal.RangedAttackGoal;
 import net.minestom.server.entity.ai.target.ClosestEntityTarget;
-import net.minestom.server.event.EventNode;
-import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.utils.time.TimeUnit;
@@ -16,8 +14,8 @@ import java.time.Duration;
 import java.util.List;
 
 public final class SkeletonMob extends ArenaMob {
-    public SkeletonMob(int level, EventNode<InstanceEvent> node) {
-        super(EntityType.SKELETON, node);
+    public SkeletonMob(int level) {
+        super(EntityType.SKELETON, level);
         setItemInMainHand(ItemStack.of(Material.BOW));
 
         RangedAttackGoal rangedAttackGoal = new RangedAttackGoal(
