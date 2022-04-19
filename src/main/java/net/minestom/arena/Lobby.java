@@ -22,6 +22,7 @@ public final class Lobby extends InstanceContainer {
         super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
         setGenerator(unit -> unit.modifier().fillHeight(0, 40, Block.GRASS_BLOCK));
         getWorldBorder().setDiameter(100);
+        setTimeRate(0);
 
         eventNode().addListener(AddEntityToInstanceEvent.class, event -> {
             final Entity entity = event.getEntity();
