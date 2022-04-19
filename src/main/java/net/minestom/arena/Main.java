@@ -3,6 +3,7 @@ package net.minestom.arena;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.game.ArenaCommand;
+import net.minestom.arena.game.mobdrops.DropEvents;
 import net.minestom.arena.group.GroupCommand;
 import net.minestom.arena.group.GroupEvent;
 import net.minestom.arena.utils.ServerProperties;
@@ -13,6 +14,8 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
+import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
@@ -61,6 +64,10 @@ public final class Main {
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setEnableRespawnScreen(false);
             });
+
+            // Mobdrops events
+            handler.addListener(EntityDeathEvent.class, event -> { new DropEvents().onDeath(event); });
+            handler.addListener(PickupItemEvent.class, event -> { new DropEvents().itemPickUp(event); });
 
             // Monitoring
             AtomicReference<TickMonitor> lastTick = new AtomicReference<>();
