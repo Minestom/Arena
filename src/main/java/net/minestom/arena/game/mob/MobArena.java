@@ -101,6 +101,11 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     @Override
+    public int stage() {
+        return stage;
+    }
+
+    @Override
     public @NotNull Instance instance() {
         return arenaInstance;
     }
