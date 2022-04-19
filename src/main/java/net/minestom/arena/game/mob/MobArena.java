@@ -94,6 +94,8 @@ public final class MobArena implements SingleInstanceArena {
             }
         }).addListener(PlayerDeathEvent.class, event -> {
             event.getPlayer().setInstance(Lobby.INSTANCE);
+
+            event.setChatMessage(null);
             Messenger.info(event.getPlayer(), "You died. Your last stage was " + stage);
         });
     }
