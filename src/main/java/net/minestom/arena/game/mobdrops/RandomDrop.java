@@ -11,11 +11,14 @@ public class RandomDrop {
 
     public ItemEntity getDrop() {
         ArrayList<ItemEntity> itemList = new ArrayList<>();
-        itemList.add(new ItemEntity(ItemStack.builder(Material.GOLDEN_APPLE).build()));
-        itemList.add(new ItemEntity(ItemStack.builder(Material.FEATHER).build()));
-        itemList.add(new ItemEntity(ItemStack.builder(Material.BLAZE_ROD).build()));
+        itemList.add(new ItemEntity(healItem));
+        itemList.add(new ItemEntity(speedItem));
+        itemList.add(new ItemEntity(lightningItem));
         Random random = new Random();
         return itemList.get(random.nextInt(itemList.size()));
     }
 
+    public static ItemStack speedItem = ItemStack.builder(Material.FEATHER).build();
+    public static ItemStack healItem = ItemStack.builder(Material.GOLDEN_APPLE).build();
+    public static ItemStack lightningItem = ItemStack.builder(Material.BLAZE_ROD).build();
 }

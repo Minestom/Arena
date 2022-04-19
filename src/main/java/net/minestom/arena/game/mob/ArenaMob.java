@@ -2,9 +2,11 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.game.mobdrops.RandomDrop;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.event.entity.EntityDamageEvent;
+import net.minestom.server.event.entity.EntityDeathEvent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,6 +21,8 @@ abstract class ArenaMob extends EntityCreature {
         setCustomNameVisible(true);
         eventNode().addListener(EntityDamageEvent.class, event ->
                 setCustomName(generateHealthBar(getMaxHealth(), getHealth())));
+        eventNode().addListener(EntityDeathEvent.class, event ->
+                new RandomDrop().getDrop().setInstance(event.getInstance(), event.getEntity().getPosition()));
     }
 
     @Contract(pure = true)

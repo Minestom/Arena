@@ -65,10 +65,6 @@ public final class Main {
                 player.setEnableRespawnScreen(false);
             });
 
-            // Mobdrops events
-            handler.addListener(EntityDeathEvent.class, event -> { new DropEvents().onDeath(event); });
-            handler.addListener(PickupItemEvent.class, event -> { new DropEvents().itemPickUp(event); });
-
             // Monitoring
             AtomicReference<TickMonitor> lastTick = new AtomicReference<>();
             handler.addListener(ServerTickMonitorEvent.class, event -> lastTick.set(event.getTickMonitor()));

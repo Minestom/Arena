@@ -9,13 +9,16 @@ import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
+import net.minestom.arena.game.mobdrops.PickupEvent;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
+import net.minestom.server.attribute.Attribute;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -77,7 +80,10 @@ public final class MobArena implements SingleInstanceArena {
         arenaInstance.eventNode().addListener(PlayerDeathEvent.class, event -> {
             event.getPlayer().setInstance(Lobby.INSTANCE);
             Messenger.info(event.getPlayer(), "You died. Your last stage was " + stage);
+            event.getPlayer().getAttribute(Attribute.MOVEMENT_SPEED).getModifiers().clear();
         });
+
+        arenaInstance.eventNode().addListener(PickupItemEvent.class, event -> new PickupEvent().itemPickUp(event));
     }
 
     @Override
