@@ -34,7 +34,8 @@ import java.util.function.Function;
 
 public final class MobArena implements SingleInstanceArena {
     private static final List<Function<Integer, EntityCreature>> MOB_GENERATION_LAMBDAS = List.of(
-            ZombieMob::new
+            ZombieMob::new,
+            SpiderMob::new
     );
 
     public static final class MobArenaInstance extends InstanceContainer {
