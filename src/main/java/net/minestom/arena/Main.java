@@ -2,6 +2,7 @@ package net.minestom.arena;
 
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.game.ArenaCommand;
 import net.minestom.arena.group.GroupCommand;
 import net.minestom.arena.group.GroupEvent;
@@ -16,7 +17,6 @@ import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
-import net.minestom.server.event.server.ServerListPingEvent;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
@@ -26,11 +26,6 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -44,6 +39,7 @@ public final class Main {
             manager.register(new GroupCommand());
             manager.register(new ArenaCommand());
             manager.register(new StopCommand());
+            manager.register(new LeaveCommand());
         }
 
         // Events
@@ -52,17 +48,20 @@ public final class Main {
 
             // Group events
             GroupEvent.hook(handler);
+            // Server list
+            ServerList.hook(handler);
 
             // Login
             handler.addListener(PlayerLoginEvent.class, event -> {
                 final Player player = event.getPlayer();
                 event.setSpawningInstance(Lobby.INSTANCE);
-                player.setRespawnPoint(new Pos(0, 42, 0));
+                player.setRespawnPoint(new Pos(0, 40, 0));
             });
 
             handler.addListener(PlayerSpawnEvent.class, event -> {
                 if (!event.isFirstSpawn()) return;
                 final Player player = event.getPlayer();
+                Messenger.info(player, "Welcome to the Minestom Demo Server.");
                 player.setGameMode(GameMode.ADVENTURE);
                 player.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1f, 1f));
                 player.setEnableRespawnScreen(false);
@@ -106,14 +105,16 @@ public final class Main {
                 final TickMonitor tickMonitor = lastTick.get();
                 final long ramUsage = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024;
 
-                final Component header = Component.text("Minestom demo")
+                final Component header = Component.newline()
+                        .append(Component.text("Minestom Arena Demo", Messenger.PINK_COLOR))
                         .append(Component.newline()).append(Component.text("Players: " + players.size()))
                         .append(Component.newline()).append(Component.newline())
-                        .append(Component.text("RAM USAGE: " + ramUsage + " MB").append(Component.newline())
-                                .append(Component.text("TICK TIME: " + MathUtils.round(tickMonitor.getTickTime(), 2) + "ms"))).append(Component.newline());
+                        .append(Component.text("RAM USAGE: " + ramUsage + " MB", NamedTextColor.GRAY).append(Component.newline())
+                                .append(Component.text("TICK TIME: " + MathUtils.round(tickMonitor.getTickTime(), 2) + "ms", NamedTextColor.GRAY))).append(Component.newline());
                 final Component footer = Component.newline().append(Component.text("Project: minestom.net").append(Component.newline())
-                        .append(Component.text("Source: github.com/Minestom/Minestom")).append(Component.newline())
-                        .append(Component.text("Arena: github.com/Minestom/Arena")));
+                                .append(Component.text("    Source: github.com/Minestom/Minestom    ", Messenger.ORANGE_COLOR)).append(Component.newline())
+                                .append(Component.text("Arena: github.com/Minestom/Arena", Messenger.ORANGE_COLOR)))
+                        .append(Component.newline());
 
                 Audiences.players().sendPlayerListHeaderAndFooter(header, footer);
 

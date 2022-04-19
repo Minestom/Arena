@@ -10,4 +10,10 @@ public final class CommandUtils {
         final Instance instance = player.getInstance();
         return instance == null || instance == Lobby.INSTANCE;
     }
+
+    public static boolean arenaOnly(CommandSender sender, String commandString) {
+        if (!(sender instanceof Player player)) return false;
+        final Instance instance = player.getInstance();
+        return instance != null && instance != Lobby.INSTANCE;
+    }
 }
