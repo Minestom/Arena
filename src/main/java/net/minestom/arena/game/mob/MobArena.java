@@ -4,6 +4,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
+import net.minestom.arena.Items;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
@@ -14,8 +15,10 @@ import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
+import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -64,17 +67,24 @@ public final class MobArena implements SingleInstanceArena {
 
     public MobArena(Group group) {
         this.group = group;
-        arenaInstance.eventNode().addListener(EntityDeathEvent.class, (event) -> {
-            for (Entity entity : this.arenaInstance.getEntities()) {
+        arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
+            ItemEntity item = new ItemEntity(Items.COIN);
+            item.setInstance(arenaInstance, event.getEntity().getPosition());
+
+            for (Entity entity : arenaInstance.getEntities()) {
                 if (entity instanceof EntityCreature creature && !(creature.isDead())) {
-                    // TODO give money;
-                    return; // round hasn't ended yet
+                    return; // Round hasn't ended yet
                 }
             }
             nextStage();
-        });
-
-        arenaInstance.eventNode().addListener(PlayerDeathEvent.class, event -> {
+        }).addListener(PickupItemEvent.class, event -> {
+            if (event.getEntity() instanceof Player player) {
+                player.getInventory().addItemStack(event.getItemStack());
+            } else {
+                // Don't allow other mobs to pick up coins
+                event.setCancelled(true);
+            }
+        }).addListener(PlayerDeathEvent.class, event -> {
             event.getPlayer().setInstance(Lobby.INSTANCE);
             Messenger.info(event.getPlayer(), "You died. Your last stage was " + stage);
         });
