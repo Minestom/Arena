@@ -1,6 +1,8 @@
 package net.minestom.arena.game.mob;
 
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
@@ -18,9 +20,11 @@ import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -48,8 +52,14 @@ public final class MobArena implements SingleInstanceArena {
             EntityCreature creature = findMob(stage);
             creature.setInstance(arenaInstance, new Pos(0, 42, 0));
         }
-        arenaInstance.showTitle(Title.title(Component.text("Stage " + stage), Component.empty()));
-        arenaInstance.sendMessage(Component.text("Stage " + stage));
+        arenaInstance.showTitle(Title.title(
+                Component.text("Stage " + stage, NamedTextColor.GREEN),
+                Component.text(stage + " mob" + (stage == 1 ? "" : "s") + ".")
+        ));
+
+        arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f));
+
+        Messenger.info(arenaInstance, "Stage " + stage);
     }
 
     public MobArena(Group group) {
@@ -96,9 +106,9 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     static EntityCreature findMob(int level) {
-        Function<Integer, EntityCreature> randomMobGenerator = MOB_GENERATION_LAMBDAS.get(
-                ThreadLocalRandom.current().nextInt(MOB_GENERATION_LAMBDAS.size()) % MOB_GENERATION_LAMBDAS.size()
-        );
+        Random random = ThreadLocalRandom.current();
+        final int index = random.nextInt(MOB_GENERATION_LAMBDAS.size()) % MOB_GENERATION_LAMBDAS.size();
+        var randomMobGenerator = MOB_GENERATION_LAMBDAS.get(index);
         return randomMobGenerator.apply(level);
     }
 }

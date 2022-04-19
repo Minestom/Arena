@@ -1,6 +1,7 @@
 package net.minestom.arena;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.game.ArenaCommand;
 import net.minestom.arena.group.GroupCommand;
 import net.minestom.arena.group.GroupEvent;
@@ -41,6 +42,7 @@ public final class Main {
             manager.register(new GroupCommand());
             manager.register(new ArenaCommand());
             manager.register(new StopCommand());
+            manager.register(new LeaveCommand());
         }
 
         // Events
@@ -60,6 +62,7 @@ public final class Main {
             handler.addListener(PlayerSpawnEvent.class, event -> {
                 if (!event.isFirstSpawn()) return;
                 final Player player = event.getPlayer();
+                Messenger.info(player, "Welcome to the Minestom Demo Server.");
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setEnableRespawnScreen(false);
             });
@@ -95,14 +98,16 @@ public final class Main {
                 final TickMonitor tickMonitor = lastTick.get();
                 final long ramUsage = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024;
 
-                final Component header = Component.text("Minestom demo")
+                final Component header = Component.newline()
+                        .append(Component.text("Minestom Arena Demo", Messenger.PINK_COLOR))
                         .append(Component.newline()).append(Component.text("Players: " + players.size()))
                         .append(Component.newline()).append(Component.newline())
-                        .append(Component.text("RAM USAGE: " + ramUsage + " MB").append(Component.newline())
-                                .append(Component.text("TICK TIME: " + MathUtils.round(tickMonitor.getTickTime(), 2) + "ms"))).append(Component.newline());
+                        .append(Component.text("RAM USAGE: " + ramUsage + " MB", NamedTextColor.GRAY).append(Component.newline())
+                                .append(Component.text("TICK TIME: " + MathUtils.round(tickMonitor.getTickTime(), 2) + "ms", NamedTextColor.GRAY))).append(Component.newline());
                 final Component footer = Component.newline().append(Component.text("Project: minestom.net").append(Component.newline())
-                        .append(Component.text("Source: github.com/Minestom/Minestom")).append(Component.newline())
-                        .append(Component.text("Arena: github.com/Minestom/Arena")));
+                        .append(Component.text("    Source: github.com/Minestom/Minestom    ", Messenger.ORANGE_COLOR)).append(Component.newline())
+                        .append(Component.text("Arena: github.com/Minestom/Arena", Messenger.ORANGE_COLOR)))
+                        .append(Component.newline());
 
                 Audiences.players().sendPlayerListHeaderAndFooter(header, footer);
 

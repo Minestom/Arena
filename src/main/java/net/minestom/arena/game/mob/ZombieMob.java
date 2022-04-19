@@ -1,6 +1,5 @@
 package net.minestom.arena.game.mob;
 
-import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.ai.goal.FollowTargetGoal;
@@ -11,7 +10,7 @@ import net.minestom.server.utils.time.TimeUnit;
 import java.time.Duration;
 import java.util.List;
 
-public final class ZombieMob extends EntityCreature {
+final class ZombieMob extends ArenaMob {
     public ZombieMob(int level) {
         super(EntityType.ZOMBIE);
         addAIGroup(
