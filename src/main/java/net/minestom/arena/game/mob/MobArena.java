@@ -27,17 +27,20 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
-    private static final List<Function<Integer, EntityCreature>> MOB_GENERATION_LAMBDAS = List.of(
-            ZombieMob::new,
-            SpiderMob::new
-    );
+    private static final MobGenerator[] MOB_GENERATORS = {
+            (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
+                    .limit(ThreadLocalRandom.current().nextInt(needed + 1))
+                    .collect(Collectors.toList()),
+            (stage, needed) -> Stream.generate(() -> new SpiderMob(stage))
+                    .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
+                    .collect(Collectors.toList())
+    };
 
     public static final class MobArenaInstance extends InstanceContainer {
         public MobArenaInstance() {
@@ -53,19 +56,19 @@ public final class MobArena implements SingleInstanceArena {
 
     public void nextStage() {
         stage++;
-        for (int i = 0; i < stage; i++) {
-            EntityCreature creature = findMob(stage);
-
-            creature.setInstance(arenaInstance, Vec.ONE
+        List<ArenaMob> mobs = generateMobs(stage, stage);
+        for (ArenaMob mob : mobs) {
+            mob.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
                     .mul(10, 0, 10)
                     .asPosition()
                     .add(0, 40, 0)
             );
         }
+
         arenaInstance.showTitle(Title.title(
                 Component.text("Stage " + stage, NamedTextColor.GREEN),
-                Component.text(stage + " mob" + (stage == 1 ? "" : "s") + ".")
+                Component.text(stage + " mob" + (stage == 1 ? "" : "s"))
         ));
 
         arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f));
@@ -130,10 +133,20 @@ public final class MobArena implements SingleInstanceArena {
         return List.of(Features.combat());
     }
 
-    static EntityCreature findMob(int level) {
-        Random random = ThreadLocalRandom.current();
-        final int index = random.nextInt(MOB_GENERATION_LAMBDAS.size()) % MOB_GENERATION_LAMBDAS.size();
-        var randomMobGenerator = MOB_GENERATION_LAMBDAS.get(index);
-        return randomMobGenerator.apply(level);
+    private static List<ArenaMob> generateMobs(int stage, int needed) {
+        List<ArenaMob> mobs = new ArrayList<>();
+        while (needed > 0) {
+            for (MobGenerator generator : MOB_GENERATORS) {
+                if (needed <= 0) {
+                    return mobs;
+                }
+
+                List<? extends ArenaMob> generatedMobs = generator.generate(stage, needed);
+                mobs.addAll(generatedMobs);
+                needed -= generatedMobs.size();
+            }
+        }
+
+        return mobs;
     }
 }
