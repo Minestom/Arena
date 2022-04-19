@@ -11,11 +11,11 @@ public final class LeaveCommand extends Command {
 
         setDefaultExecutor((sender, context) -> {
             final Player player = (Player) sender;
-            player.setInstance(Lobby.INSTANCE);
-            player.setHealth(player.getMaxHealth());
             Messenger.info(player, "You left the arena. Your last stage was " + Group.findGroup(player)
                     .arena()
                     .stage());
+            player.setInstance(Lobby.INSTANCE);
+            player.setHealth(player.getMaxHealth());
         });
     }
 }

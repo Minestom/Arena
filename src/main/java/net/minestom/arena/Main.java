@@ -52,7 +52,7 @@ public final class Main {
             handler.addListener(PlayerLoginEvent.class, event -> {
                 final Player player = event.getPlayer();
                 event.setSpawningInstance(Lobby.INSTANCE);
-                player.setRespawnPoint(new Pos(0, 42, 0));
+                player.setRespawnPoint(new Pos(0, 40, 0));
             });
 
             handler.addListener(PlayerSpawnEvent.class, event -> {
