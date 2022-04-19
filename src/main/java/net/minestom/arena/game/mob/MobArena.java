@@ -19,6 +19,7 @@ import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.instance.Instance;
@@ -27,7 +28,9 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -100,6 +103,11 @@ public final class MobArena implements SingleInstanceArena {
 
             event.setChatMessage(null);
             Messenger.info(event.getPlayer(), "You died. Your last stage was " + stage);
+        }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
+            // We don't care about entities, only players.
+            if (!(event.getEntity() instanceof Player player)) return;
+
+            Messenger.info(player, "You left the arena. Your last stage was " + stage);
         });
     }
 
@@ -111,11 +119,6 @@ public final class MobArena implements SingleInstanceArena {
     @Override
     public @NotNull Group group() {
         return group;
-    }
-
-    @Override
-    public int stage() {
-        return stage;
     }
 
     @Override

@@ -9,6 +9,4 @@ public interface Arena {
     @NotNull Group group();
 
     @NotNull CompletableFuture<Void> init();
-
-    int stage();
 }

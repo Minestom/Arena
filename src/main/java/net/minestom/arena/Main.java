@@ -13,7 +13,6 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
-import net.minestom.server.event.item.ItemDropEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
@@ -62,9 +61,6 @@ public final class Main {
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setEnableRespawnScreen(false);
             });
-
-            // Prevent dropping
-            handler.addListener(ItemDropEvent.class, event -> event.setCancelled(true));
 
             // Monitoring
             AtomicReference<TickMonitor> lastTick = new AtomicReference<>();

@@ -36,9 +36,7 @@ public final class ArenaCommand extends Command {
                 return;
             }
             Arena arena = ARENAS.get(type).apply(group);
-            arena.init()
-                    .thenRun(() -> group.play(arena))
-                    .thenRun(() -> group.members().forEach(Player::refreshCommands));
+            arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
         }, ArgumentType.Word("type").from(ARENAS.keySet().toArray(new String[0])));
     }
 }

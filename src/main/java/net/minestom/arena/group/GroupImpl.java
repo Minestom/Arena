@@ -4,12 +4,10 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.Messenger;
-import net.minestom.arena.game.Arena;
 import net.minestom.arena.group.displays.GroupDisplay;
 import net.minestom.arena.group.displays.GroupSidebarDisplay;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -21,13 +19,7 @@ final class GroupImpl implements Group {
     private final Set<Player> pendingInvites = Collections.newSetFromMap(new WeakHashMap<>());
     private final GroupDisplay displayManager = new GroupSidebarDisplay();
 
-    private Arena arena;
     private Player leader;
-
-    @Override
-    public void play(Arena arena) {
-        this.arena = arena;
-    }
 
     @Override
     public @NotNull Player leader() {
@@ -43,11 +35,6 @@ final class GroupImpl implements Group {
     @Override
     public @NotNull Set<Player> members() {
         return Set.copyOf(players);
-    }
-
-    @Override
-    public @Nullable Arena arena() {
-        return arena;
     }
 
     public void addPendingInvite(@NotNull Player player) {
