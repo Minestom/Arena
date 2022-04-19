@@ -15,20 +15,13 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
-import net.minestom.server.event.server.ServerListPingEvent;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.monitoring.TickMonitor;
-import net.minestom.server.ping.ResponseData;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -51,6 +44,8 @@ public final class Main {
 
             // Group events
             GroupEvent.hook(handler);
+            // Server list
+            ServerList.hook(handler);
 
             // Login
             handler.addListener(PlayerLoginEvent.class, event -> {
@@ -65,24 +60,6 @@ public final class Main {
                 Messenger.info(player, "Welcome to the Minestom Demo Server.");
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setEnableRespawnScreen(false);
-            });
-
-            String favicon = "";
-            try {
-                BufferedImage image = ImageIO.read(new File("./src/main/resources/favicon.png"));
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                ImageIO.write(image, "png", outputStream);
-                favicon = "data:image/png;base64," + Base64.getEncoder().encodeToString(outputStream.toByteArray());
-                outputStream.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            String finalFavicon = favicon;
-            handler.addListener(ServerListPingEvent.class, event -> {
-                ResponseData responseData = event.getResponseData();
-                responseData.setDescription(Component.text("Minestom Arena").color(Messenger.ORANGE_COLOR));
-                responseData.setFavicon(finalFavicon);
             });
 
             // Monitoring
@@ -105,8 +82,8 @@ public final class Main {
                         .append(Component.text("RAM USAGE: " + ramUsage + " MB", NamedTextColor.GRAY).append(Component.newline())
                                 .append(Component.text("TICK TIME: " + MathUtils.round(tickMonitor.getTickTime(), 2) + "ms", NamedTextColor.GRAY))).append(Component.newline());
                 final Component footer = Component.newline().append(Component.text("Project: minestom.net").append(Component.newline())
-                        .append(Component.text("    Source: github.com/Minestom/Minestom    ", Messenger.ORANGE_COLOR)).append(Component.newline())
-                        .append(Component.text("Arena: github.com/Minestom/Arena", Messenger.ORANGE_COLOR)))
+                                .append(Component.text("    Source: github.com/Minestom/Minestom    ", Messenger.ORANGE_COLOR)).append(Component.newline())
+                                .append(Component.text("Arena: github.com/Minestom/Arena", Messenger.ORANGE_COLOR)))
                         .append(Component.newline());
 
                 Audiences.players().sendPlayerListHeaderAndFooter(header, footer);
