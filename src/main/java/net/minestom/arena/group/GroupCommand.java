@@ -33,7 +33,7 @@ public final class GroupCommand extends Command {
                 } else {
                     boolean isLeader = group.leader().equals(player);
                     TextComponent.Builder builder = Component.text()
-                            .append(Component.text((isLeader ? "Your" : group.leader().getUsername() + "'s") + " party"))
+                            .append(Component.text((isLeader ? "Your" : group.leader().getUsername() + "'s") + " group"))
                             .append(Component.newline())
                             .append(Component.text("Members (" + group.members().size() + "): "));
 
