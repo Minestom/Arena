@@ -6,4 +6,7 @@ public final class Features {
     public static @NotNull Feature combat() {
         return new CombatFeature(false);
     }
+    public static @NotNull Feature drop() {
+        return new DropFeature();
+    }
 }

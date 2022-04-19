@@ -30,7 +30,10 @@ public final class Lobby extends InstanceContainer {
             if (entity instanceof Player player) {
                 // Refresh visible commands if the player previously was in an arena
                 final Instance instance = player.getInstance();
-                if (instance != null) player.scheduler().scheduleNextTick(player::refreshCommands);
+                if (instance != null) {
+                    player.scheduler().scheduleNextTick(player::refreshCommands);
+                    player.getInventory().clear(); // clear their inventory of any tokens
+                }
             }
         }).addListener(ItemDropEvent.class, event -> event.setCancelled(true));
     }

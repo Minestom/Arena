@@ -57,12 +57,13 @@ record CombatFeature(boolean playerCombat) implements Feature {
             spawnHologram(target, projectile, damage);
 
             projectile.remove();
-        });
-
-        node.addListener(EntityAttackEvent.class, event -> {
+        }).addListener(EntityAttackEvent.class, event -> {
             if (event.getTarget() instanceof LivingEntity target) {
                 // PVP is disabled and two players have attempted to hit each other
                 if (!playerCombat && event.getTarget() instanceof Player && event.getEntity() instanceof Player) return;
+
+                // Can't have dead sources attacking things
+                if (((LivingEntity) event.getEntity()).isDead()) return;
 
                 int damage = 1;
 

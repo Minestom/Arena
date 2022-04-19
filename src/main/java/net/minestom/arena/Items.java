@@ -10,7 +10,10 @@ import java.util.List;
 
 public final class Items {
     public static final ItemStack COIN = ItemStack.builder(Material.SUNFLOWER)
-            .displayName(Component.text("Coin", NamedTextColor.GOLD, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false))
-            .lore(List.of(Component.text("Use me to buy things!", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)))
+            .displayName(Component.text("Coin", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false))
+            .lore(List.of(
+                    Component.empty(),
+                    Component.text("Use me to buy things!", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+            ))
             .build();
 }
