@@ -11,12 +11,14 @@ import net.minestom.server.entity.ai.target.ClosestEntityTarget;
 import net.minestom.server.entity.pathfinding.Navigator;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.timer.ExecutionType;
 import net.minestom.server.utils.time.Cooldown;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -33,7 +35,7 @@ final class SpiderMob extends ArenaMob {
     private static class ThrowWebAttackGoal extends GoalSelector {
         private final Cooldown cooldown = new Cooldown(Duration.of(5, TimeUnit.SERVER_TICK));
 
-        private long lastHit;
+        private long lastHit = System.currentTimeMillis(); // Don't instantly attack as soon as the entity spawns
         private final double range;
         private final Duration delay;
 
@@ -102,6 +104,7 @@ final class SpiderMob extends ArenaMob {
                         Instance instance = target.getInstance();
                         if (instance == null) return;
 
+                        List<Pos> cobwebs = new ArrayList<>();
                         for (int i = 0; i < 8; i++) {
                             Pos spawnAt = pos.add(
                                 random.nextInt(-1, 1),
@@ -111,8 +114,18 @@ final class SpiderMob extends ArenaMob {
 
                             if (instance.getBlock(spawnAt).isAir()) {
                                 instance.setBlock(spawnAt, Block.COBWEB);
+                                cobwebs.add(spawnAt);
                             }
                         }
+
+                        target.scheduler().buildTask(() -> {
+                            Instance cobwebInstance = target.getInstance();
+                            if (cobwebInstance == null) return;
+
+                            for (Pos cobweb : cobwebs) {
+                                cobwebInstance.setBlock(cobweb, Block.AIR);
+                            }
+                        }).delay(5, TimeUnit.SECOND).executionType(ExecutionType.ASYNC).schedule();
 
                         this.lastHit = time;
                     }
