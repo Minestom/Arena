@@ -5,7 +5,7 @@ import net.minestom.server.entity.Player;
 
 public final class LeaveCommand extends Command {
     public LeaveCommand() {
-        super("leave");
+        super("leave", "l");
         setCondition(CommandUtils::arenaOnly);
 
         setDefaultExecutor((sender, context) -> {

@@ -5,6 +5,7 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.instance.AddEntityToInstanceEvent;
+import net.minestom.server.event.item.ItemDropEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
@@ -31,6 +32,6 @@ public final class Lobby extends InstanceContainer {
                 final Instance instance = player.getInstance();
                 if (instance != null) player.scheduler().scheduleNextTick(player::refreshCommands);
             }
-        });
+        }).addListener(ItemDropEvent.class, event -> event.setCancelled(true));
     }
 }
