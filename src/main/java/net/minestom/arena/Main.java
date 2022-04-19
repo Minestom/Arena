@@ -118,7 +118,6 @@ public final class Main {
 
         final String address = ServerProperties.getServerAddress("0.0.0.0");
         final int port = ServerProperties.getServerPort(25565);
-
         minecraftServer.start(address, port);
         System.out.println("Server startup done! Listening on " + address + ":" + port);
     }
