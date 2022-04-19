@@ -14,6 +14,6 @@ public final class CommandUtils {
     public static boolean arenaOnly(CommandSender sender, String commandString) {
         if (!(sender instanceof Player player)) return false;
         final Instance instance = player.getInstance();
-        return instance != Lobby.INSTANCE;
+        return instance != null && instance != Lobby.INSTANCE;
     }
 }
