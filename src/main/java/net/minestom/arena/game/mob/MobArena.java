@@ -13,6 +13,7 @@ import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.ItemEntity;
@@ -54,7 +55,13 @@ public final class MobArena implements SingleInstanceArena {
         stage++;
         for (int i = 0; i < stage; i++) {
             EntityCreature creature = findMob(stage);
-            creature.setInstance(arenaInstance, new Pos(0, 42, 0));
+
+            creature.setInstance(arenaInstance, Vec.ONE
+                    .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
+                    .mul(10, 0, 10)
+                    .asPosition()
+                    .add(0, 40, 0)
+            );
         }
         arenaInstance.showTitle(Title.title(
                 Component.text("Stage " + stage, NamedTextColor.GREEN),
