@@ -14,7 +14,7 @@ final class ZombieMob extends ArenaMob {
     public ZombieMob(int level) {
         super(EntityType.ZOMBIE);
         addAIGroup(
-                List.of(new MeleeAttackGoal(this, 2, 20, TimeUnit.SERVER_TICK),
+                List.of(new MeleeAttackGoal(this, 1.2, 20, TimeUnit.SERVER_TICK),
                         new FollowTargetGoal(this, Duration.of(3, TimeUnit.SERVER_TICK))),
                 List.of(new ClosestEntityTarget(this, 20, Player.class))
         );
