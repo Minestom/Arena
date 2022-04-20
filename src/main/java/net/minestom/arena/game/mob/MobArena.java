@@ -1,5 +1,7 @@
 package net.minestom.arena.game.mob;
 
+import de.articdive.jnoise.JNoise;
+import de.articdive.jnoise.modules.octavation.OctavationModule;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -12,6 +14,7 @@ import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
+import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
@@ -26,6 +29,7 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
+import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -51,14 +55,35 @@ public final class MobArena implements SingleInstanceArena {
     private static final int spawnRadius = 10;
 
     public static final class MobArenaInstance extends InstanceContainer {
+        private final JNoise noise = JNoise.newBuilder()
+                .fastSimplex()
+                .setFrequency(0.0025)
+                .addModule(OctavationModule.newBuilder()
+                        .setOctaves(6)
+                        .build())
+                .build();
+
         public MobArenaInstance() {
             super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
-            setGenerator(unit -> {
-                unit.modifier().fillHeight(0, 40, Block.SAND);
-                unit.modifier().fill(new Vec(-10, 40, -10), new Vec(10, 40, 10), Block.SMOOTH_QUARTZ);
-            });
-
             getWorldBorder().setDiameter(100);
+            setGenerator(unit -> {
+                unit.modifier().fill(new Vec(-10, 16, -10), new Vec(10, 16, 10), Block.SMOOTH_QUARTZ);
+
+                final Point start = unit.absoluteStart();
+                for (int x = 0; x < unit.size().x(); x++) {
+                    for (int z = 0; z < unit.size().z(); z++) {
+                        Point bottom = start.add(x, 0, z);
+
+                        synchronized (noise) { // Synchronization is necessary for JNoise
+                            // Ensure flat terrain in the fighting area
+                            final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
+                            double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
+                            height = (height > 0 ? height * 4 : height) * 8 + 16;
+                            unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
+                        }
+                    }
+                }
+            });
 
             int x = spawnRadius;
             int y = 0;
@@ -68,12 +93,12 @@ public final class MobArena implements SingleInstanceArena {
 
             while (x >= y) {
                 for (int i = -x; i <= x; i++) {
-                    setBlock(i, 39, y, Block.RED_SAND);
-                    setBlock(i, 39, -y, Block.RED_SAND);
+                    setBlock(i, 15, y, Block.RED_SAND);
+                    setBlock(i, 15, -y, Block.RED_SAND);
                 }
                 for (int i = -y; i <=  y; i++) {
-                    setBlock(i, 39, x, Block.RED_SAND);
-                    setBlock(i, 39, -x, Block.RED_SAND);
+                    setBlock(i, 15, x, Block.RED_SAND);
+                    setBlock(i, 15, -x, Block.RED_SAND);
                 }
 
                 y++;
@@ -101,7 +126,7 @@ public final class MobArena implements SingleInstanceArena {
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
                     .mul(spawnRadius, 0, spawnRadius)
                     .asPosition()
-                    .add(0, 40, 0)
+                    .add(0, 16, 0)
             );
         }
 
@@ -165,7 +190,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull Pos spawnPosition(@NotNull Player player) {
-        return new Pos(0, 41, 0);
+        return new Pos(0, 16, 0);
     }
 
     @Override
