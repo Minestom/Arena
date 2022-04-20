@@ -1,6 +1,5 @@
 package net.minestom.arena.game.mob;
 
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.EntityProjectile;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
@@ -13,7 +12,7 @@ import net.minestom.server.utils.time.TimeUnit;
 import java.time.Duration;
 import java.util.List;
 
-public final class SkeletonMob extends ArenaMob {
+final class SkeletonMob extends ArenaMob {
     public SkeletonMob(int level) {
         super(EntityType.SKELETON, level);
         setItemInMainHand(ItemStack.of(Material.BOW));
@@ -24,10 +23,7 @@ public final class SkeletonMob extends ArenaMob {
 
         rangedAttackGoal.setProjectileGenerator((entity) -> {
             EntityProjectile projectile = new EntityProjectile(entity, EntityType.ARROW);
-
-            MinecraftServer.getSchedulerManager().buildTask(projectile::remove)
-                    .delay(Duration.of(100, TimeUnit.SERVER_TICK)).schedule();
-
+            projectile.scheduleRemove(Duration.of(100, TimeUnit.SERVER_TICK));
             return projectile;
         });
 

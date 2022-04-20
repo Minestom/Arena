@@ -18,14 +18,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-class MobShopInventory extends Inventory {
+final class MobShopInventory extends Inventory {
     private static final ItemStack[] WEAPONS = {
-            ItemUtils.hideFlags(ItemStack.of(Material.WOODEN_SWORD).withTag(MobArena.WEAPON_TAG, true)),
-            ItemUtils.hideFlags(ItemStack.of(Material.STONE_SWORD).withTag(MobArena.WEAPON_TAG, true))
+            ItemStack.builder(Material.WOODEN_SWORD).meta(ItemUtils::hideFlags).set(MobArena.WEAPON_TAG, true).build(),
+            ItemStack.builder(Material.STONE_SWORD).meta(ItemUtils::hideFlags).set(MobArena.WEAPON_TAG, true).build()
     };
     private static final ItemStack[] ARMOR = {
-            ItemUtils.hideFlags(ItemStack.of(Material.LEATHER_CHESTPLATE)),
-            ItemUtils.hideFlags(ItemStack.of(Material.CHAINMAIL_CHESTPLATE))
+            ItemStack.builder(Material.LEATHER_CHESTPLATE).meta(ItemUtils::hideFlags).build(),
+            ItemStack.builder(Material.CHAINMAIL_CHESTPLATE).meta(ItemUtils::hideFlags).build()
     };
 
     private final Player player;
@@ -83,7 +83,8 @@ class MobShopInventory extends Inventory {
             if (getItemStack(slot).material() == Material.BARRIER) return;
 
             switch (slot) {
-                case 12 -> buyWeapon(3, currentWeaponTier + 1, currentWeaponTier == -1 ? null : WEAPONS[currentWeaponTier], nextWeapon);
+                case 12 -> buyWeapon(3, currentWeaponTier + 1, currentWeaponTier == -1 ?
+                        null : WEAPONS[currentWeaponTier], nextWeapon);
                 case 13 -> buyArmor(3, currentArmorTier + 1, nextArmor);
                 case 14 -> buyHealth(3, 4);
                 case 31 -> {

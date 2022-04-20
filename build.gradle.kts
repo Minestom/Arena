@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Minestom:Minestom:64f617c81c")
+    implementation("com.github.Minestom:Minestom:3c0abb0409")
     implementation("de.articdive:jnoise:3.0.2")
 }
 
