@@ -35,20 +35,19 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
     private static final MobGenerator[] MOB_GENERATORS = {
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
-                    .collect(Collectors.toList()),
+                    .toList(),
             (stage, needed) -> Stream.generate(() -> new SpiderMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .collect(Collectors.toList()),
+                    .toList(),
             (stage, needed) -> Stream.generate(() -> new SkeletonMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .collect(Collectors.toList())
+                    .toList()
     };
 
     private static final int spawnRadius = 10;

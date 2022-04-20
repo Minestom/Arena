@@ -6,8 +6,6 @@ import net.minestom.server.item.ItemHideFlag;
 import net.minestom.server.item.ItemStack;
 import org.jetbrains.annotations.Contract;
 
-import java.util.stream.Collectors;
-
 public final class ItemUtils {
     private ItemUtils() {}
 
@@ -29,7 +27,7 @@ public final class ItemUtils {
         return itemStack.withDisplayName(ItemUtils::stripItalics)
                 .withLore(lore -> lore.stream()
                         .map(ItemUtils::stripItalics)
-                        .collect(Collectors.toList()));
+                        .toList());
     }
 
     @Contract("null -> null; !null -> !null")
