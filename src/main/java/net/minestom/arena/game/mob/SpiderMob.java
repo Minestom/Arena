@@ -16,7 +16,6 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.server.LazyPacket;
 import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
-import net.minestom.server.timer.ExecutionType;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,16 +97,15 @@ final class SpiderMob extends ArenaMob {
                 }
             }
 
-            projectile.scheduler().buildTask(() -> {
-                Instance cobwebInstance = projectile.getInstance();
-                if (cobwebInstance == null) return;
+            projectile.remove();
+
+            instance.scheduler().buildTask(() -> {
+                if (!instance.isRegistered()) return;
 
                 for (Pos cobweb : cobwebs) {
-                    cobwebInstance.setBlock(cobweb, Block.AIR);
+                    instance.setBlock(cobweb, Block.AIR);
                 }
-            }).delay(5, TimeUnit.SECOND).executionType(ExecutionType.ASYNC).schedule();
-
-            projectile.remove();
+            }).delay(5, TimeUnit.SECOND).schedule();
         }
     }
 }
