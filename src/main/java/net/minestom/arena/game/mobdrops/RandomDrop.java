@@ -9,7 +9,7 @@ import java.util.Random;
 
 public class RandomDrop {
 
-    public ItemEntity getDrop() {
+    public static ItemEntity getDrop() {
         ArrayList<ItemEntity> itemList = new ArrayList<>();
         itemList.add(new ItemEntity(healItem));
         itemList.add(new ItemEntity(speedItem));
