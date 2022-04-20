@@ -17,14 +17,12 @@ import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EntityCreature;
-import net.minestom.server.entity.ItemEntity;
-import net.minestom.server.entity.Player;
+import net.minestom.server.entity.*;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
+import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
@@ -137,7 +135,7 @@ public final class MobArena implements SingleInstanceArena {
 
             group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
             Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
-            new NextStageNPC(this).setInstance(arenaInstance, new Pos(0, 16, 0));
+            new NextStageNPC().setInstance(arenaInstance, new Pos(0, 16, 0));
         }).addListener(PickupItemEvent.class, event -> {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
@@ -155,6 +153,18 @@ public final class MobArena implements SingleInstanceArena {
             if (!(event.getEntity() instanceof Player player)) return;
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
+        }).addListener(PlayerEntityInteractEvent.class, event -> {
+            Player player = event.getPlayer();
+            Entity target = event.getTarget();
+
+            if (!(target instanceof NextStageNPC)) return;
+            if (!hasContinued(player)) {
+                player.openInventory(new MobShopInventory(player, this));
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), target);
+            } else {
+                Messenger.warn(player, "You already continued");
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), target);
+            }
         });
 
         // TODO: Cancel armor unequip
@@ -174,6 +184,7 @@ public final class MobArena implements SingleInstanceArena {
         for (Entity entity : arenaInstance.getEntities()) {
             if (entity instanceof NextStageNPC) {
                 entity.remove();
+                break;
             }
         }
 
