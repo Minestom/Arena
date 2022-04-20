@@ -51,7 +51,7 @@ public final class Main {
             handler.addListener(PlayerLoginEvent.class, event -> {
                 final Player player = event.getPlayer();
                 event.setSpawningInstance(Lobby.INSTANCE);
-                player.setRespawnPoint(new Pos(0, 40, 0));
+                player.setRespawnPoint(new Pos(0.5, 16, 0.5));
             });
 
             handler.addListener(PlayerSpawnEvent.class, event -> {
@@ -60,6 +60,7 @@ public final class Main {
                 Messenger.info(player, "Welcome to the Minestom Demo Server.");
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setEnableRespawnScreen(false);
+                player.sendPackets(Lobby.MAP_PACKETS);
             });
 
             // Monitoring
