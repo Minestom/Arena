@@ -51,8 +51,8 @@ public final class MobArena implements SingleInstanceArena {
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
     };
-    private static final Tag<Integer> WEAPON_TAG = Tag.Integer("weapon").defaultValue(-1),
-            ARMOR_TAG = Tag.Integer("armor").defaultValue(-1);
+    private static final Tag<Integer> WEAPON_TAG = Tag.Integer("weapon").defaultValue(-1);
+    private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(-1);
 
     private static final int spawnRadius = 10;
 
