@@ -7,8 +7,10 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.other.ItemFrameMeta;
+import net.minestom.server.event.EventNode;
 import net.minestom.server.event.instance.AddEntityToInstanceEvent;
 import net.minestom.server.event.item.ItemDropEvent;
+import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.AnvilLoader;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -34,7 +36,6 @@ public final class Lobby extends InstanceContainer {
         MinecraftServer.getInstanceManager().registerInstance(INSTANCE);
 
         createMaps();
-
         try {
             final LargeGraphics2DFramebuffer framebuffer = new LargeGraphics2DFramebuffer(5 * 128, 3 * 128);
             final InputStream imageStream = Lobby.class.getResourceAsStream("/minestom.png");
@@ -52,14 +53,25 @@ public final class Lobby extends InstanceContainer {
         setChunkLoader(new AnvilLoader(Path.of("lobby")));
         setTimeRate(0);
 
-        eventNode().addListener(AddEntityToInstanceEvent.class, event -> {
+        EventNode<InstanceEvent> eventNode = eventNode();
+        eventNode.addListener(AddEntityToInstanceEvent.class, event -> {
             final Entity entity = event.getEntity();
             if (entity instanceof Player player) {
-                // Refresh visible commands if the player previously was in an arena
                 final Instance instance = player.getInstance();
-                if (instance != null) player.scheduler().scheduleNextTick(player::refreshCommands);
+                if (instance != null) onArenaFinish(player);
+                else onFirstSpawn(player);
             }
-        }).addListener(ItemDropEvent.class, event -> event.setCancelled(true));
+        });
+        eventNode.addListener(ItemDropEvent.class, event -> event.setCancelled(true));
+    }
+
+    void onFirstSpawn(Player player) {
+        player.sendPackets(Lobby.MAP_PACKETS);
+    }
+
+    void onArenaFinish(Player player) {
+        // Update visible commands
+        player.scheduler().scheduleNextTick(player::refreshCommands);
     }
 
     /**
@@ -69,7 +81,6 @@ public final class Lobby extends InstanceContainer {
         final int maxX = 2;
         final int maxY = 18;
         final int z = 9;
-
         for (int i = 0; i < 15; i++) {
             final int x = maxX - i % 5;
             final int y = maxY - i / 5;
@@ -93,14 +104,11 @@ public final class Lobby extends InstanceContainer {
      */
     private static ServerPacket[] mapPackets(LargeGraphics2DFramebuffer framebuffer) {
         ServerPacket[] packets = new ServerPacket[15];
-
         for (int i = 0; i < 15; i++) {
             final int x = i % 5;
             final int y = i / 5;
-
             packets[i] = framebuffer.createSubView(x * 128, y * 128).preparePacket(i);
         }
-
         return packets;
     }
 }

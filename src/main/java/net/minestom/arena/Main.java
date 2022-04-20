@@ -60,7 +60,6 @@ public final class Main {
                 Messenger.info(player, "Welcome to the Minestom Demo Server.");
                 player.setGameMode(GameMode.ADVENTURE);
                 player.setEnableRespawnScreen(false);
-                player.sendPackets(Lobby.MAP_PACKETS);
             });
 
             // Monitoring
