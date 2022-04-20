@@ -19,6 +19,7 @@ repositories {
 
 dependencies {
     implementation("com.github.Minestom:Minestom:64f617c81c")
+    implementation("de.articdive:jnoise:3.0.2")
 }
 
 tasks.withType<JavaCompile> {
