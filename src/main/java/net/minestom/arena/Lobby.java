@@ -72,6 +72,8 @@ public final class Lobby extends InstanceContainer {
     void onArenaFinish(Player player) {
         // Update visible commands
         player.scheduler().scheduleNextTick(player::refreshCommands);
+        // Clear player inventory
+        player.getInventory().clear();
     }
 
     /**
