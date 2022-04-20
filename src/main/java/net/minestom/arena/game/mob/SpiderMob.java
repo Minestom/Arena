@@ -1,6 +1,5 @@
 package net.minestom.arena.game.mob;
 
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -16,6 +15,7 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.server.LazyPacket;
 import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
+import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +52,7 @@ final class SpiderMob extends ArenaMob {
             meta.setSmall(true);
             meta.setRightArmRotation(new Vec(135, 90, 0));
             meta.setInvisible(true);
-            getViewersAsAudience().playSound(Sound.sound(Key.key("entity.spider.step"), Sound.Source.HOSTILE, 1, 1), shooter);
+            getViewersAsAudience().playSound(Sound.sound(SoundEvent.ENTITY_SPIDER_STEP, Sound.Source.HOSTILE, 1, 1), shooter);
 
             eventNode().addListener(ProjectileCollideWithEntityEvent.class, event -> {
                 final Entity target = event.getTarget();
