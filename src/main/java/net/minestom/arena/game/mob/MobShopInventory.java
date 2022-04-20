@@ -20,8 +20,8 @@ import java.util.List;
 
 class MobShopInventory extends Inventory {
     private static final ItemStack[] WEAPONS = {
-            ItemUtils.hideFlags(ItemStack.of(Material.WOODEN_SWORD)),
-            ItemUtils.hideFlags(ItemStack.of(Material.STONE_SWORD))
+            ItemUtils.hideFlags(ItemStack.of(Material.WOODEN_SWORD).withTag(MobArena.WEAPON_TAG, true)),
+            ItemUtils.hideFlags(ItemStack.of(Material.STONE_SWORD).withTag(MobArena.WEAPON_TAG, true))
     };
     private static final ItemStack[] ARMOR = {
             ItemUtils.hideFlags(ItemStack.of(Material.LEATHER_CHESTPLATE)),

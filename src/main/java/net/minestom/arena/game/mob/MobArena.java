@@ -49,8 +49,9 @@ public final class MobArena implements SingleInstanceArena {
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
     };
-    private static final Tag<Integer> WEAPON_TAG = Tag.Integer("weapon").defaultValue(-1);
-    private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(-1);
+    private static final Tag<Integer> WEAPON_TIER_TAG = Tag.Integer("weaponTier").defaultValue(-1);
+    private static final Tag<Integer> ARMOR_TIER_TAG = Tag.Integer("armorTier").defaultValue(-1);
+    static final Tag<Boolean> WEAPON_TAG = Tag.Boolean("weapon").defaultValue(false);
 
     private static final int spawnRadius = 10;
 
@@ -212,19 +213,19 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public int currentWeaponTier(Player player) {
-        return arenaTag(player, WEAPON_TAG);
+        return arenaTag(player, WEAPON_TIER_TAG);
     }
 
     public int currentArmorTier(Player player) {
-        return arenaTag(player, ARMOR_TAG);
+        return arenaTag(player, ARMOR_TIER_TAG);
     }
 
     public void setWeaponTier(Player player, int tier) {
-        updateArenaTag(player, WEAPON_TAG, tier);
+        updateArenaTag(player, WEAPON_TIER_TAG, tier);
     }
 
     public void setArmorTier(Player player, int tier) {
-        updateArenaTag(player, ARMOR_TAG, tier);
+        updateArenaTag(player, ARMOR_TIER_TAG, tier);
     }
 
     public TagHandler arenaTagHandler(Player player) {
@@ -263,16 +264,13 @@ public final class MobArena implements SingleInstanceArena {
     public @NotNull List<Feature> features() {
         return List.of(Features.combat(false, (attacker, victim) -> {
             if (attacker instanceof Player player) {
-                final boolean isSword = player.getItemInMainHand()
-                        .material()
-                        .name()
-                        .contains("sword");
-                final float multi = 0.5f * (arenaTag(player, WEAPON_TAG) + 1);
+                final boolean isWeapon = player.getItemInMainHand().getTag(WEAPON_TAG);
+                final float multi = 0.5f * (arenaTag(player, WEAPON_TIER_TAG) + 1);
 
-                return isSword ? 1 + multi : 1;
+                return isWeapon ? 1 + multi : 1;
             } else if (victim instanceof Player player) {
                 final boolean hasArmor = !player.getChestplate().isAir();
-                final float multi = -0.1f * (arenaTag(player, ARMOR_TAG) + 1);
+                final float multi = -0.1f * (arenaTag(player, ARMOR_TIER_TAG) + 1);
 
                 return hasArmor ? 1 + multi : 1;
             }
