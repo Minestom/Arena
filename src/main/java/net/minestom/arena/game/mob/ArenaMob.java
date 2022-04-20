@@ -6,6 +6,7 @@ import net.minestom.server.attribute.Attribute;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.event.entity.EntityDamageEvent;
+import net.minestom.server.event.entity.EntityDeathEvent;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +33,9 @@ abstract class ArenaMob extends EntityCreature {
         setCustomName(generateHealthBar(getMaxHealth(), getHealth()));
         setCustomNameVisible(true);
         eventNode().addListener(EntityDamageEvent.class, event ->
-                setCustomName(generateHealthBar(getMaxHealth(), getHealth())));
+                setCustomName(generateHealthBar(getMaxHealth(), getHealth())))
+            .addListener(EntityDeathEvent.class, event ->
+                setCustomName(generateHealthBar(getMaxHealth(), 0)));
     }
 
     @Contract(pure = true)
@@ -46,7 +49,7 @@ abstract class ArenaMob extends EntityCreature {
                         NamedTextColor.RED
                 )).append(Component.text(CHARACTERS.get((int) Math.round(
                         (charHealth - Math.floor(charHealth)) // number from 0-1
-                        * CHARACTERS.size()
+                        * (CHARACTERS.size() - 1) // indexes start at 0
                 )), NamedTextColor.YELLOW))
                 .append(Component.text("]", NamedTextColor.DARK_GRAY))
                 .build();
