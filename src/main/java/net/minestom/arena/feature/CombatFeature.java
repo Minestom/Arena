@@ -17,8 +17,17 @@ import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
+import java.util.function.ToDoubleBiFunction;
 
-record CombatFeature(boolean playerCombat) implements Feature {
+/**
+ * @param playerCombat Allow player combat
+ * @param damageModifier Multiplies final damage by return value arg 1 is attacker arg 2 is victim
+ */
+record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> damageModifier) implements Feature {
+    public CombatFeature(boolean playerCombat) {
+        this(playerCombat, (a, v) -> 1);
+    }
+
     private void takeKnockback(Entity target, Entity source) {
         target.takeKnockback(
                 0.5f,
@@ -27,7 +36,7 @@ record CombatFeature(boolean playerCombat) implements Feature {
         );
     }
 
-    private void spawnHologram(Entity target, Entity source, int damage) {
+    private void spawnHologram(Entity target, Entity source, float damage) {
         Hologram hologram = new Hologram(
                 target.getInstance(),
                 target.getPosition().add(0, target.getEyeHeight(), 0),
@@ -48,7 +57,7 @@ record CombatFeature(boolean playerCombat) implements Feature {
             if (!(event.getTarget() instanceof LivingEntity target)) return;
             if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
 
-            int damage = 1;
+            float damage = (float) damageModifier.applyAsDouble(projectile, target);
 
             target.damage(DamageType.fromProjectile(projectile.getShooter(), projectile), damage);
 
@@ -64,7 +73,7 @@ record CombatFeature(boolean playerCombat) implements Feature {
                 // Can't have dead sources attacking things
                 if (((LivingEntity) event.getEntity()).isDead()) return;
 
-                int damage = 1;
+                float damage = (float) damageModifier.applyAsDouble(event.getEntity(), target);
 
                 target.damage(DamageType.fromEntity(event.getEntity()), damage);
 
