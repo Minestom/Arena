@@ -1,159 +1,113 @@
 package net.minestom.arena.game.mob;
 
-import net.minestom.server.coordinate.Point;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.minestom.server.coordinate.Pos;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EntityCreature;
-import net.minestom.server.entity.EntityType;
-import net.minestom.server.entity.Player;
-import net.minestom.server.entity.ai.GoalSelector;
+import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.*;
+import net.minestom.server.entity.ai.goal.RangedAttackGoal;
 import net.minestom.server.entity.ai.target.ClosestEntityTarget;
-import net.minestom.server.entity.pathfinding.Navigator;
+import net.minestom.server.entity.metadata.other.ArmorStandMeta;
+import net.minestom.server.event.entity.projectile.ProjectileCollideWithBlockEvent;
+import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
+import net.minestom.server.network.packet.server.LazyPacket;
+import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
 import net.minestom.server.timer.ExecutionType;
-import net.minestom.server.utils.time.Cooldown;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 final class SpiderMob extends ArenaMob {
     public SpiderMob(int stage) {
         super(EntityType.SPIDER, stage);
+
+        RangedAttackGoal attackGoal = new RangedAttackGoal(
+                this, Duration.of(10, TimeUnit.SECOND),
+                16, 12, false, 1.3, 0);
+
+        attackGoal.setProjectileGenerator(WebProjectile::new);
+
         addAIGroup(
-                List.of(new ThrowWebAttackGoal(this, 16, 10, TimeUnit.SECOND)),
+                List.of(attackGoal),
                 List.of(new ClosestEntityTarget(this, 32, Player.class))
         );
     }
 
-    private static class ThrowWebAttackGoal extends GoalSelector {
-        private final Cooldown cooldown = new Cooldown(Duration.of(5, TimeUnit.SERVER_TICK));
+    private static class WebProjectile extends EntityProjectile {
+        public WebProjectile(@Nullable Entity shooter) {
+            super(shooter, EntityType.ARMOR_STAND);
+            ArmorStandMeta meta = (ArmorStandMeta) getEntityMeta();
+            meta.setHasNoBasePlate(true);
+            meta.setHasArms(true);
+            meta.setSmall(true);
+            meta.setRightArmRotation(new Vec(135, 90, 0));
+            meta.setInvisible(true);
+            getViewersAsAudience().playSound(Sound.sound(Key.key("entity.spider.step"), Sound.Source.HOSTILE, 1, 1), shooter);
 
-        private long lastHit = System.currentTimeMillis(); // Don't instantly attack as soon as the entity spawns
-        private final double range;
-        private final Duration delay;
-
-        private boolean stop;
-        private Entity cachedTarget;
-
-        /**
-         * @param entityCreature the entity to add the goal to
-         * @param range          the allowed range the entity can attack others.
-         * @param delay          the delay between each attacks
-         * @param timeUnit       the unit of the delay
-         */
-        public ThrowWebAttackGoal(@NotNull EntityCreature entityCreature, double range, int delay, @NotNull TemporalUnit timeUnit) {
-            this(entityCreature, range, Duration.of(delay, timeUnit));
+            eventNode().addListener(ProjectileCollideWithEntityEvent.class, event -> {
+                final Entity target = event.getTarget();
+                if (!(target instanceof Player)) event.setCancelled(true);
+                else collide(event.getEntity(), target.getPosition());
+            });
+            eventNode().addListener(ProjectileCollideWithBlockEvent.class, event -> collide(event.getEntity(), event.getCollisionPosition()));
         }
 
-        /**
-         * @param entityCreature the entity to add the goal to
-         * @param range          the allowed range the entity can attack others.
-         * @param delay          the delay between each attacks
-         */
-        public ThrowWebAttackGoal(@NotNull EntityCreature entityCreature, double range, Duration delay) {
-            super(entityCreature);
-            this.range = range;
-            this.delay = delay;
-        }
-
-        public @NotNull Cooldown getCooldown() {
-            return this.cooldown;
+        private @NotNull EntityEquipmentPacket getEquipmentsPacket() {
+            return new EntityEquipmentPacket(this.getEntityId(), Map.of(
+                    EquipmentSlot.MAIN_HAND, ItemStack.of(Material.COBWEB),
+                    EquipmentSlot.OFF_HAND, ItemStack.AIR,
+                    EquipmentSlot.BOOTS, ItemStack.AIR,
+                    EquipmentSlot.LEGGINGS, ItemStack.AIR,
+                    EquipmentSlot.CHESTPLATE, ItemStack.AIR,
+                    EquipmentSlot.HELMET, ItemStack.AIR));
         }
 
         @Override
-        public boolean shouldStart() {
-            this.cachedTarget = findTarget();
-            return this.cachedTarget != null;
+        public void updateNewViewer(@NotNull Player player) {
+            super.updateNewViewer(player);
+            player.sendPacket(new LazyPacket(this::getEquipmentsPacket));
         }
 
-        @Override
-        public void start() {
-            final Point targetPosition = this.cachedTarget.getPosition();
-            entityCreature.getNavigator().setPathTo(targetPosition);
-        }
+        private static void collide(Entity projectile, Pos pos) {
+            final Instance instance = projectile.getInstance();
+            if (instance == null) return;
 
-        @Override
-        public void tick(long time) {
-            Entity target;
-            if (this.cachedTarget != null) {
-                target = this.cachedTarget;
-                this.cachedTarget = null;
-            } else {
-                target = findTarget();
-            }
+            final Random random = ThreadLocalRandom.current();
+            final List<Pos> cobwebs = new ArrayList<>();
+            for (int i = 0; i < 8; i++) {
+                Pos spawnAt = pos.add(
+                        random.nextInt(-1, 1),
+                        random.nextInt(0, 2),
+                        random.nextInt(-1, 1)
+                );
 
-            this.stop = target == null;
-
-            if (!stop) {
-
-                // Attack the target entity
-                if (entityCreature.getDistance(target) <= range) {
-                    entityCreature.lookAt(target);
-                    if (!Cooldown.hasCooldown(time, lastHit, delay)) {
-                        // TODO Add animation for throwing web
-
-                        Pos pos = target.getPosition();
-                        Random random = ThreadLocalRandom.current();
-                        Instance instance = target.getInstance();
-                        if (instance == null) return;
-
-                        List<Pos> cobwebs = new ArrayList<>();
-                        for (int i = 0; i < 8; i++) {
-                            Pos spawnAt = pos.add(
-                                random.nextInt(-1, 1),
-                                random.nextInt(0, 2),
-                                random.nextInt(-1, 1)
-                            );
-
-                            if (instance.getBlock(spawnAt).isAir()) {
-                                instance.setBlock(spawnAt, Block.COBWEB);
-                                cobwebs.add(spawnAt);
-                            }
-                        }
-
-                        target.scheduler().buildTask(() -> {
-                            Instance cobwebInstance = target.getInstance();
-                            if (cobwebInstance == null) return;
-
-                            for (Pos cobweb : cobwebs) {
-                                cobwebInstance.setBlock(cobweb, Block.AIR);
-                            }
-                        }).delay(5, TimeUnit.SECOND).executionType(ExecutionType.ASYNC).schedule();
-
-                        this.lastHit = time;
-                    }
-                    return;
-                }
-
-                // Move toward the target entity
-                Navigator navigator = entityCreature.getNavigator();
-                final var pathPosition = navigator.getPathPosition();
-                final var targetPosition = target.getPosition();
-                if (pathPosition == null || pathPosition.distance(targetPosition) > range) {
-                    if (this.cooldown.isReady(time)) {
-                        this.cooldown.refreshLastUpdate(time);
-                        navigator.setPathTo(targetPosition);
-                    }
+                if (instance.getBlock(spawnAt).isAir()) {
+                    instance.setBlock(spawnAt, Block.COBWEB);
+                    cobwebs.add(spawnAt);
                 }
             }
-        }
 
-        @Override
-        public boolean shouldEnd() {
-            return stop;
-        }
+            projectile.scheduler().buildTask(() -> {
+                Instance cobwebInstance = projectile.getInstance();
+                if (cobwebInstance == null) return;
 
-        @Override
-        public void end() {
-            // Stop following the target
-            entityCreature.getNavigator().setPathTo(null);
+                for (Pos cobweb : cobwebs) {
+                    cobwebInstance.setBlock(cobweb, Block.AIR);
+                }
+            }).delay(5, TimeUnit.SECOND).executionType(ExecutionType.ASYNC).schedule();
+
+            projectile.remove();
         }
     }
 }
