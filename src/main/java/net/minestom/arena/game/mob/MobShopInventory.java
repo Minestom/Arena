@@ -53,7 +53,7 @@ class MobShopInventory extends Inventory {
         else setItemStack(12, ItemUtils.stripItalics(nextWeapon
                 .withDisplayName(Component.text("Upgrade Weapon", NamedTextColor.RED))
                 .withLore(List.of(
-                        Component.text("Upgrade your weapon to ", NamedTextColor.GRAY).append(Component.translatable(nextWeapon.material().name(), NamedTextColor.GRAY)),
+                        Component.text("Upgrade your weapon to ", NamedTextColor.GRAY).append(Component.translatable(nextWeapon.material().registry().translationKey(), NamedTextColor.GRAY)),
                         Component.empty(),
                         Component.text("Costs 3 coins", NamedTextColor.GOLD)
                 ))));
@@ -64,7 +64,7 @@ class MobShopInventory extends Inventory {
         else setItemStack(13, ItemUtils.stripItalics(nextArmor
                 .withDisplayName(Component.text("Upgrade Armor", NamedTextColor.BLUE))
                 .withLore(List.of(
-                        Component.text("Upgrade your chestplate to ", NamedTextColor.GRAY).append(Component.translatable(nextArmor.material().name(), NamedTextColor.GRAY)),
+                        Component.text("Upgrade your chestplate to ", NamedTextColor.GRAY).append(Component.translatable(nextArmor.material().registry().translationKey(), NamedTextColor.GRAY)),
                         Component.empty(),
                         Component.text("Costs 3 coins", NamedTextColor.GOLD)
                 ))));
