@@ -1,5 +1,6 @@
 package net.minestom.arena;
 
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.game.ArenaCommand;
@@ -13,15 +14,24 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
+import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
+import net.minestom.server.event.server.ServerListPingEvent;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.monitoring.TickMonitor;
+import net.minestom.server.ping.ResponseData;
+import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,7 +69,15 @@ public final class Main {
                 final Player player = event.getPlayer();
                 Messenger.info(player, "Welcome to the Minestom Demo Server.");
                 player.setGameMode(GameMode.ADVENTURE);
+                player.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1f, 1f));
                 player.setEnableRespawnScreen(false);
+            });
+            
+            // Chat
+            handler.addListener(PlayerChatEvent.class, chatEvent -> {
+                chatEvent.setChatFormat((event) -> Component.text(event.getEntity().getUsername())
+                        .append(Component.text(" | ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text(event.getMessage(), NamedTextColor.WHITE))));
             });
 
             // Monitoring

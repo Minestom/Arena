@@ -16,7 +16,7 @@ final class ZombieMob extends ArenaMob {
         super(EntityType.ZOMBIE, stage);
         addAIGroup(
                 List.of(new MeleeAttackGoal(this, 1.2, 20, TimeUnit.SERVER_TICK)),
-                List.of(new ClosestEntityTarget(this, 20, Player.class))
+                List.of(new ClosestEntityTarget(this, 32, Player.class))
         );
 
         boolean isBaby = stage >= 5 && ThreadLocalRandom.current().nextBoolean();

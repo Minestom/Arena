@@ -7,6 +7,7 @@ import net.minestom.arena.group.Group;
 import net.minestom.server.entity.Player;
 import net.minestom.server.scoreboard.Sidebar;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -37,10 +38,10 @@ public class GroupSidebarDisplay implements GroupDisplay {
             sidebar.removeLine(line.getId());
         }
 
-        Set<Player> toUpdate = new java.util.HashSet<>(group.members());
+        Set<Player> toUpdate = new HashSet<>(group.members());
         toUpdate.retainAll(sidebar.getPlayers());
 
-        Set<Player> toRemove = new java.util.HashSet<>(sidebar.getPlayers());
+        Set<Player> toRemove = new HashSet<>(sidebar.getPlayers());
         toRemove.removeAll(toUpdate);
         for (Player player : toRemove) {
             sidebar.removeViewer(player);
@@ -49,7 +50,7 @@ public class GroupSidebarDisplay implements GroupDisplay {
         for (Sidebar.ScoreboardLine line : createLines(group.members(), group.leader()))
             sidebar.createLine(line);
 
-        Set<Player> toAdd = new java.util.HashSet<>(group.members());
+        Set<Player> toAdd = new HashSet<>(group.members());
         toAdd.removeAll(sidebar.getPlayers());
         for (Player player : toAdd) {
             sidebar.addViewer(player);

@@ -42,13 +42,49 @@ public final class MobArena implements SingleInstanceArena {
                     .collect(Collectors.toList()),
             (stage, needed) -> Stream.generate(() -> new SpiderMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
+                    .collect(Collectors.toList()),
+            (stage, needed) -> Stream.generate(() -> new SkeletonMob(stage))
+                    .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .collect(Collectors.toList())
     };
+
+    private static final int spawnRadius = 10;
 
     public static final class MobArenaInstance extends InstanceContainer {
         public MobArenaInstance() {
             super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
-            setGenerator(unit -> unit.modifier().fillHeight(0, 40, Block.SAND));
+            setGenerator(unit -> {
+                unit.modifier().fillHeight(0, 40, Block.SAND);
+                unit.modifier().fill(new Vec(-10, 40, -10), new Vec(10, 40, 10), Block.SMOOTH_QUARTZ);
+            });
+
+            getWorldBorder().setDiameter(100);
+
+            int x = spawnRadius;
+            int y = 0;
+            int xChange = 1 - (spawnRadius << 1);
+            int yChange = 0;
+            int radiusError = 0;
+
+            while (x >= y) {
+                for (int i = -x; i <= x; i++) {
+                    setBlock(i, 39, y, Block.RED_SAND);
+                    setBlock(i, 39, -y, Block.RED_SAND);
+                }
+                for (int i = -y; i <=  y; i++) {
+                    setBlock(i, 39, x, Block.RED_SAND);
+                    setBlock(i, 39, -x, Block.RED_SAND);
+                }
+
+                y++;
+                radiusError += yChange;
+                yChange += 2;
+                if (((radiusError << 1) + xChange) > 0) {
+                    x--;
+                    radiusError += xChange;
+                    xChange += 2;
+                }
+            }
         }
     }
 
@@ -63,7 +99,7 @@ public final class MobArena implements SingleInstanceArena {
         for (ArenaMob mob : mobs) {
             mob.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
-                    .mul(10, 0, 10)
+                    .mul(spawnRadius, 0, spawnRadius)
                     .asPosition()
                     .add(0, 40, 0)
             );
@@ -83,6 +119,7 @@ public final class MobArena implements SingleInstanceArena {
         this.group = group;
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
             ItemEntity item = new ItemEntity(Items.COIN);
+            item.setGlowing(true);
             item.setInstance(arenaInstance, event.getEntity().getPosition());
 
             for (Entity entity : arenaInstance.getEntities()) {
@@ -133,10 +170,10 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.combat());
+        return List.of(Features.combat(), Features.drop());
     }
 
-    private static List<ArenaMob> generateMobs(int stage, int needed) {
+    private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
         List<ArenaMob> mobs = new ArrayList<>();
         while (needed > 0) {
             for (MobGenerator generator : MOB_GENERATORS) {
