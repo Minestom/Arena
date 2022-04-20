@@ -26,13 +26,13 @@ public final class ArenaCommand extends Command {
         addSyntax((sender, context) -> {
             final Player player = (Player) sender;
             if (player.getInstance() != Lobby.INSTANCE) {
-                player.sendMessage("You are not in the lobby! Join the lobby first.");
+                Messenger.warn(player, "You are not in the lobby! Join the lobby first.");
                 return;
             }
             final String type = context.get("type");
             final Group group = Group.findGroup(player);
             if (group.leader() != player) {
-                player.sendMessage("You are not the leader of your group!");
+                Messenger.warn(player, "You are not the leader of your group!");
                 return;
             }
             Arena arena = ARENAS.get(type).apply(group);

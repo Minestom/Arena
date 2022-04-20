@@ -1,5 +1,6 @@
 package net.minestom.arena.group;
 
+import net.kyori.adventure.audience.Audience;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,4 +13,5 @@ public sealed interface Group permits GroupImpl {
 
     @NotNull Player leader();
     @NotNull Set<@NotNull Player> members();
+    @NotNull Audience audience();
 }
