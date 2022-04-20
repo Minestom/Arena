@@ -6,5 +6,5 @@ import java.util.List;
 
 @FunctionalInterface
 interface MobGenerator {
-    @NotNull List<ArenaMob> generate(int stage, int maximum);
+    @NotNull List<? extends ArenaMob> generate(int stage, int maximum);
 }

@@ -17,40 +17,41 @@ import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EntityCreature;
-import net.minestom.server.entity.ItemEntity;
-import net.minestom.server.entity.Player;
+import net.minestom.server.entity.*;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
+import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
+import net.minestom.server.tag.Tag;
+import net.minestom.server.tag.TagHandler;
 import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
     private static final MobGenerator[] MOB_GENERATORS = {
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
-                    .collect(Collectors.toList()),
+                    .toList(),
             (stage, needed) -> Stream.generate(() -> new SpiderMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .collect(Collectors.toList()),
+                    .toList(),
             (stage, needed) -> Stream.generate(() -> new SkeletonMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .collect(Collectors.toList())
+                    .toList()
     };
+    private static final Tag<Integer> WEAPON_TIER_TAG = Tag.Integer("weaponTier").defaultValue(-1);
+    private static final Tag<Integer> ARMOR_TIER_TAG = Tag.Integer("armorTier").defaultValue(-1);
+    static final Tag<Boolean> WEAPON_TAG = Tag.Boolean("weapon").defaultValue(false);
 
     private static final int spawnRadius = 10;
 
@@ -115,30 +116,10 @@ public final class MobArena implements SingleInstanceArena {
 
     private final Group group;
     private final Instance arenaInstance = new MobArenaInstance();
+    private final Set<Player> continued = new HashSet<>();
+    private final Map<Player, TagHandler> playerTagHandlerMap = new ConcurrentHashMap<>();
 
     private int stage = 0;
-
-    public void nextStage() {
-        stage++;
-        List<ArenaMob> mobs = generateMobs(stage, stage);
-        for (ArenaMob mob : mobs) {
-            mob.setInstance(arenaInstance, Vec.ONE
-                    .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
-                    .mul(spawnRadius, 0, spawnRadius)
-                    .asPosition()
-                    .add(0, 16, 0)
-            );
-        }
-
-        arenaInstance.showTitle(Title.title(
-                Component.text("Stage " + stage, NamedTextColor.GREEN),
-                Component.text(stage + " mob" + (stage == 1 ? "" : "s"))
-        ));
-
-        arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f));
-
-        Messenger.info(arenaInstance, "Stage " + stage);
-    }
 
     public MobArena(Group group) {
         this.group = group;
@@ -152,7 +133,10 @@ public final class MobArena implements SingleInstanceArena {
                     return; // Round hasn't ended yet
                 }
             }
-            nextStage();
+
+            group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
+            Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
+            new NextStageNPC().setInstance(arenaInstance, new Pos(0, 16, 0));
         }).addListener(PickupItemEvent.class, event -> {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
@@ -170,7 +154,90 @@ public final class MobArena implements SingleInstanceArena {
             if (!(event.getEntity() instanceof Player player)) return;
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
+        }).addListener(PlayerEntityInteractEvent.class, event -> {
+            Player player = event.getPlayer();
+            Entity target = event.getTarget();
+
+            if (!(target instanceof NextStageNPC)) return;
+            if (!hasContinued(player)) {
+                player.openInventory(new MobShopInventory(player, this));
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), target);
+            } else {
+                Messenger.warn(player, "You already continued");
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), target);
+            }
         });
+
+        // TODO: Cancel armor unequip
+    }
+
+    public void continueToNextStage(Player player) {
+        continued.add(player);
+
+        if (continued.size() >= group().members().size()) {
+            Messenger.countdown(group().audience(), 5).thenRun(this::nextStage);
+            continued.clear();
+        }
+    }
+
+    public void nextStage() {
+        stage++;
+        for (Entity entity : arenaInstance.getEntities()) {
+            if (entity instanceof NextStageNPC) {
+                entity.remove();
+                break;
+            }
+        }
+
+        List<ArenaMob> mobs = generateMobs(stage, stage);
+        for (ArenaMob mob : mobs) {
+            mob.setInstance(arenaInstance, Vec.ONE
+                    .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
+                    .mul(spawnRadius, 0, spawnRadius)
+                    .asPosition()
+                    .add(0, 16, 0)
+            );
+        }
+
+        arenaInstance.showTitle(Title.title(
+                Component.text("Stage " + stage, NamedTextColor.GREEN),
+                Component.text(stage + " mob" + (stage == 1 ? "" : "s"))
+        ));
+
+        arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 2f));
+        Messenger.info(arenaInstance, "Stage " + stage + " has begun! Kill all the mobs to proceed to the next stage");
+    }
+
+    public boolean hasContinued(Player player) {
+        return continued.contains(player);
+    }
+
+    public int currentWeaponTier(Player player) {
+        return arenaTag(player, WEAPON_TIER_TAG);
+    }
+
+    public int currentArmorTier(Player player) {
+        return arenaTag(player, ARMOR_TIER_TAG);
+    }
+
+    public void setWeaponTier(Player player, int tier) {
+        updateArenaTag(player, WEAPON_TIER_TAG, tier);
+    }
+
+    public void setArmorTier(Player player, int tier) {
+        updateArenaTag(player, ARMOR_TIER_TAG, tier);
+    }
+
+    public TagHandler arenaTagHandler(Player player) {
+        return playerTagHandlerMap.computeIfAbsent(player, p -> TagHandler.newHandler());
+    }
+
+    public <T> T arenaTag(Player player, Tag<T> tag) {
+        return arenaTagHandler(player).getTag(tag);
+    }
+
+    public <T> void updateArenaTag(Player player, Tag<T> tag, T value) {
+        arenaTagHandler(player).setTag(tag, value);
     }
 
     @Override
@@ -195,7 +262,21 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.combat(), Features.drop());
+        return List.of(Features.combat(false, (attacker, victim) -> {
+            if (attacker instanceof Player player) {
+                final boolean isWeapon = player.getItemInMainHand().getTag(WEAPON_TAG);
+                final float multi = 0.5f * (arenaTag(player, WEAPON_TIER_TAG) + 1);
+
+                return isWeapon ? 1 + multi : 1;
+            } else if (victim instanceof Player player) {
+                final boolean hasArmor = !player.getChestplate().isAir();
+                final float multi = -0.1f * (arenaTag(player, ARMOR_TIER_TAG) + 1);
+
+                return hasArmor ? 1 + multi : 1;
+            }
+
+            return 1;
+        }), Features.drop());
     }
 
     private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
