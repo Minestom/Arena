@@ -45,7 +45,6 @@ record CombatFeature(boolean playerCombat) implements Feature {
     @Override
     public void hook(@NotNull EventNode<Event> node) {
         node.addListener(ProjectileCollideWithEntityEvent.class, event -> {
-
             if (!(event.getTarget() instanceof LivingEntity target)) return;
             if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
 

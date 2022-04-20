@@ -9,7 +9,6 @@ import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
 record DropFeature() implements Feature {
-
     @Override
     public void hook(@NotNull EventNode<Event> node) {
         node.addListener(ItemDropEvent.class, event -> {
