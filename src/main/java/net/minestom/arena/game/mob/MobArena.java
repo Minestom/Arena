@@ -29,6 +29,8 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
+import net.minestom.server.tag.Tag;
+import net.minestom.server.tag.TagHandler;
 import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,6 +51,8 @@ public final class MobArena implements SingleInstanceArena {
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
     };
+    private static final Tag<Integer> WEAPON_TAG = Tag.Integer("weapon").defaultValue(-1),
+            ARMOR_TAG = Tag.Integer("armor").defaultValue(-1);
 
     private static final int spawnRadius = 10;
 
@@ -114,8 +118,7 @@ public final class MobArena implements SingleInstanceArena {
     private final Group group;
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
-    private final Map<Player, Integer> weaponTiers = new ConcurrentHashMap<>();
-    private final Map<Player, Integer> armorTiers = new ConcurrentHashMap<>();
+    private final Map<Player, TagHandler> playerTagHandlerMap = new ConcurrentHashMap<>();
 
     private int stage = 0;
 
@@ -198,19 +201,31 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public int currentWeaponTier(Player player) {
-        return weaponTiers.getOrDefault(player, -1);
+        return arenaTag(player, WEAPON_TAG);
     }
 
     public int currentArmorTier(Player player) {
-        return armorTiers.getOrDefault(player, -1);
+        return arenaTag(player, ARMOR_TAG);
     }
 
     public void setWeaponTier(Player player, int tier) {
-        weaponTiers.put(player, tier);
+        updateArenaTag(player, WEAPON_TAG, tier);
     }
 
     public void setArmorTier(Player player, int tier) {
-        armorTiers.put(player, tier);
+        updateArenaTag(player, ARMOR_TAG, tier);
+    }
+
+    public TagHandler arenaTagHandler(Player player) {
+        return playerTagHandlerMap.computeIfAbsent(player, p -> TagHandler.newHandler());
+    }
+
+    public <T> T arenaTag(Player player, Tag<T> tag) {
+        return arenaTagHandler(player).getTag(tag);
+    }
+
+    public <T> void updateArenaTag(Player player, Tag<T> tag, T value) {
+        arenaTagHandler(player).setTag(tag, value);
     }
 
     @Override
@@ -241,12 +256,12 @@ public final class MobArena implements SingleInstanceArena {
                         .material()
                         .name()
                         .contains("sword");
-                final float multi = 0.5f * (weaponTiers.getOrDefault(player, -1) + 1);
+                final float multi = 0.5f * (arenaTag(player, WEAPON_TAG) + 1);
 
                 return isSword ? 1 + multi : 1;
             } else if (victim instanceof Player player) {
                 final boolean hasArmor = !player.getChestplate().isAir();
-                final float multi = -0.1f * (armorTiers.getOrDefault(player, -1) + 1);
+                final float multi = -0.1f * (arenaTag(player, ARMOR_TAG) + 1);
 
                 return hasArmor ? 1 + multi : 1;
             }
