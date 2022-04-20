@@ -72,24 +72,6 @@ public final class Main {
                 player.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1f, 1f));
                 player.setEnableRespawnScreen(false);
             });
-
-            String favicon = "";
-            try {
-                BufferedImage image = ImageIO.read(new File("./src/main/resources/favicon.png"));
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                ImageIO.write(image, "png", outputStream);
-                favicon = "data:image/png;base64," + Base64.getEncoder().encodeToString(outputStream.toByteArray());
-                outputStream.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            String finalFavicon = favicon;
-            handler.addListener(ServerListPingEvent.class, event -> {
-                ResponseData responseData = event.getResponseData();
-                responseData.setDescription(Component.text("Minestom Arena").color(Messenger.ORANGE_COLOR));
-                responseData.setFavicon(finalFavicon);
-            });
             
             // Chat
             handler.addListener(PlayerChatEvent.class, chatEvent -> {
