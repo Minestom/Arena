@@ -164,7 +164,7 @@ public final class MobArena implements SingleInstanceArena {
         continued.add(player);
 
         if (continued.size() >= group().members().size()) {
-            Messenger.countdown(group().audience(), 5, this::nextStage);
+            Messenger.countdown(group().audience(), 5).thenRun(this::nextStage);
             continued.clear();
         }
     }

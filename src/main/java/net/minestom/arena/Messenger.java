@@ -6,11 +6,11 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.title.Title;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.sound.SoundEvent;
-import net.minestom.server.timer.ExecutionType;
-import net.minestom.server.timer.Scheduler;
 import net.minestom.server.timer.TaskSchedule;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Messenger {
@@ -35,13 +35,13 @@ public final class Messenger {
                 .append(message.color(NamedTextColor.GRAY)));
     }
 
-    // TODO: use CompletableFuture instead
-    public static void countdown(Audience audience, int from, Runnable thenRun) {
+    public static CompletableFuture<Void> countdown(Audience audience, int from) {
+        final CompletableFuture<Void> completableFuture = new CompletableFuture<>();
         final AtomicInteger countdown = new AtomicInteger(from);
-        Scheduler.newScheduler().submitTask(() -> {
+        MinecraftServer.getSchedulerManager().submitTask(() -> {
             final int count = countdown.getAndDecrement();
             if (count <= 0) {
-                thenRun.run();
+                completableFuture.complete(null);
                 return TaskSchedule.stop();
             }
 
@@ -49,6 +49,8 @@ public final class Messenger {
             audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.BLOCK, 1, 1), Sound.Emitter.self());
 
             return TaskSchedule.seconds(1);
-        }, ExecutionType.ASYNC);
+        });
+
+        return completableFuture;
     }
 }
