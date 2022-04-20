@@ -58,7 +58,7 @@ public final class Lobby extends InstanceContainer {
             final Entity entity = event.getEntity();
             if (entity instanceof Player player) {
                 final Instance instance = player.getInstance();
-                if (instance != null) onArenaFinish(player);
+                if (instance != null) player.scheduler().scheduleNextTick(() -> onArenaFinish(player));
                 else onFirstSpawn(player);
             }
         });
@@ -70,9 +70,7 @@ public final class Lobby extends InstanceContainer {
     }
 
     void onArenaFinish(Player player) {
-        // Update visible commands
-        player.scheduler().scheduleNextTick(player::refreshCommands);
-        // Clear player inventory
+        player.refreshCommands();
         player.getInventory().clear();
     }
 
