@@ -15,6 +15,8 @@ import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.attribute.Attribute;
+import net.minestom.server.attribute.AttributeModifier;
+import net.minestom.server.attribute.AttributeOperation;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -50,6 +52,7 @@ public final class MobArena implements SingleInstanceArena {
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
     };
+    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mob-arena", 100f, AttributeOperation.ADDITION);
     private static final Tag<Integer> WEAPON_TIER_TAG = Tag.Integer("weaponTier").defaultValue(-1);
     private static final Tag<Integer> ARMOR_TIER_TAG = Tag.Integer("armorTier").defaultValue(-1);
     static final Tag<Boolean> WEAPON_TAG = Tag.Boolean("weapon").defaultValue(false);
@@ -124,6 +127,12 @@ public final class MobArena implements SingleInstanceArena {
 
     public MobArena(Group group) {
         this.group = group;
+
+        // Remove attack indicator
+        for (Player member : group.members()) {
+            member.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
+        }
+
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
             ItemEntity item = new ItemEntity(Items.COIN);
             item.setGlowing(true);
@@ -142,7 +151,7 @@ public final class MobArena implements SingleInstanceArena {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
             } else {
-                // Don't allow other mobs to pick up coins
+                // Don't allow other mobs to pick up items
                 event.setCancelled(true);
             }
         }).addListener(PlayerDeathEvent.class, event -> {
@@ -153,6 +162,9 @@ public final class MobArena implements SingleInstanceArena {
         }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
             // We don't care about entities, only players.
             if (!(event.getEntity() instanceof Player player)) return;
+
+            // Re-add attack indicator
+            player.getAttribute(Attribute.ATTACK_SPEED).removeModifier(ATTACK_SPEED_MODIFIER);
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
         }).addListener(PlayerEntityInteractEvent.class, event -> {
