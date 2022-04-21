@@ -6,8 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.ToDoubleBiFunction;
 
 public final class Features {
-    public static @NotNull Feature combat(boolean combat, ToDoubleBiFunction<Entity, Entity> damageModifier) {
-        return new CombatFeature(combat, damageModifier);
+    public static @NotNull Feature combat(boolean combat, ToDoubleBiFunction<Entity, Entity> damageFunction) {
+        return new CombatFeature(combat, damageFunction);
     }
 
     public static @NotNull Feature combat(boolean combat) {

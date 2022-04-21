@@ -13,6 +13,7 @@ import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
+import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,9 +22,9 @@ import java.util.function.ToDoubleBiFunction;
 
 /**
  * @param playerCombat Allow player combat
- * @param damageModifier Multiplies final damage by return value arg 1 is attacker arg 2 is victim
+ * @param damageFunction Uses the return value as damage to apply (in lambda arg 1 is attacker, arg 2 is victim)
  */
-record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> damageModifier) implements Feature {
+record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> damageFunction) implements Feature {
     public CombatFeature(boolean playerCombat) {
         this(playerCombat, (a, v) -> 1);
     }
@@ -37,6 +38,8 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
     }
 
     private void spawnHologram(Entity target, Entity source, float damage) {
+        damage = MathUtils.round(damage, 2);
+
         Hologram hologram = new Hologram(
                 target.getInstance(),
                 target.getPosition().add(0, target.getEyeHeight(), 0),
@@ -57,7 +60,7 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
             if (!(event.getTarget() instanceof LivingEntity target)) return;
             if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
 
-            float damage = (float) damageModifier.applyAsDouble(projectile, target);
+            float damage = (float) damageFunction.applyAsDouble(projectile, target);
 
             target.damage(DamageType.fromProjectile(projectile.getShooter(), projectile), damage);
 
@@ -73,7 +76,7 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
                 // Can't have dead sources attacking things
                 if (((LivingEntity) event.getEntity()).isDead()) return;
 
-                float damage = (float) damageModifier.applyAsDouble(event.getEntity(), target);
+                float damage = (float) damageFunction.applyAsDouble(event.getEntity(), target);
 
                 target.damage(DamageType.fromEntity(event.getEntity()), damage);
 

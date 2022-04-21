@@ -14,6 +14,9 @@ import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
+import net.minestom.server.attribute.Attribute;
+import net.minestom.server.attribute.AttributeModifier;
+import net.minestom.server.attribute.AttributeOperation;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -49,6 +52,7 @@ public final class MobArena implements SingleInstanceArena {
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
     };
+    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mob-arena", 100f, AttributeOperation.ADDITION);
     private static final Tag<Integer> WEAPON_TIER_TAG = Tag.Integer("weaponTier").defaultValue(-1);
     private static final Tag<Integer> ARMOR_TIER_TAG = Tag.Integer("armorTier").defaultValue(-1);
     static final Tag<Boolean> WEAPON_TAG = Tag.Boolean("weapon").defaultValue(false);
@@ -123,6 +127,12 @@ public final class MobArena implements SingleInstanceArena {
 
     public MobArena(Group group) {
         this.group = group;
+
+        // Remove attack indicator
+        for (Player member : group.members()) {
+            member.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
+        }
+
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
             ItemEntity item = new ItemEntity(Items.COIN);
             item.setGlowing(true);
@@ -136,12 +146,12 @@ public final class MobArena implements SingleInstanceArena {
 
             group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
             Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
-            new NextStageNPC().setInstance(arenaInstance, new Pos(0, 16, 0));
+            new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, 16, 0.5));
         }).addListener(PickupItemEvent.class, event -> {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
             } else {
-                // Don't allow other mobs to pick up coins
+                // Don't allow other mobs to pick up items
                 event.setCancelled(true);
             }
         }).addListener(PlayerDeathEvent.class, event -> {
@@ -152,6 +162,9 @@ public final class MobArena implements SingleInstanceArena {
         }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
             // We don't care about entities, only players.
             if (!(event.getEntity() instanceof Player player)) return;
+
+            // Re-add attack indicator
+            player.getAttribute(Attribute.ATTACK_SPEED).removeModifier(ATTACK_SPEED_MODIFIER);
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
         }).addListener(PlayerEntityInteractEvent.class, event -> {
@@ -175,13 +188,15 @@ public final class MobArena implements SingleInstanceArena {
         continued.add(player);
 
         if (continued.size() >= group().members().size()) {
-            Messenger.countdown(group().audience(), 5).thenRun(this::nextStage);
-            continued.clear();
+            Messenger.countdown(group().audience(), 3)
+                    .thenRun(this::nextStage)
+                    .thenRun(continued::clear);
         }
     }
 
     public void nextStage() {
         stage++;
+        int mobCount = (int) (stage * 1.5);
         for (Entity entity : arenaInstance.getEntities()) {
             if (entity instanceof NextStageNPC) {
                 entity.remove();
@@ -189,7 +204,7 @@ public final class MobArena implements SingleInstanceArena {
             }
         }
 
-        List<ArenaMob> mobs = generateMobs(stage, stage);
+        List<ArenaMob> mobs = generateMobs(stage, mobCount);
         for (ArenaMob mob : mobs) {
             mob.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
@@ -201,7 +216,7 @@ public final class MobArena implements SingleInstanceArena {
 
         arenaInstance.showTitle(Title.title(
                 Component.text("Stage " + stage, NamedTextColor.GREEN),
-                Component.text(stage + " mob" + (stage == 1 ? "" : "s"))
+                Component.text(mobCount + " mob" + (mobCount == 1 ? "" : "s"))
         ));
 
         arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 2f));
@@ -257,25 +272,32 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull Pos spawnPosition(@NotNull Player player) {
-        return new Pos(0, 16, 0);
+        return new Pos(0.5, 16, 0.5);
     }
 
     @Override
     public @NotNull List<Feature> features() {
         return List.of(Features.combat(false, (attacker, victim) -> {
+            float damage = 1;
+            if (attacker instanceof LivingEntity livingEntity) {
+                damage = livingEntity.getAttributeValue(Attribute.ATTACK_DAMAGE);
+            }
+
             if (attacker instanceof Player player) {
                 final boolean isWeapon = player.getItemInMainHand().getTag(WEAPON_TAG);
-                final float multi = 0.5f * (arenaTag(player, WEAPON_TIER_TAG) + 1);
+                final float multi = 0.2f * (arenaTag(player, WEAPON_TIER_TAG) + 1);
 
-                return isWeapon ? 1 + multi : 1;
-            } else if (victim instanceof Player player) {
+                if (isWeapon) damage *= 1 + multi;
+            }
+
+            if (victim instanceof Player player) {
                 final boolean hasArmor = !player.getChestplate().isAir();
                 final float multi = -0.1f * (arenaTag(player, ARMOR_TIER_TAG) + 1);
 
-                return hasArmor ? 1 + multi : 1;
+                if (hasArmor) damage *= 1 + multi;
             }
 
-            return 1;
+            return damage;
         }), Features.drop());
     }
 
