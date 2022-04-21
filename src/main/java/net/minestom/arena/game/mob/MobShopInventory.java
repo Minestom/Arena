@@ -16,30 +16,28 @@ import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 final class MobShopInventory extends Inventory {
-    private static final ItemStack[] WEAPONS = Arrays.stream(new ItemStack.Builder[] {
-            ItemStack.builder(Material.WOODEN_SWORD),
-            ItemStack.builder(Material.STONE_SWORD),
-            ItemStack.builder(Material.IRON_SWORD),
-            ItemStack.builder(Material.GOLDEN_SWORD),
-            ItemStack.builder(Material.DIAMOND_SWORD),
-            ItemStack.builder(Material.NETHERITE_SWORD)
-    }).map(builder -> builder.meta(ItemUtils::hideFlags)
-            .set(MobArena.WEAPON_TAG, true)
-            .build()
-    ).toArray(ItemStack[]::new);
+    private static final List<ItemStack> WEAPONS = Stream.of(
+                    ItemStack.builder(Material.WOODEN_SWORD),
+                    ItemStack.builder(Material.STONE_SWORD),
+                    ItemStack.builder(Material.IRON_SWORD),
+                    ItemStack.builder(Material.GOLDEN_SWORD),
+                    ItemStack.builder(Material.DIAMOND_SWORD),
+                    ItemStack.builder(Material.NETHERITE_SWORD))
+            .map(builder -> builder.meta(ItemUtils::hideFlags)
+                    .set(MobArena.WEAPON_TAG, true).build()).toList();
 
-    private static final ItemStack[] ARMOR = Arrays.stream(new ItemStack.Builder[] {
-            ItemStack.builder(Material.LEATHER_CHESTPLATE),
-            ItemStack.builder(Material.CHAINMAIL_CHESTPLATE),
-            ItemStack.builder(Material.IRON_CHESTPLATE),
-            ItemStack.builder(Material.GOLDEN_CHESTPLATE),
-            ItemStack.builder(Material.DIAMOND_CHESTPLATE),
-            ItemStack.builder(Material.NETHERITE_CHESTPLATE)
-    }).map(builder -> builder.meta(ItemUtils::hideFlags).build()).toArray(ItemStack[]::new);
+    private static final List<ItemStack> ARMOR = Stream.of(
+                    ItemStack.builder(Material.LEATHER_CHESTPLATE),
+                    ItemStack.builder(Material.CHAINMAIL_CHESTPLATE),
+                    ItemStack.builder(Material.IRON_CHESTPLATE),
+                    ItemStack.builder(Material.GOLDEN_CHESTPLATE),
+                    ItemStack.builder(Material.DIAMOND_CHESTPLATE),
+                    ItemStack.builder(Material.NETHERITE_CHESTPLATE))
+            .map(builder -> builder.meta(ItemUtils::hideFlags).build()).toList();
 
     private final Player player;
     private final MobArena arena;
@@ -97,7 +95,7 @@ final class MobShopInventory extends Inventory {
 
             switch (slot) {
                 case 12 -> buyWeapon(currentWeaponTier + 1, currentWeaponTier == -1 ?
-                        null : WEAPONS[currentWeaponTier], nextWeapon);
+                        null : WEAPONS.get(currentWeaponTier), nextWeapon);
                 case 13 -> buyArmor(currentArmorTier + 1, nextArmor);
                 case 14 -> buyHealth(4);
                 case 31 -> {
@@ -110,12 +108,12 @@ final class MobShopInventory extends Inventory {
 
     private ItemStack nextWeapon(int currentWeaponTier) {
         int nextWeapon = currentWeaponTier + 1;
-        return nextWeapon >= WEAPONS.length ? null : WEAPONS[nextWeapon];
+        return nextWeapon >= WEAPONS.size() ? null : WEAPONS.get(nextWeapon);
     }
 
     private ItemStack nextArmor(int currentArmorTier) {
         int nextArmor = currentArmorTier + 1;
-        return nextArmor >= ARMOR.length ? null : ARMOR[nextArmor];
+        return nextArmor >= ARMOR.size() ? null : ARMOR.get(nextArmor);
     }
 
     private void buyWeapon(int tier, @Nullable ItemStack take, @NotNull ItemStack item) {
