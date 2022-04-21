@@ -14,21 +14,16 @@ import java.util.List;
 
 abstract class ArenaMob extends EntityCreature {
     private static final int BLOCK_LENGTH = 6;
-    public static final List<String> CHARACTERS = List.of("",
-            "▏",
-            "▎",
-            "▍",
-            "▌",
-            "▋",
-            "▊",
-            "▉"
+    private static final List<String> CHARACTERS = List.of(
+            "", "▏", "▎", "▍",
+            "▌", "▋", "▊", "▉"
     );
     private static final String FULL_BLOCK_CHAR = "█";
 
     public ArenaMob(@NotNull EntityType entityType, int stage) {
         super(entityType);
-        getAttribute(Attribute.MAX_HEALTH).setBaseValue(getMaxHealth() + stage);
-        getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(getAttributeValue(Attribute.ATTACK_DAMAGE) + stage / 4f);
+        getAttribute(Attribute.MAX_HEALTH).setBaseValue(getMaxHealth() + stage * 2);
+        getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(1 + stage / 4f);
         heal();
         setCustomName(generateHealthBar(getMaxHealth(), getHealth()));
         setCustomNameVisible(true);

@@ -14,6 +14,7 @@ import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
+import net.minestom.server.attribute.Attribute;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -175,13 +176,15 @@ public final class MobArena implements SingleInstanceArena {
         continued.add(player);
 
         if (continued.size() >= group().members().size()) {
-            Messenger.countdown(group().audience(), 5).thenRun(this::nextStage);
-            continued.clear();
+            Messenger.countdown(group().audience(), 3)
+                    .thenRun(this::nextStage)
+                    .thenRun(continued::clear);
         }
     }
 
     public void nextStage() {
         stage++;
+        int mobCount = (int) (stage * 1.5);
         for (Entity entity : arenaInstance.getEntities()) {
             if (entity instanceof NextStageNPC) {
                 entity.remove();
@@ -189,7 +192,7 @@ public final class MobArena implements SingleInstanceArena {
             }
         }
 
-        List<ArenaMob> mobs = generateMobs(stage, stage);
+        List<ArenaMob> mobs = generateMobs(stage, mobCount);
         for (ArenaMob mob : mobs) {
             mob.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
@@ -201,7 +204,7 @@ public final class MobArena implements SingleInstanceArena {
 
         arenaInstance.showTitle(Title.title(
                 Component.text("Stage " + stage, NamedTextColor.GREEN),
-                Component.text(stage + " mob" + (stage == 1 ? "" : "s"))
+                Component.text(mobCount + " mob" + (mobCount == 1 ? "" : "s"))
         ));
 
         arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 2f));
@@ -263,19 +266,26 @@ public final class MobArena implements SingleInstanceArena {
     @Override
     public @NotNull List<Feature> features() {
         return List.of(Features.combat(false, (attacker, victim) -> {
+            float damage = 1;
+            if (attacker instanceof LivingEntity livingEntity) {
+                damage = livingEntity.getAttributeValue(Attribute.ATTACK_DAMAGE);
+            }
+
             if (attacker instanceof Player player) {
                 final boolean isWeapon = player.getItemInMainHand().getTag(WEAPON_TAG);
-                final float multi = 0.5f * (arenaTag(player, WEAPON_TIER_TAG) + 1);
+                final float multi = 0.2f * (arenaTag(player, WEAPON_TIER_TAG) + 1);
 
-                return isWeapon ? 1 + multi : 1;
-            } else if (victim instanceof Player player) {
+                if (isWeapon) damage *= 1 + multi;
+            }
+
+            if (victim instanceof Player player) {
                 final boolean hasArmor = !player.getChestplate().isAir();
                 final float multi = -0.1f * (arenaTag(player, ARMOR_TIER_TAG) + 1);
 
-                return hasArmor ? 1 + multi : 1;
+                if (hasArmor) damage *= 1 + multi;
             }
 
-            return 1;
+            return damage;
         }), Features.drop());
     }
 
