@@ -26,11 +26,18 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.UUID;
 
 public final class Lobby extends InstanceContainer {
     public static final Lobby INSTANCE = new Lobby();
     public static final ServerPacket[] MAP_PACKETS;
+    public static final Leaderboard MOB_LEADERBOARD = new Leaderboard(
+            INSTANCE, new Pos(9.5, 16, 0.5),
+            Leaderboard.loadLeaderboardData("mob"),
+            "Mob Arena Leaderboard", 10,
+            entry -> entry.getKey() + " - stage " + entry.getValue()
+    );
 
     static {
         MinecraftServer.getInstanceManager().registerInstance(INSTANCE);
@@ -46,6 +53,13 @@ public final class Lobby extends InstanceContainer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+
+        MinecraftServer.getSchedulerManager().buildTask(() -> {
+            MOB_LEADERBOARD.update();
+            Leaderboard.saveLeaderboard("mob", MOB_LEADERBOARD);
+        }).repeat(Duration.ofHours(1)).schedule();
+        MinecraftServer.getSchedulerManager().buildShutdownTask(() -> Leaderboard.saveLeaderboard("mob", MOB_LEADERBOARD));
     }
 
     private Lobby() {

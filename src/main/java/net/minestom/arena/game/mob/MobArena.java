@@ -38,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
@@ -165,6 +166,16 @@ public final class MobArena implements SingleInstanceArena {
 
             // Re-add attack indicator
             player.getAttribute(Attribute.ATTACK_SPEED).removeModifier(ATTACK_SPEED_MODIFIER);
+
+            // Save score
+            Lobby.MOB_LEADERBOARD.addEntry(
+                    group.members()
+                            .stream()
+                            .map(Player::getUsername)
+                            .sorted(String::compareTo) // Ensure alphabetical order in group names so group can't show up on leaderboard twice
+                            .collect(Collectors.joining(", ")),
+                    stage
+            );
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
         }).addListener(PlayerEntityInteractEvent.class, event -> {
