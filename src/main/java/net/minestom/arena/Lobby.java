@@ -72,6 +72,7 @@ public final class Lobby extends InstanceContainer {
     void onArenaFinish(Player player) {
         player.refreshCommands();
         player.getInventory().clear();
+        player.teleport(new Pos(0.5, 16, 0.5));
     }
 
     /**

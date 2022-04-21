@@ -146,7 +146,7 @@ public final class MobArena implements SingleInstanceArena {
 
             group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
             Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
-            new NextStageNPC().setInstance(arenaInstance, new Pos(0, 16, 0));
+            new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, 16, 0.5));
         }).addListener(PickupItemEvent.class, event -> {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
@@ -272,7 +272,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull Pos spawnPosition(@NotNull Player player) {
-        return new Pos(0, 16, 0);
+        return new Pos(0.5, 16, 0.5);
     }
 
     @Override
