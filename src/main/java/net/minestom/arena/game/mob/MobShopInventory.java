@@ -16,17 +16,30 @@ import net.minestom.server.sound.SoundEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
 
 final class MobShopInventory extends Inventory {
-    private static final ItemStack[] WEAPONS = {
-            ItemStack.builder(Material.WOODEN_SWORD).meta(ItemUtils::hideFlags).set(MobArena.WEAPON_TAG, true).build(),
-            ItemStack.builder(Material.STONE_SWORD).meta(ItemUtils::hideFlags).set(MobArena.WEAPON_TAG, true).build()
-    };
-    private static final ItemStack[] ARMOR = {
-            ItemStack.builder(Material.LEATHER_CHESTPLATE).meta(ItemUtils::hideFlags).build(),
-            ItemStack.builder(Material.CHAINMAIL_CHESTPLATE).meta(ItemUtils::hideFlags).build()
-    };
+    private static final ItemStack[] WEAPONS = Arrays.stream(new ItemStack.Builder[] {
+            ItemStack.builder(Material.WOODEN_SWORD),
+            ItemStack.builder(Material.STONE_SWORD),
+            ItemStack.builder(Material.IRON_SWORD),
+            ItemStack.builder(Material.GOLDEN_SWORD),
+            ItemStack.builder(Material.DIAMOND_SWORD),
+            ItemStack.builder(Material.NETHERITE_SWORD)
+    }).map(builder -> builder.meta(ItemUtils::hideFlags)
+            .set(MobArena.WEAPON_TAG, true)
+            .build()
+    ).toArray(ItemStack[]::new);
+
+    private static final ItemStack[] ARMOR = Arrays.stream(new ItemStack.Builder[] {
+            ItemStack.builder(Material.LEATHER_CHESTPLATE),
+            ItemStack.builder(Material.CHAINMAIL_CHESTPLATE),
+            ItemStack.builder(Material.IRON_CHESTPLATE),
+            ItemStack.builder(Material.GOLDEN_CHESTPLATE),
+            ItemStack.builder(Material.DIAMOND_CHESTPLATE),
+            ItemStack.builder(Material.NETHERITE_CHESTPLATE)
+    }).map(builder -> builder.meta(ItemUtils::hideFlags).build()).toArray(ItemStack[]::new);
 
     private final Player player;
     private final MobArena arena;
@@ -55,7 +68,7 @@ final class MobShopInventory extends Inventory {
                 .withLore(List.of(
                         Component.text("Upgrade your weapon to ", NamedTextColor.GRAY).append(Component.translatable(nextWeapon.material().registry().translationKey(), NamedTextColor.GRAY)),
                         Component.empty(),
-                        Component.text("Costs 3 coins", NamedTextColor.GOLD)
+                        Component.text("Costs " + (4 + currentWeaponTier) + " coins", NamedTextColor.GOLD)
                 ))));
         if (nextArmor == null) setItemStack(13, ItemUtils.stripItalics(ItemStack.builder(Material.BARRIER)
                 .displayName(Component.text("Maximum Armor Tier", NamedTextColor.BLUE))
@@ -66,7 +79,7 @@ final class MobShopInventory extends Inventory {
                 .withLore(List.of(
                         Component.text("Upgrade your chestplate to ", NamedTextColor.GRAY).append(Component.translatable(nextArmor.material().registry().translationKey(), NamedTextColor.GRAY)),
                         Component.empty(),
-                        Component.text("Costs 3 coins", NamedTextColor.GOLD)
+                        Component.text("Costs " + (4 + currentArmorTier) + " coins", NamedTextColor.GOLD)
                 ))));
         setItemStack(14, ItemUtils.stripItalics(ItemStack.builder(Material.POTION)
                 .displayName(Component.text("Restore Health", NamedTextColor.GREEN))
@@ -83,10 +96,10 @@ final class MobShopInventory extends Inventory {
             if (getItemStack(slot).material() == Material.BARRIER) return;
 
             switch (slot) {
-                case 12 -> buyWeapon(3, currentWeaponTier + 1, currentWeaponTier == -1 ?
+                case 12 -> buyWeapon(currentWeaponTier + 1, currentWeaponTier == -1 ?
                         null : WEAPONS[currentWeaponTier], nextWeapon);
-                case 13 -> buyArmor(3, currentArmorTier + 1, nextArmor);
-                case 14 -> buyHealth(3, 4);
+                case 13 -> buyArmor(currentArmorTier + 1, nextArmor);
+                case 14 -> buyHealth(4);
                 case 31 -> {
                     player.closeInventory();
                     arena.continueToNextStage(player);
@@ -105,23 +118,23 @@ final class MobShopInventory extends Inventory {
         return nextArmor >= ARMOR.length ? null : ARMOR[nextArmor];
     }
 
-    private void buyWeapon(int cost, int tier, @Nullable ItemStack take, @NotNull ItemStack item) {
-        buy(cost, () -> {
+    private void buyWeapon(int tier, @Nullable ItemStack take, @NotNull ItemStack item) {
+        buy(3 + tier, () -> {
             if (take != null) player.getInventory().takeItemStack(take, TransactionOption.ALL);
             player.getInventory().addItemStack(item);
             arena.setWeaponTier(player, tier);
         });
     }
 
-    private void buyArmor(int cost, int tier, @NotNull ItemStack item) {
-        buy(cost, () -> {
+    private void buyArmor(int tier, @NotNull ItemStack item) {
+        buy(3 + tier, () -> {
             player.setChestplate(item);
             arena.setArmorTier(player, tier);
         });
     }
 
-    private void buyHealth(int cost, float amount) {
-        buy(cost, () -> player.setHealth(player.getHealth() + amount));
+    private void buyHealth(float amount) {
+        buy(3, () -> player.setHealth(player.getHealth() + amount));
     }
 
     private void buy(int cost, @NotNull Runnable execute) {
