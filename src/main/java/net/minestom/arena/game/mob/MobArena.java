@@ -188,6 +188,10 @@ public final class MobArena implements SingleInstanceArena {
         continued.add(player);
 
         if (continued.size() >= arenaInstance.getPlayers().size()) {
+            for (Player deadPlayer : deadPlayers()) {
+                deadPlayer.setInstance(arenaInstance, spawnPosition(player));
+            }
+
             Messenger.countdown(group().audience(), 3)
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
@@ -253,6 +257,13 @@ public final class MobArena implements SingleInstanceArena {
 
     public <T> void updateArenaTag(Player player, Tag<T> tag, T value) {
         arenaTagHandler(player).setTag(tag, value);
+    }
+
+    private Set<Player> deadPlayers() {
+        Set<Player> deadPlayers = new HashSet<>(group.members());
+        deadPlayers.removeAll(arenaInstance.getPlayers());
+
+        return deadPlayers;
     }
 
     @Override
