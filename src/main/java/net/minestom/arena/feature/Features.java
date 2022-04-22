@@ -4,18 +4,11 @@ import net.minestom.server.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.ToDoubleBiFunction;
+import java.util.function.ToLongFunction;
 
 public final class Features {
-    public static @NotNull Feature combat(boolean combat, ToDoubleBiFunction<Entity, Entity> damageFunction) {
-        return new CombatFeature(combat, damageFunction);
-    }
-
-    public static @NotNull Feature combat(boolean combat) {
-        return new CombatFeature(combat);
-    }
-
-    public static @NotNull Feature combat() {
-        return new CombatFeature(false);
+    public static @NotNull Feature combat(boolean combat, ToDoubleBiFunction<Entity, Entity> damageFunction, ToLongFunction<Entity> invulnerabilityFunction) {
+        return new CombatFeature(combat, damageFunction, invulnerabilityFunction);
     }
 
     public static @NotNull Feature drop() {

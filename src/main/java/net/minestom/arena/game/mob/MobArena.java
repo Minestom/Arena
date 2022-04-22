@@ -309,6 +309,9 @@ public final class MobArena implements SingleInstanceArena {
             }
 
             return damage;
+        }, victim -> {
+            if (victim instanceof Player) return 500;
+            else return 100;
         }), Features.drop());
     }
 
