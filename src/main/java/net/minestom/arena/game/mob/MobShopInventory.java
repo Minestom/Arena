@@ -39,6 +39,11 @@ final class MobShopInventory extends Inventory {
                     ItemStack.builder(Material.NETHERITE_CHESTPLATE))
             .map(builder -> builder.meta(ItemUtils::hideFlags).build()).toList();
 
+    private static final ItemStack HEADER = ItemUtils.stripItalics(ItemStack.builder(Material.ANVIL)
+            .displayName(Component.text("Shop", NamedTextColor.GOLD))
+            .lore(Component.text("Select upgrades you want to buy", NamedTextColor.GRAY))
+            .build());
+
     private final Player player;
     private final MobArena arena;
 
@@ -52,10 +57,7 @@ final class MobShopInventory extends Inventory {
         final ItemStack nextWeapon = nextWeapon(currentWeaponTier);
         final ItemStack nextArmor = nextArmor(currentArmorTier);
 
-        setItemStack(4, ItemUtils.stripItalics(ItemStack.builder(Material.ANVIL)
-                .displayName(Component.text("Shop", NamedTextColor.GOLD))
-                .lore(Component.text("Select upgrades you want to buy", NamedTextColor.GRAY))
-                .build()));
+        setItemStack(4, HEADER);
 
         if (nextWeapon == null) setItemStack(12, ItemUtils.stripItalics(ItemStack.builder(Material.BARRIER)
                 .displayName(Component.text("Maximum Weapon Tier", NamedTextColor.RED))
