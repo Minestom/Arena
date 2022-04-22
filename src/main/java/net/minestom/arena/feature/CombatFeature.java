@@ -40,18 +40,11 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
     private void spawnHologram(Entity target, Entity source, float damage) {
         damage = MathUtils.round(damage, 2);
 
-        Hologram hologram = new Hologram(
+        new DamageHologram(
                 target.getInstance(),
                 target.getPosition().add(0, target.getEyeHeight(), 0),
                 Component.text(damage, NamedTextColor.RED)
         );
-
-        hologram.getEntity().setVelocity(source.getPosition().direction().withY(-1).normalize().mul(3));
-
-        MinecraftServer.getSchedulerManager()
-                .buildTask(hologram::remove)
-                .delay(Duration.of(30, TimeUnit.SERVER_TICK)).
-                schedule();
     }
 
     @Override
@@ -84,5 +77,25 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
                 spawnHologram(target, event.getEntity(), damage);
             }
         });
+    }
+
+    private static class DamageHologram extends Hologram {
+        public DamageHologram(Instance instance, Pos spawnPosition, Component text) {
+            super(instance, spawnPosition, text, true, true);
+            getEntity().getEntityMeta().setHasNoGravity(false);
+
+            Random random = ThreadLocalRandom.current();
+            getEntity().setVelocity(getPosition()
+                    .direction()
+                    .withX(random.nextDouble(2))
+                    .withY(3)
+                    .withZ(random.nextDouble(2))
+                    .normalize().mul(3));
+
+            MinecraftServer.getSchedulerManager()
+                    .buildTask(this::remove)
+                    .delay(Duration.of(15, TimeUnit.SERVER_TICK)).
+                    schedule();
+        }
     }
 }
