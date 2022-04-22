@@ -1,6 +1,6 @@
 package net.minestom.arena.game;
 
-import net.minestom.arena.CommandUtils;
+import net.minestom.arena.utils.CommandUtils;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.game.mob.MobArena;
