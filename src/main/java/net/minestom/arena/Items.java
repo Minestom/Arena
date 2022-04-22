@@ -11,6 +11,10 @@ public final class Items {
             .displayName(Component.text("Coin", NamedTextColor.GOLD))
             .lore(Component.empty(), Component.text("Use me to buy things!", NamedTextColor.GRAY))
             .build());
+    public static final ItemStack CLOSE = ItemUtils.stripItalics(ItemStack.builder(Material.BARRIER)
+            .displayName(Component.text("Close", NamedTextColor.RED))
+            .lore(Component.text("Click me to close this gui", NamedTextColor.GRAY))
+            .build());
     public static final ItemStack CONTINUE = ItemUtils.stripItalics(ItemStack.builder(Material.FEATHER)
             .displayName(Component.text("Continue", NamedTextColor.RED))
             .lore(Component.text("Click me to continue", NamedTextColor.GRAY))

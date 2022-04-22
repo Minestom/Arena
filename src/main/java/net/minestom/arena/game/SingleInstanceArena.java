@@ -4,7 +4,6 @@ import net.minestom.arena.feature.Feature;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
-import net.minestom.server.event.EventNode;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
@@ -36,14 +35,14 @@ public interface SingleInstanceArena extends Arena {
             instance.scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
         });
 
-        for (var feature : features()) {
-            feature.hook(EventNode.class.cast(instance.eventNode()));
+        for (Feature feature : features()) {
+            feature.hook(instance.eventNode());
         }
 
-        @SuppressWarnings("rawtypes") CompletableFuture[] futures =
+        CompletableFuture<?>[] futures =
                 group().members().stream()
                     .map(player -> player.setInstance(instance, spawnPosition(player)))
-                    .toArray(CompletableFuture[]::new);
+                    .toArray(CompletableFuture<?>[]::new);
 
         return CompletableFuture.allOf(futures).thenRun(this::start);
     }

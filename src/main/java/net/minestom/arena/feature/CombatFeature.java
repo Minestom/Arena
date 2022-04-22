@@ -9,10 +9,10 @@ import net.minestom.server.entity.LivingEntity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.hologram.Hologram;
-import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
+import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +55,7 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
     }
 
     @Override
-    public void hook(@NotNull EventNode<Event> node) {
+    public void hook(@NotNull EventNode<InstanceEvent> node) {
         node.addListener(ProjectileCollideWithEntityEvent.class, event -> {
             if (!(event.getTarget() instanceof LivingEntity target)) return;
             if (!(event.getEntity() instanceof EntityProjectile projectile)) return;

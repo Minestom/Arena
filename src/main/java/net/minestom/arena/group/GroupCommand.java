@@ -5,7 +5,7 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minestom.arena.CommandUtils;
+import net.minestom.arena.utils.CommandUtils;
 import net.minestom.arena.Messenger;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.entity.Player;
@@ -47,9 +47,8 @@ public final class GroupCommand extends Command {
             }
         });
 
-        addSyntax((sender, context) -> {
-            GroupManager.removePlayer((Player) sender);
-        }, Literal("leave"));
+        addSyntax((sender, context) ->
+                GroupManager.removePlayer((Player) sender), Literal("leave"));
 
         addSyntax((sender, context) -> {
             final EntityFinder finder = context.get("player");

@@ -1,5 +1,6 @@
 package net.minestom.arena;
 
+import net.minestom.arena.utils.CommandUtils;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.entity.Player;
 
