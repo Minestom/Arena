@@ -124,7 +124,7 @@ public final class GroupCommand extends Command {
                             }
                         });
 
-                        Messenger.info(toKick, Component.text("You have been kicked from")
+                        Messenger.info(toKick, Component.text("You have been kicked from ")
                                 .append(player.getName())
                                 .append(Component.text("'s group")));
                     }

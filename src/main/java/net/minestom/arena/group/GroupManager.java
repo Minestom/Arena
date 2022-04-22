@@ -1,6 +1,6 @@
 package net.minestom.arena.group;
 
-import net.kyori.adventure.text.Component;
+import net.minestom.arena.Messenger;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,8 +26,7 @@ final class GroupManager {
     public static void transferOwnership(@NotNull GroupImpl group, @NotNull Player newLeader) {
         groups.remove(group.leader());
         group.setLeader(newLeader);
-        group.members().forEach(member ->
-                member.sendMessage(Component.text("Group ownership has been transferred to ").append(newLeader.getName())));
+        Messenger.info(group.audience(), "Group ownership has been transferred to " + newLeader.getUsername());
         groups.put(newLeader, group);
     }
 
@@ -43,13 +42,13 @@ final class GroupManager {
 
             if (newLeader.isPresent()) {
                 transferOwnership(groups.get(player), newLeader.get());
-                player.sendMessage("You have left your group and ownership has been transferred");
+                Messenger.info(player, "You have left your group and ownership has been transferred");
             } else {
-                player.sendMessage("Your group has been disbanded");
+                Messenger.info(player, "Your group has been disbanded");
                 groups.remove(player);
             }
         } else {
-            player.sendMessage("You have left your group");
+            Messenger.info(player, "You have left your group");
         }
     }
 
