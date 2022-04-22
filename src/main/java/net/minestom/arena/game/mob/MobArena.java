@@ -32,12 +32,10 @@ import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
-import net.minestom.server.tag.TagHandler;
 import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
@@ -123,7 +121,6 @@ public final class MobArena implements SingleInstanceArena {
     private final BossBar bossBar;
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
-    private final Map<Player, TagHandler> playerTagHandlerMap = new ConcurrentHashMap<>();
 
     private int stage = 0;
 
@@ -195,6 +192,10 @@ public final class MobArena implements SingleInstanceArena {
 
             // Hide boss bar
             player.hideBossBar(bossBar);
+
+            // Clean up tags
+            player.removeTag(WEAPON_TIER_TAG);
+            player.removeTag(ARMOR_TIER_TAG);
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
         }).addListener(PlayerEntityInteractEvent.class, event -> {
@@ -282,31 +283,19 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public int currentWeaponTier(Player player) {
-        return arenaTag(player, WEAPON_TIER_TAG);
+        return player.getTag(WEAPON_TIER_TAG);
     }
 
     public int currentArmorTier(Player player) {
-        return arenaTag(player, ARMOR_TIER_TAG);
+        return player.getTag(ARMOR_TIER_TAG);
     }
 
     public void setWeaponTier(Player player, int tier) {
-        updateArenaTag(player, WEAPON_TIER_TAG, tier);
+        player.setTag(WEAPON_TIER_TAG, tier);
     }
 
     public void setArmorTier(Player player, int tier) {
-        updateArenaTag(player, ARMOR_TIER_TAG, tier);
-    }
-
-    public TagHandler arenaTagHandler(Player player) {
-        return playerTagHandlerMap.computeIfAbsent(player, p -> TagHandler.newHandler());
-    }
-
-    public <T> T arenaTag(Player player, Tag<T> tag) {
-        return arenaTagHandler(player).getTag(tag);
-    }
-
-    public <T> void updateArenaTag(Player player, Tag<T> tag, T value) {
-        arenaTagHandler(player).setTag(tag, value);
+        player.setTag(ARMOR_TIER_TAG, tier);
     }
 
     private Set<Player> deadPlayers() {
@@ -346,14 +335,14 @@ public final class MobArena implements SingleInstanceArena {
 
             if (attacker instanceof Player player) {
                 final boolean isWeapon = player.getItemInMainHand().getTag(WEAPON_TAG);
-                final float multi = 0.2f * (arenaTag(player, WEAPON_TIER_TAG) + 1);
+                final float multi = 0.2f * (currentWeaponTier(player) + 1);
 
                 if (isWeapon) damage *= 1 + multi;
             }
 
             if (victim instanceof Player player) {
                 final boolean hasArmor = !player.getChestplate().isAir();
-                final float multi = -0.1f * (arenaTag(player, ARMOR_TIER_TAG) + 1);
+                final float multi = -0.1f * (currentArmorTier(player) + 1);
 
                 if (hasArmor) damage *= 1 + multi;
             }

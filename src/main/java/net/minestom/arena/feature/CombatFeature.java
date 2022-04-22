@@ -13,6 +13,7 @@ import net.minestom.server.entity.hologram.Hologram;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
+import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.tag.Tag;
@@ -93,6 +94,10 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
 
             takeKnockback(target, event.getEntity());
             spawnHologram(target, event.getEntity(), damage);
+        }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
+            if (!(event.getEntity() instanceof Player player)) return;
+
+            player.removeTag(INVULNERABLE_UNTIL_TAG);
         });
     }
 
