@@ -144,6 +144,11 @@ public final class MobArena implements SingleInstanceArena {
                 }
             }
 
+            // Revive dead players
+            for (Player deadPlayer : deadPlayers()) {
+                deadPlayer.setInstance(arenaInstance, spawnPosition(deadPlayer));
+            }
+
             group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
             Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
             new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, 16, 0.5));
@@ -188,10 +193,6 @@ public final class MobArena implements SingleInstanceArena {
         continued.add(player);
 
         if (continued.size() >= arenaInstance.getPlayers().size()) {
-            for (Player deadPlayer : deadPlayers()) {
-                deadPlayer.setInstance(arenaInstance, spawnPosition(player));
-            }
-
             Messenger.countdown(group().audience(), 3)
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
