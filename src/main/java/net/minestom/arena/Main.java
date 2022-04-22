@@ -62,6 +62,7 @@ public final class Main {
                 if (!event.isFirstSpawn()) return;
                 final Player player = event.getPlayer();
                 Messenger.info(player, "Welcome to the Minestom Demo Server.");
+                Messenger.info(player, "Use /arena to play!");
                 player.setGameMode(GameMode.ADVENTURE);
                 player.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1f, 1f));
                 player.setEnableRespawnScreen(false);
