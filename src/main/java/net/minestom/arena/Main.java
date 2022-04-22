@@ -35,6 +35,7 @@ public final class Main {
         // Commands
         {
             CommandManager manager = MinecraftServer.getCommandManager();
+            manager.setUnknownCommandCallback((sender, c) -> Messenger.warn(sender, "Command not found."));
             manager.register(new GroupCommand());
             manager.register(new ArenaCommand());
             manager.register(new StopCommand());
