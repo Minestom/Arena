@@ -18,7 +18,7 @@ final class SkeletonMob extends ArenaMob {
         setItemInMainHand(ItemStack.of(Material.BOW));
 
         RangedAttackGoal rangedAttackGoal = new RangedAttackGoal(
-                this, Duration.of(20, TimeUnit.SERVER_TICK),
+                this, Duration.of(40, TimeUnit.SERVER_TICK),
                 16, 8, true, 1, 0.1);
 
         rangedAttackGoal.setProjectileGenerator((entity) -> {
