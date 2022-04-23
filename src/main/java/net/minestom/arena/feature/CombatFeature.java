@@ -2,7 +2,6 @@ package net.minestom.arena.feature;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityProjectile;
@@ -13,7 +12,6 @@ import net.minestom.server.entity.hologram.Hologram;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
-import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.tag.Tag;
@@ -94,10 +92,6 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
 
             takeKnockback(target, event.getEntity());
             spawnHologram(target, event.getEntity(), damage);
-        }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
-            if (!(event.getEntity() instanceof Player player)) return;
-
-            player.removeTag(INVULNERABLE_UNTIL_TAG);
         });
     }
 
@@ -114,10 +108,7 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
                     .withZ(random.nextDouble(2))
                     .normalize().mul(3));
 
-            MinecraftServer.getSchedulerManager()
-                    .buildTask(this::remove)
-                    .delay(Duration.of(15, TimeUnit.SERVER_TICK)).
-                    schedule();
+            getEntity().scheduleRemove(Duration.of(15, TimeUnit.SERVER_TICK));
         }
     }
 }
