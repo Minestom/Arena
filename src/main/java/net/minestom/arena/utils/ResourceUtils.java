@@ -11,8 +11,15 @@ import java.util.stream.Stream;
 
 public final class ResourceUtils {
     public static void extractResource(String source) throws URISyntaxException, IOException {
-        URI uri = ResourceUtils.class.getResource("/" + source).toURI();
-        try (FileSystem ignored = FileSystems.newFileSystem(uri, Map.of("create", "true"))) {
+        final URI uri = ResourceUtils.class.getResource("/" + source).toURI();
+        FileSystem fileSystem = null;
+
+        // Only create a new filesystem if it's a jar file
+        // (People can run this from their IDE too)
+        if (uri.toString().startsWith("jar:"))
+            fileSystem = FileSystems.newFileSystem(uri, Map.of("create", "true"));
+
+        try {
             final Path jarPath = Paths.get(uri);
             final Path target = Path.of(source);
             if (Files.exists(target)) {
@@ -42,6 +49,9 @@ public final class ResourceUtils {
                     return FileVisitResult.CONTINUE;
                 }
             });
+        } finally {
+            if (fileSystem != null)
+                fileSystem.close();
         }
     }
 }
