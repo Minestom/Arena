@@ -159,6 +159,10 @@ public final class MobArena implements SingleInstanceArena {
             // Revive dead players
             for (Player deadPlayer : deadPlayers()) {
                 deadPlayer.setInstance(arenaInstance, spawnPosition(deadPlayer));
+
+                deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
+
+                deadPlayer.showBossBar(bossBar);
             }
 
             final int playerCount = arenaInstance.getPlayers().size();
@@ -227,12 +231,6 @@ public final class MobArena implements SingleInstanceArena {
             bossBar.name(Component.text("Wave starting..."));
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
-
-            for (Player deadPlayer : deadPlayers()) {
-                deadPlayer.setInstance(arenaInstance, spawnPosition(player));
-                deadPlayer.showBossBar(bossBar);
-                deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
-            }
 
             Messenger.countdown(group().audience(), 3)
                     .thenRun(this::nextStage)
