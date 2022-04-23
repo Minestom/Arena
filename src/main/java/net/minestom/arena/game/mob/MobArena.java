@@ -232,12 +232,6 @@ public final class MobArena implements SingleInstanceArena {
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
 
-            for (Player deadPlayer : deadPlayers()) {
-                deadPlayer.setInstance(arenaInstance, spawnPosition(player));
-                deadPlayer.showBossBar(bossBar);
-                deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
-            }
-
             Messenger.countdown(group().audience(), 3)
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
