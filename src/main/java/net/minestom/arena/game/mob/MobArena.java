@@ -56,7 +56,8 @@ public final class MobArena implements SingleInstanceArena {
     private static final Tag<Integer> ARMOR_TIER_TAG = Tag.Integer("armorTier").defaultValue(-1);
     static final Tag<Boolean> WEAPON_TAG = Tag.Boolean("weapon").defaultValue(false);
 
-    private static final int spawnRadius = 10;
+    private static final int SPAWN_RADIUS = 10;
+    private static final int HEIGHT = 16;
 
     public static final class MobArenaInstance extends InstanceContainer {
         private final JNoise noise = JNoise.newBuilder()
@@ -71,27 +72,24 @@ public final class MobArena implements SingleInstanceArena {
             super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
             getWorldBorder().setDiameter(100);
             setGenerator(unit -> {
-                unit.modifier().fill(new Vec(-10, 16, -10), new Vec(10, 16, 10), Block.SMOOTH_QUARTZ);
-
                 final Point start = unit.absoluteStart();
                 for (int x = 0; x < unit.size().x(); x++) {
                     for (int z = 0; z < unit.size().z(); z++) {
                         Point bottom = start.add(x, 0, z);
-
                         synchronized (noise) { // Synchronization is necessary for JNoise
                             // Ensure flat terrain in the fighting area
                             final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
                             double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
-                            height = (height > 0 ? height * 4 : height) * 8 + 16;
+                            height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
                             unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
                         }
                     }
                 }
             });
 
-            int x = spawnRadius;
+            int x = SPAWN_RADIUS;
             int y = 0;
-            int xChange = 1 - (spawnRadius << 1);
+            int xChange = 1 - (SPAWN_RADIUS << 1);
             int yChange = 0;
             int radiusError = 0;
 
@@ -100,7 +98,7 @@ public final class MobArena implements SingleInstanceArena {
                     setBlock(i, 15, y, Block.RED_SAND);
                     setBlock(i, 15, -y, Block.RED_SAND);
                 }
-                for (int i = -y; i <=  y; i++) {
+                for (int i = -y; i <= y; i++) {
                     setBlock(i, 15, x, Block.RED_SAND);
                     setBlock(i, 15, -x, Block.RED_SAND);
                 }
@@ -174,7 +172,7 @@ public final class MobArena implements SingleInstanceArena {
 
             group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
             Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
-            new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, 16, 0.5));
+            new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
         }).addListener(PickupItemEvent.class, event -> {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
@@ -259,9 +257,9 @@ public final class MobArena implements SingleInstanceArena {
         for (ArenaMob mob : mobs) {
             mob.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
-                    .mul(spawnRadius, 0, spawnRadius)
+                    .mul(SPAWN_RADIUS, 0, SPAWN_RADIUS)
                     .asPosition()
-                    .add(0, 16, 0)
+                    .add(0, HEIGHT, 0)
             );
         }
 
@@ -324,7 +322,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull Pos spawnPosition(@NotNull Player player) {
-        return new Pos(0.5, 16, 0.5);
+        return new Pos(0.5, HEIGHT, 0.5);
     }
 
     @Override
