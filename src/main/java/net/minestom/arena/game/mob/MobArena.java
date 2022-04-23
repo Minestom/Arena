@@ -159,6 +159,10 @@ public final class MobArena implements SingleInstanceArena {
             // Revive dead players
             for (Player deadPlayer : deadPlayers()) {
                 deadPlayer.setInstance(arenaInstance, spawnPosition(deadPlayer));
+
+                deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
+
+                deadPlayer.showBossBar(bossBar);
             }
 
             final int playerCount = arenaInstance.getPlayers().size();
