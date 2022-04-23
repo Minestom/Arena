@@ -179,10 +179,16 @@ public final class MobArena implements SingleInstanceArena {
                 event.setCancelled(true);
             }
         }).addListener(PlayerDeathEvent.class, event -> {
-            event.getPlayer().setInstance(Lobby.INSTANCE);
+            final Player player = event.getPlayer();
+
+            player.setInstance(Lobby.INSTANCE);
+
+            // Reset tags (player has to buy everything again if they die)
+            player.removeTag(WEAPON_TIER_TAG);
+            player.removeTag(ARMOR_TIER_TAG);
 
             event.setChatMessage(null);
-            Messenger.info(event.getPlayer(), "You died. Your last stage was " + stage);
+            Messenger.info(player, "You died. Your last stage was " + stage);
         }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
             // We don't care about entities, only players.
             if (!(event.getEntity() instanceof Player player)) return;
@@ -192,10 +198,6 @@ public final class MobArena implements SingleInstanceArena {
 
             // Hide boss bar
             player.hideBossBar(bossBar);
-
-            // Clean up tags
-            player.removeTag(WEAPON_TIER_TAG);
-            player.removeTag(ARMOR_TIER_TAG);
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
         }).addListener(PlayerEntityInteractEvent.class, event -> {
@@ -228,6 +230,8 @@ public final class MobArena implements SingleInstanceArena {
 
             for (Player deadPlayer : deadPlayers()) {
                 deadPlayer.setInstance(arenaInstance, spawnPosition(player));
+                deadPlayer.showBossBar(bossBar);
+                deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
             }
 
             Messenger.countdown(group().audience(), 3)
