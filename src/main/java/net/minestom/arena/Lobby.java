@@ -19,6 +19,7 @@ import net.minestom.server.item.Material;
 import net.minestom.server.item.metadata.MapMeta;
 import net.minestom.server.map.framebuffers.LargeGraphics2DFramebuffer;
 import net.minestom.server.network.packet.server.ServerPacket;
+import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 
 import javax.imageio.ImageIO;
 import java.awt.geom.AffineTransform;
@@ -61,8 +62,7 @@ public final class Lobby extends InstanceContainer {
                 if (instance != null) player.scheduler().scheduleNextTick(() -> onArenaFinish(player));
                 else onFirstSpawn(player);
             }
-        });
-        eventNode.addListener(ItemDropEvent.class, event -> event.setCancelled(true));
+        }).addListener(ItemDropEvent.class, event -> event.setCancelled(true));
     }
 
     void onFirstSpawn(Player player) {
@@ -73,6 +73,7 @@ public final class Lobby extends InstanceContainer {
         player.refreshCommands();
         player.getInventory().clear();
         player.teleport(new Pos(0.5, 16, 0.5));
+        player.tagHandler().updateContent(NBTCompound.EMPTY);
     }
 
     /**
