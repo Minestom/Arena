@@ -70,7 +70,7 @@ public final class GameManager {
 
             // Kick players and shut down server
             MinecraftServer.getConnectionManager().getOnlinePlayers().forEach(player -> player.kick(STOP_KICK_MESSAGE));
-            MinecraftServer.getSchedulerManager().scheduleNextTick(MinecraftServer::stopCleanly);
+            FutureUtils.completeAfter(Duration.ofMillis(150)).thenRun(MinecraftServer::stopCleanly);
         });
     }
 }
