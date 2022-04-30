@@ -4,19 +4,14 @@ import java.util.concurrent.CompletableFuture;
 
 public abstract class Game {
 
-    private final CompletableFuture<Void> gameFuture;
-    private State state;
+    private final CompletableFuture<Void> gameFuture = new CompletableFuture<>();
+    private State state = State.STARTING;
 
     enum State {
         STARTING,
         STARTED,
         ENDING,
         ENDED
-    }
-
-    public Game() {
-        this.gameFuture = new CompletableFuture<>();
-        this.state = State.STARTING;
     }
 
     /**
