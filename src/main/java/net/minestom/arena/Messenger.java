@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class Messenger {
     public static final TextColor PINK_COLOR = TextColor.color(209, 72, 212);
     public static final TextColor ORANGE_COLOR = TextColor.color(232, 175, 53);
+    public static final TextColor RED_COLOR = TextColor.color(255, 68, 68);
 
     public static void info(Audience audience, String message) {
         info(audience, Component.text(message));
@@ -32,6 +33,15 @@ public final class Messenger {
 
     public static void warn(Audience audience, Component message) {
         audience.sendMessage(Component.text("* ", ORANGE_COLOR)
+                .append(message.color(NamedTextColor.GRAY)));
+    }
+
+    public static void error(Audience audience, String message) {
+        error(audience, Component.text(message));
+    }
+
+    public static void error(Audience audience, Component message) {
+        audience.sendMessage(Component.text("× ", RED_COLOR)
                 .append(message.color(NamedTextColor.GRAY)));
     }
 

@@ -49,8 +49,17 @@ public final class ArenaCommand extends Command {
             Messenger.warn(player, "You are not the leader of your group!");
             return;
         }
-        Arena arena = ARENAS.get(type).apply(group);
-        arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
+
+        if (GameManager.canStartGame(group.audience())) {
+            Arena arena = ARENAS.get(type).apply(group);
+            if (arena instanceof Game game) {
+                GameManager.registerGame(game);
+            } else {
+                LOGGER.warn("Arena with type '"+type+"' doesn't extend Game, graceful shutdown of this arena isn't possible!");
+            }
+
+            arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
+        }
     }
 
     private static class ArenaInventory extends Inventory {

@@ -12,6 +12,7 @@ import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
+import net.minestom.arena.game.Game;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
@@ -39,7 +40,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
-public final class MobArena implements SingleInstanceArena {
+public final class MobArena extends Game implements SingleInstanceArena {
     private static final MobGenerator[] MOB_GENERATORS = {
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
@@ -307,6 +308,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public void start() {
+        super.start();
         nextStage();
     }
 

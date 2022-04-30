@@ -33,6 +33,11 @@ public interface SingleInstanceArena extends Arena {
             if (instance.getPlayers().size() > 1) return;
             // All players have left. We can remove this instance once the player is removed.
             instance.scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
+
+            // TODO: 2022. 04. 30. Properly handle game ending, fix memory leak
+            if (this instanceof Game game) {
+                game.end();
+            }
         });
 
         for (Feature feature : features()) {
