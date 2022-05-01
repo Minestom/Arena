@@ -28,9 +28,9 @@ abstract class ArenaMob extends EntityCreature {
         setCustomName(generateHealthBar(getMaxHealth(), getHealth()));
         setCustomNameVisible(true);
         eventNode().addListener(EntityDamageEvent.class, event ->
-                setCustomName(generateHealthBar(getMaxHealth(), getHealth())))
-            .addListener(EntityDeathEvent.class, event ->
-                setCustomName(generateHealthBar(getMaxHealth(), 0)));
+                        setCustomName(generateHealthBar(getMaxHealth(), getHealth())))
+                .addListener(EntityDeathEvent.class, event ->
+                        setCustomName(generateHealthBar(getMaxHealth(), 0)));
     }
 
     @Contract(pure = true)
@@ -44,7 +44,7 @@ abstract class ArenaMob extends EntityCreature {
                         NamedTextColor.RED
                 )).append(Component.text(CHARACTERS.get((int) Math.round(
                         (charHealth - Math.floor(charHealth)) // number from 0-1
-                        * (CHARACTERS.size() - 1) // indexes start at 0
+                                * (CHARACTERS.size() - 1) // indexes start at 0
                 )), NamedTextColor.YELLOW))
                 .append(Component.text("]", NamedTextColor.DARK_GRAY))
                 .build();
