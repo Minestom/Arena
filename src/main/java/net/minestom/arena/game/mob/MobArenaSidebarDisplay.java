@@ -2,6 +2,7 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.Messenger;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.group.displays.GroupSidebarDisplay;
 import net.minestom.server.entity.Player;
@@ -19,7 +20,11 @@ final class MobArenaSidebarDisplay extends GroupSidebarDisplay {
 
     @Override
     protected Sidebar.ScoreboardLine createPlayerLine(Player player, Group group) {
-        return new Sidebar.ScoreboardLine(player.getUuid().toString(), player.getName(), 2);
+        return new Sidebar.ScoreboardLine(
+                player.getUuid().toString(),
+                Component.text(arena.playerClass(player).icon() + " ").color(NamedTextColor.WHITE).append(player.getName().color(Messenger.ORANGE_COLOR)),
+                3
+        );
     }
 
     @Override

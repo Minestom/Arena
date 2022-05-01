@@ -7,7 +7,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
-import net.minestom.arena.Items;
+import net.minestom.arena.Icons;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
@@ -21,7 +21,10 @@ import net.minestom.server.attribute.AttributeOperation;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
-import net.minestom.server.entity.*;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EntityCreature;
+import net.minestom.server.entity.LivingEntity;
+import net.minestom.server.entity.Player;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
@@ -30,16 +33,25 @@ import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
+    private static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
+    private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
+    private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
+    private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
+    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mob-arena", 100f, AttributeOperation.ADDITION);
+
     private static final MobGenerator[] MOB_GENERATORS = {
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
@@ -51,10 +63,43 @@ public final class MobArena implements SingleInstanceArena {
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
     };
-    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mob-arena", 100f, AttributeOperation.ADDITION);
-    private static final Tag<Integer> WEAPON_TIER_TAG = Tag.Integer("weaponTier").defaultValue(-1);
-    private static final Tag<Integer> ARMOR_TIER_TAG = Tag.Integer("armorTier").defaultValue(-1);
-    static final Tag<Boolean> WEAPON_TAG = Tag.Boolean("weapon").defaultValue(false);
+    public static final ArenaClass[] CLASSES = {
+            new ArenaClass("Knight", Icons.SWORD, ItemStack.AIR, new Kit(
+                    new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
+                    null,
+                    ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                    null,
+                    null
+            ), 0),
+            new ArenaClass("Archer", Icons.BOW, ItemStack.AIR, new Kit(
+                    new ItemStack[] { ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW) },
+                    null,
+                    ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
+                    null,
+                    null
+            ), 10),
+            new ArenaClass("Tank", Icons.SHIELD, ItemStack.AIR, new Kit(
+                    new ItemStack[] { ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1) },
+                    ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
+                    ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                    ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
+                    ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
+            ), 20),
+            new ArenaClass("Healer", Icons.POTION, ItemStack.AIR, new Kit(
+                    new ItemStack[] { ItemStack.of(Material.BLAZE_POWDER).withTag(WAND_TAG, true) },
+                    null,
+                    null,
+                    ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
+                    null
+            ), 30),
+            new ArenaClass("Berserker", Icons.AXE, ItemStack.AIR, new Kit(
+                    new ItemStack[] { ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4) },
+                    null,
+                    null,
+                    null,
+                    null
+            ), 40)
+    };
 
     private static final int SPAWN_RADIUS = 10;
     private static final int HEIGHT = 16;
@@ -119,6 +164,7 @@ public final class MobArena implements SingleInstanceArena {
     private final BossBar bossBar;
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
+    private final Map<Player, ArenaClass> playerClasses = new ConcurrentHashMap<>();
 
     private int stage = 0;
     private int coins = 0;
@@ -186,10 +232,6 @@ public final class MobArena implements SingleInstanceArena {
 
             player.setInstance(Lobby.INSTANCE);
 
-            // Reset tags (player has to buy everything again if they die)
-            player.removeTag(WEAPON_TIER_TAG);
-            player.removeTag(ARMOR_TIER_TAG);
-
             event.setChatMessage(null);
             Messenger.info(player, "You died. Your last stage was " + stage);
         }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
@@ -209,7 +251,7 @@ public final class MobArena implements SingleInstanceArena {
 
             if (!(target instanceof NextStageNPC)) return;
             if (!hasContinued(player)) {
-                player.openInventory(new MobShopInventory(player, this));
+                player.openInventory(new NextStageInventory(player, this));
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), target);
             } else {
                 Messenger.warn(player, "You already continued");
@@ -228,6 +270,8 @@ public final class MobArena implements SingleInstanceArena {
         final int untilStart = haveToContinue - continuedCount;
 
         if (untilStart <= 0) {
+            Messenger.info(group.audience(), player.getUsername() + " has continued. Starting the next wave.");
+
             bossBar.name(Component.text("Wave starting..."));
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
@@ -236,7 +280,7 @@ public final class MobArena implements SingleInstanceArena {
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
         } else {
-            Messenger.info(group.audience(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave prematurely.");
+            Messenger.info(group.audience(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
 
             final String playerOrPlayers = "player" + (untilStart == 1 ? "" : "s");
             bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
@@ -253,6 +297,10 @@ public final class MobArena implements SingleInstanceArena {
                 entity.remove();
                 break;
             }
+        }
+
+        for (Player member : group.members()) {
+            playerClass(member).apply(member);
         }
 
         List<ArenaMob> mobs = generateMobs(stage, mobCount);
@@ -286,6 +334,14 @@ public final class MobArena implements SingleInstanceArena {
 
     public int coins() {
         return coins;
+    }
+
+    public ArenaClass playerClass(Player player) {
+        return playerClasses.getOrDefault(player, CLASSES[0]); // Knight class is default
+    }
+
+    public void setPlayerClass(Player player, ArenaClass arenaClass) {
+        playerClasses.put(player, arenaClass);
     }
 
     private Set<Player> deadPlayers() {
@@ -324,17 +380,22 @@ public final class MobArena implements SingleInstanceArena {
             }
 
             if (attacker instanceof Player player) {
-                final boolean isWeapon = player.getItemInMainHand().getTag(WEAPON_TAG);
-                final float multi = 0.2f * (currentWeaponTier(player) + 1);
+                final int tier = player.getItemInMainHand().getTag(MELEE_TAG);
+                final float multi = 0.1f * tier; // 0 (no weapon)
 
-                if (isWeapon) damage *= 1 + multi;
+                damage *= 1 + multi;
             }
 
             if (victim instanceof Player player) {
-                final boolean hasArmor = !player.getChestplate().isAir();
-                final float multi = -0.1f * (currentArmorTier(player) + 1);
+                int armorPoints = player.getHelmet().getTag(ARMOR_TAG) +
+                        player.getChestplate().getTag(ARMOR_TAG) +
+                        player.getLeggings().getTag(ARMOR_TAG) +
+                        player.getBoots().getTag(ARMOR_TAG);
 
-                if (hasArmor) damage *= 1 + multi;
+                // Armor point = 4% damage reduction
+                final float multi = -0.04f * armorPoints;
+
+                damage *= 1 + multi;
             }
 
             return damage;
