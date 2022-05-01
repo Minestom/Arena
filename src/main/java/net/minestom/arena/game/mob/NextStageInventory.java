@@ -2,13 +2,14 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.minestom.arena.Items;
+import net.minestom.arena.Messenger;
 import net.minestom.arena.utils.ItemUtils;
 import net.minestom.server.entity.Player;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
-import net.minestom.server.item.ItemStack;
-import net.minestom.server.item.Material;
+import net.minestom.server.item.*;
 
 final class NextStageInventory extends Inventory {
     private static final ItemStack HEADER = ItemUtils.stripItalics(ItemStack.builder(Material.ANVIL)
@@ -52,14 +53,65 @@ final class NextStageInventory extends Inventory {
 
             setItemStack(4, HEADER);
 
+            draw();
+
             setItemStack(31, Items.BACK);
 
             addInventoryCondition((p, s, c, result) -> result.setCancel(true));
             addInventoryCondition((p, slot, c, r) -> {
-                switch (slot) {
-                    case 31 -> player.openInventory(parent);
+                if (slot == 31) player.openInventory(parent);
+                else {
+                    final int length = MobArena.CLASSES.length;
+                    for (int i = 0; i < length; i++) {
+                        ArenaClass arenaClass = MobArena.CLASSES[i];
+
+                        if (slot == 13 - length / 2 + i) {
+                            switchClass(arenaClass);
+                            return;
+                        }
+                    }
                 }
             });
+        }
+
+        private void draw() {
+            final int length = MobArena.CLASSES.length;
+            for (int i = 0; i < length; i++) {
+                ArenaClass arenaClass = MobArena.CLASSES[i];
+
+                setItemStack(13 - length / 2 + i, ItemUtils.stripItalics(ItemStack.builder(arenaClass.material())
+                        .displayName(Component.text(
+                                arenaClass.icon() + " " + arenaClass.name(),
+                                NamedTextColor.nearestTo(TextColor.color(Integer.MAX_VALUE / length / 2 * i))
+                        ))
+                        .lore(
+                                Component.text(arenaClass.description(), NamedTextColor.GRAY),
+                                Component.empty(),
+                                Component.text("Switch to this class for " + arenaClass.cost() + " coins", NamedTextColor.GOLD)
+                        )
+                        .meta(builder -> arena.playerClass(player) == arenaClass
+                                ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
+                                : builder
+                        )
+                        .build()
+                ));
+            }
+        }
+
+        private void switchClass(ArenaClass arenaClass) {
+            if (arena.playerClass(player) == arenaClass) {
+                Messenger.warn(player, "You can't switch to your selected class");
+                return;
+            }
+
+            if (arena.coins() >= arenaClass.cost()) {
+                Messenger.info(player, "You switched your class. It will apply when the stage starts");
+                arena.setCoins(arena.coins() - arenaClass.cost());
+                arena.setPlayerClass(player, arenaClass);
+                draw();
+            } else {
+                Messenger.warn(player, "You can't afford that");
+            }
         }
     }
 

@@ -64,41 +64,41 @@ public final class MobArena implements SingleInstanceArena {
                     .toList()
     };
     public static final ArenaClass[] CLASSES = {
-            new ArenaClass("Knight", Icons.SWORD, ItemStack.AIR, new Kit(
+            new ArenaClass("Knight", "Starter class with mediocre attack and defense.", Icons.SWORD, Material.STONE_SWORD, new Kit(
                     new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
                     null,
                     ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
                     null,
                     null
-            ), 0),
-            new ArenaClass("Archer", Icons.BOW, ItemStack.AIR, new Kit(
+            ), 5),
+            new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.", Icons.BOW, Material.BOW, new Kit(
                     new ItemStack[] { ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW) },
                     null,
                     ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
                     null,
                     null
             ), 10),
-            new ArenaClass("Tank", Icons.SHIELD, ItemStack.AIR, new Kit(
+            new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.", Icons.SHIELD, Material.IRON_CHESTPLATE, new Kit(
                     new ItemStack[] { ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1) },
                     ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
                     ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
                     ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
                     ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
-            ), 20),
-            new ArenaClass("Healer", Icons.POTION, ItemStack.AIR, new Kit(
+            ), 15),
+            new ArenaClass("Healer", "Support your teammates, but you better stay at a safe distance.", Icons.POTION, Material.POTION, new Kit(
                     new ItemStack[] { ItemStack.of(Material.BLAZE_POWDER).withTag(WAND_TAG, true) },
                     null,
                     null,
                     ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
                     null
-            ), 30),
-            new ArenaClass("Berserker", Icons.AXE, ItemStack.AIR, new Kit(
+            ), 20),
+            new ArenaClass("Berserker", "For when knight doesn't deal enough damage.", Icons.AXE, Material.STONE_AXE, new Kit(
                     new ItemStack[] { ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4) },
                     null,
                     null,
                     null,
                     null
-            ), 40)
+            ), 25)
     };
 
     private static final int SPAWN_RADIUS = 10;
@@ -300,6 +300,7 @@ public final class MobArena implements SingleInstanceArena {
         }
 
         for (Player member : group.members()) {
+            member.setHealth(member.getHealth() + 4); // Heal 2 hearts
             playerClass(member).apply(member);
         }
 
@@ -334,6 +335,10 @@ public final class MobArena implements SingleInstanceArena {
 
     public int coins() {
         return coins;
+    }
+
+    public void setCoins(int coins) {
+        this.coins = coins;
     }
 
     public ArenaClass playerClass(Player player) {
