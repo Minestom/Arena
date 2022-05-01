@@ -6,6 +6,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.title.Title;
 import net.minestom.arena.Icons;
 import net.minestom.arena.Lobby;
@@ -64,41 +65,46 @@ public final class MobArena implements SingleInstanceArena {
                     .toList()
     };
     public static final ArenaClass[] CLASSES = {
-            new ArenaClass("Knight", "Starter class with mediocre attack and defense.", Icons.SWORD, Material.STONE_SWORD, new Kit(
-                    new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
-                    null,
-                    ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
-                    null,
-                    null
-            ), 5),
-            new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.", Icons.BOW, Material.BOW, new Kit(
-                    new ItemStack[] { ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW) },
-                    null,
-                    ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
-                    null,
-                    null
-            ), 10),
-            new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.", Icons.SHIELD, Material.IRON_CHESTPLATE, new Kit(
-                    new ItemStack[] { ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1) },
-                    ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
-                    ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
-                    ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
-                    ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
-            ), 15),
-            new ArenaClass("Healer", "Support your teammates, but you better stay at a safe distance.", Icons.POTION, Material.POTION, new Kit(
-                    new ItemStack[] { ItemStack.of(Material.BLAZE_POWDER).withTag(WAND_TAG, true) },
-                    null,
-                    null,
-                    ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
-                    null
-            ), 20),
-            new ArenaClass("Berserker", "For when knight doesn't deal enough damage.", Icons.AXE, Material.STONE_AXE, new Kit(
-                    new ItemStack[] { ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4) },
-                    null,
-                    null,
-                    null,
-                    null
-            ), 25)
+            new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
+                    Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
+                            new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
+                            null,
+                            ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                            null,
+                            null
+                    ), 5),
+            new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
+                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW, new Kit(
+                            new ItemStack[] { ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW) },
+                            null,
+                            ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
+                            null,
+                            null
+                    ), 10),
+            new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
+                    Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE, new Kit(
+                            new ItemStack[] { ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1) },
+                            ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
+                            ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                            ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
+                            ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
+                    ), 15),
+            new ArenaClass("Healer", "Support your teammates, but you better stay at a safe distance.",
+                    Icons.POTION, TextColor.color(0x3cbea5), Material.POTION, new Kit(
+                            new ItemStack[] { ItemStack.of(Material.BLAZE_POWDER).withTag(WAND_TAG, true) },
+                            null,
+                            null,
+                            ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
+                            null
+                    ), 20),
+            new ArenaClass("Berserker", "For when knight doesn't deal enough damage.",
+                    Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE, new Kit(
+                            new ItemStack[] { ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4) },
+                            null,
+                            null,
+                            null,
+                            null
+                    ), 25)
     };
 
     private static final int SPAWN_RADIUS = 10;
@@ -339,6 +345,7 @@ public final class MobArena implements SingleInstanceArena {
 
     public void setCoins(int coins) {
         this.coins = coins;
+        group.display().update();
     }
 
     public ArenaClass playerClass(Player player) {

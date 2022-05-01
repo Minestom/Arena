@@ -2,19 +2,28 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.minestom.arena.Items;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.utils.ItemUtils;
 import net.minestom.server.entity.Player;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
-import net.minestom.server.item.*;
+import net.minestom.server.item.Enchantment;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
 
 final class NextStageInventory extends Inventory {
-    private static final ItemStack HEADER = ItemUtils.stripItalics(ItemStack.builder(Material.ANVIL)
+    private static final ItemStack HEADER = ItemUtils.stripItalics(ItemStack.builder(Material.PAPER)
             .displayName(Component.text("Next Stage", NamedTextColor.GOLD))
             .lore(Component.text("Buy a different class, team upgrades or just continue to the next stage", NamedTextColor.GRAY))
+            .build());
+    private static final ItemStack CLASS_SELECTION = ItemUtils.stripItalics(ItemStack.builder(Material.SHIELD)
+            .displayName(Component.text("Class Selection", NamedTextColor.GREEN))
+            .lore(Component.text("Buy a different class", NamedTextColor.GRAY))
+            .build());
+    private static final ItemStack TEAM_UPGRADES = ItemUtils.stripItalics(ItemStack.builder(Material.ANVIL)
+            .displayName(Component.text("Team Upgrades", NamedTextColor.LIGHT_PURPLE))
+            .lore(Component.text("Buy upgrades for the whole team", NamedTextColor.GRAY))
             .build());
 
     private final Player player;
@@ -27,8 +36,8 @@ final class NextStageInventory extends Inventory {
 
         setItemStack(4, HEADER);
 
-        setItemStack(12, ItemStack.of(Material.DIRT));
-        setItemStack(14, ItemStack.of(Material.STONE));
+        setItemStack(12, CLASS_SELECTION);
+        setItemStack(14, TEAM_UPGRADES);
 
         setItemStack(30, Items.CLOSE);
         setItemStack(32, Items.CONTINUE);
@@ -82,7 +91,7 @@ final class NextStageInventory extends Inventory {
                 setItemStack(13 - length / 2 + i, ItemUtils.stripItalics(ItemStack.builder(arenaClass.material())
                         .displayName(Component.text(
                                 arenaClass.icon() + " " + arenaClass.name(),
-                                NamedTextColor.nearestTo(TextColor.color(Integer.MAX_VALUE / length / 2 * i))
+                                arenaClass.color()
                         ))
                         .lore(
                                 Component.text(arenaClass.description(), NamedTextColor.GRAY),
@@ -93,6 +102,7 @@ final class NextStageInventory extends Inventory {
                                 ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
                                 : builder
                         )
+                        .meta(ItemUtils::hideFlags)
                         .build()
                 ));
             }

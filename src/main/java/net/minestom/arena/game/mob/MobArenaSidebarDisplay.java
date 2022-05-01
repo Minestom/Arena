@@ -20,9 +20,10 @@ final class MobArenaSidebarDisplay extends GroupSidebarDisplay {
 
     @Override
     protected Sidebar.ScoreboardLine createPlayerLine(Player player, Group group) {
+        ArenaClass arenaClass = arena.playerClass(player);
         return new Sidebar.ScoreboardLine(
                 player.getUuid().toString(),
-                Component.text(arena.playerClass(player).icon() + " ").color(NamedTextColor.WHITE).append(player.getName().color(Messenger.ORANGE_COLOR)),
+                Component.text(arenaClass.icon() + " ", arenaClass.color()).append(player.getName().color(Messenger.ORANGE_COLOR)),
                 3
         );
     }
@@ -31,7 +32,7 @@ final class MobArenaSidebarDisplay extends GroupSidebarDisplay {
     protected List<Sidebar.ScoreboardLine> createAdditionalLines() {
         return List.of(
                 new Sidebar.ScoreboardLine("empty", Component.empty(), 1),
-                new Sidebar.ScoreboardLine("coins", Component.text("Coins: " + arena.coins(), NamedTextColor.GOLD), 0)
+                new Sidebar.ScoreboardLine("coins", Component.text("Coins: " + arena.coins(), NamedTextColor.WHITE), 0)
         );
     }
 }
