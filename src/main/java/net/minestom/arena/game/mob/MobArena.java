@@ -121,9 +121,11 @@ public final class MobArena implements SingleInstanceArena {
     private final Set<Player> continued = new HashSet<>();
 
     private int stage = 0;
+    private int coins = 0;
 
     public MobArena(Group group) {
         this.group = group;
+        group.setDisplay(new MobArenaSidebarDisplay(this));
 
         // Show boss bar
         bossBar = BossBar.bossBar(Component.text("Loading..."), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
@@ -135,9 +137,8 @@ public final class MobArena implements SingleInstanceArena {
         }
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
-            ItemEntity item = new ItemEntity(Items.COIN);
-            item.setGlowing(true);
-            item.setInstance(arenaInstance, event.getEntity().getPosition());
+            coins++;
+            group.display().update();
 
             for (Entity entity : arenaInstance.getEntities()) {
                 if (entity instanceof EntityCreature creature && !(creature.isDead())) {
@@ -220,12 +221,13 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public void continueToNextStage(Player player) {
-        continued.add(player);
+        if (!continued.add(player)) return;
 
         final int continuedCount = continued.size();
         final int haveToContinue = arenaInstance.getPlayers().size();
+        final int untilStart = haveToContinue - continuedCount;
 
-        if (continuedCount >= haveToContinue) {
+        if (untilStart <= 0) {
             bossBar.name(Component.text("Wave starting..."));
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
@@ -234,10 +236,10 @@ public final class MobArena implements SingleInstanceArena {
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
         } else {
-            final int playerCount = haveToContinue - continuedCount;
-            final String playerOrPlayers = "player" + (playerCount == 1 ? "" : "s");
+            Messenger.info(group.audience(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave prematurely.");
 
-            bossBar.name(Component.text("Stage cleared! Waiting for " + playerCount + " more " + playerOrPlayers + " to continue"));
+            final String playerOrPlayers = "player" + (untilStart == 1 ? "" : "s");
+            bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
             bossBar.progress((float) continuedCount / haveToContinue);
             bossBar.color(BossBar.Color.GREEN);
         }
@@ -282,20 +284,8 @@ public final class MobArena implements SingleInstanceArena {
         return continued.contains(player);
     }
 
-    public int currentWeaponTier(Player player) {
-        return player.getTag(WEAPON_TIER_TAG);
-    }
-
-    public int currentArmorTier(Player player) {
-        return player.getTag(ARMOR_TIER_TAG);
-    }
-
-    public void setWeaponTier(Player player, int tier) {
-        player.setTag(WEAPON_TIER_TAG, tier);
-    }
-
-    public void setArmorTier(Player player, int tier) {
-        player.setTag(ARMOR_TIER_TAG, tier);
+    public int coins() {
+        return coins;
     }
 
     private Set<Player> deadPlayers() {
@@ -351,7 +341,7 @@ public final class MobArena implements SingleInstanceArena {
         }, victim -> {
             if (victim instanceof Player) return 500;
             else return 100;
-        }), Features.drop());
+        }), Features.drop(item -> !item.getTag(Kit.KIT_ITEM_TAG)));
     }
 
     private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
