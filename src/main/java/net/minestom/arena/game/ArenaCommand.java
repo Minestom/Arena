@@ -21,34 +21,26 @@ import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class ArenaCommand extends Command {
 
-    // In order to add a new arena, add it to this enum.
-    private enum ArenaType {
-        MOB(Material.ZOMBIE_HEAD,
-                builder -> builder.displayName(Component.text("Mob Arena", NamedTextColor.GREEN)),
-                MobArena::new),
-        PROCEDURAL(Material.BONE_BLOCK,
-                builder -> builder.displayName(Component.text("Procedural", NamedTextColor.RED)),
-                ProceduralArena::new);
+    // In order to add a new arena, add it to this section:
+    public static final ArenaType MOB = new ArenaType("mob", ItemStack.of(Material.ZOMBIE_HEAD),
+            builder -> builder.displayName(Component.text("Mob Arena", NamedTextColor.GREEN)),
+            MobArena::new);
+    public static final ArenaType PROCEDURAL = new ArenaType("procedural", ItemStack.of(Material.BONE_BLOCK),
+            builder -> builder.displayName(Component.text("Procedural", NamedTextColor.RED)),
+            ProceduralArena::new);
+    public static final Map<String, ArenaType> ARENAS = Map.of(
+            "mob", MOB,
+            "procedural", PROCEDURAL
+    );
 
-        private final ItemStack menuItem;
-        private final Function<Group, Arena> arenaCreator;
-
-        ArenaType(Material material, Consumer<ItemStack.Builder> builderConsumer,
-                  Function<Group, Arena> arenaCreator) {
-            this.arenaCreator = arenaCreator;
-            ItemStack.Builder builder = ItemStack.builder(material);
-            builderConsumer.accept(builder);
-            this.menuItem = builder.build();
-        }
-
-        public @NotNull ItemStack menuItem() {
-            return menuItem;
-        }
+    private record ArenaType(String name, ItemStack menuItem, Consumer<ItemStack.Builder> builderConsumer,
+                             Function<Group, Arena> arenaCreator) {
 
         public Arena startNew(Group group) {
             return arenaCreator.apply(group);
@@ -64,11 +56,11 @@ public final class ArenaCommand extends Command {
 
         addSyntax(
                 (sender, context) -> play((Player) sender, context.get("type")),
-                ArgumentType.Enum("type", ArenaType.class)
+                ArgumentType.Word("type").from(ARENAS.keySet().toArray(String[]::new))
         );
     }
 
-    private static void play(Player player, ArenaType type) {
+    private static void play(Player player, String type) {
         if (player.getInstance() != Lobby.INSTANCE) {
             Messenger.warn(player, "You are not in the lobby! Join the lobby first.");
             return;
@@ -78,12 +70,12 @@ public final class ArenaCommand extends Command {
             Messenger.warn(player, "You are not the leader of your group!");
             return;
         }
-        Arena arena = type.startNew(group);
+        Arena arena = ARENAS.get(type).startNew(group);
         arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
     }
 
     private static class ArenaInventory extends Inventory {
-        private static final Tag<ArenaType> ARENA_TAG = Tag.String("arena").map(ArenaType::valueOf, ArenaType::name);
+        private static final Tag<String> ARENA_TAG = Tag.String("arena");
         private static final ItemStack HEADER = ItemUtils.stripItalics(ItemStack.builder(Material.IRON_BARS)
                 .displayName(Component.text("Arena", NamedTextColor.RED))
                 .lore(Component.text("Select an arena to play in", NamedTextColor.GRAY))
@@ -95,14 +87,14 @@ public final class ArenaCommand extends Command {
             setItemStack(4, HEADER);
             setItemStack(31, Items.CLOSE);
 
-            int i = 13 - ArenaType.values().length / 2;
-            for (ArenaType type : ArenaType.values()) {
+            int i = 13 - ARENAS.size() / 2;
+            for (ArenaType type : ARENAS.values()) {
                 ItemStack item = type.menuItem();
                 setItemStack(
                         i++,
                         ItemUtils.stripItalics(
                                 item.withLore(List.of(Component.text("Click to play in the " + type.name() + " arena", NamedTextColor.GRAY)))
-                                        .withTag(ARENA_TAG, type)
+                                        .withTag(ARENA_TAG, type.name())
                         )
                 );
             }
@@ -115,7 +107,7 @@ public final class ArenaCommand extends Command {
                     return;
                 }
 
-                ArenaType arena = result.getClickedItem().getTag(ARENA_TAG);
+                String arena = result.getClickedItem().getTag(ARENA_TAG);
 
                 if (arena != null) {
                     player.closeInventory();

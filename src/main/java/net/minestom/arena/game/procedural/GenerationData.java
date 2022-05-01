@@ -5,6 +5,7 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.utils.Direction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnknownNullability;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -62,12 +63,6 @@ public class GenerationData {
                 null, null,
                 null, null
         ),
-        BLANK(
-                null, null,
-                null, null,
-                null, null,
-                null, null
-        ),
         COBBLE_PATH_LEFT(
                 null, null,
                 COBBLESTONE, COBBLESTONE,
@@ -92,12 +87,8 @@ public class GenerationData {
         private static final Map<BlockGroup, Connections> group2Connections = new HashMap<>();
 
         static {
-            // AIR connects to everything
-            connections(AIR, towards -> towards.north().east().south().west().up().down().apply(BlockGroups.values()));
-
-            // Blank
-            connections(BLANK, towards -> {
-            });
+            // AIR connects to nothing
+            connections(AIR, towards -> {});
 
             // Cobble paths
             connections(COBBLE_PATH_LEFT, towards -> {
@@ -124,7 +115,7 @@ public class GenerationData {
         private final Block block5;
         private final Block block6;
         private final Block block7;
-        private @Nullable Connections connections;
+        private @UnknownNullability Connections connections;
 
         BlockGroups(Block block0, Block block1, Block block2, Block block3,
                     Block block4, Block block5, Block block6, Block block7) {
