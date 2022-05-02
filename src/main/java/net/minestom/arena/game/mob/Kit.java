@@ -15,9 +15,8 @@ record Kit(@NotNull List<ItemStack> inventory, @Nullable ItemStack helmet, @Null
 
     public void apply(Player player) {
         final PlayerInventory playerInventory = player.getInventory();
-        final List<ItemStack> items = List.of(playerInventory.getItemStacks());
 
-        for (ItemStack item : items) {
+        for (ItemStack item : playerInventory.getItemStacks()) {
             if (item.getTag(KIT_ITEM_TAG))
                 player.getInventory().takeItemStack(item, TransactionOption.ALL);
         }

@@ -9,18 +9,17 @@ import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 record ArenaUpgrade(String name, String description, TextColor color, Material material, @Nullable Consumer<Player> consumer, int cost) {
     public ItemStack itemStack() {
         return ItemUtils.stripItalics(ItemStack.builder(material)
                 .displayName(Component.text(name, color))
-                .lore(List.of(
+                .lore(
                         Component.text(description, NamedTextColor.GRAY),
                         Component.empty(),
                         Component.text("Buy this team upgrade for " + cost + " coins", NamedTextColor.GOLD)
-                ))
+                )
                 .meta(ItemUtils::hideFlags)
                 .build()
         );
