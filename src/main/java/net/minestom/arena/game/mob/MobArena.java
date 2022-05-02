@@ -16,16 +16,15 @@ import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.attribute.Attribute;
 import net.minestom.server.attribute.AttributeModifier;
 import net.minestom.server.attribute.AttributeOperation;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
-import net.minestom.server.entity.Entity;
-import net.minestom.server.entity.EntityCreature;
-import net.minestom.server.entity.LivingEntity;
-import net.minestom.server.entity.Player;
+import net.minestom.server.entity.*;
+import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
@@ -39,8 +38,10 @@ import net.minestom.server.item.Material;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.utils.MathUtils;
+import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -91,7 +92,7 @@ public final class MobArena implements SingleInstanceArena {
                     ), 15),
             new ArenaClass("Healer", "Support your teammates, but you better stay at a safe distance.",
                     Icons.POTION, TextColor.color(0x3cbea5), Material.POTION, new Kit(
-                            new ItemStack[] { ItemStack.of(Material.BLAZE_POWDER).withTag(WAND_TAG, true) },
+                            new ItemStack[] { ItemStack.of(Material.BLAZE_ROD).withTag(WAND_TAG, true) },
                             null,
                             null,
                             ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
@@ -354,6 +355,7 @@ public final class MobArena implements SingleInstanceArena {
 
     public void setPlayerClass(Player player, ArenaClass arenaClass) {
         playerClasses.put(player, arenaClass);
+        arenaClass.apply(player);
     }
 
     private Set<Player> deadPlayers() {
@@ -385,10 +387,20 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.combat(false, (attacker, victim) -> {
+        return List.of(Features.bow((entity, power) -> {
+            final EntityProjectile projectile = new EntityProjectile(entity, EntityType.ARROW);
+            final ArrowMeta meta = (ArrowMeta) projectile.getEntityMeta();
+            meta.setCritical(power >= 0.9);
+            projectile.scheduleRemove(Duration.of(100, TimeUnit.SERVER_TICK));
+
+            return projectile;
+        }), Features.combat(false, (attacker, victim) -> {
             float damage = 1;
             if (attacker instanceof LivingEntity livingEntity) {
                 damage = livingEntity.getAttributeValue(Attribute.ATTACK_DAMAGE);
+            } else if (attacker instanceof EntityProjectile projectile && projectile.getShooter() instanceof Player player) {
+                final float movementSpeed = (float) (projectile.getVelocity().length() / MinecraftServer.TICK_PER_SECOND);
+                damage = movementSpeed * player.getAttributeValue(Attribute.ATTACK_DAMAGE);
             }
 
             if (attacker instanceof Player player) {

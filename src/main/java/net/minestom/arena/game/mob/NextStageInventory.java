@@ -115,9 +115,10 @@ final class NextStageInventory extends Inventory {
             }
 
             if (arena.coins() >= arenaClass.cost()) {
-                Messenger.info(player, "You switched your class. It will apply when the stage starts");
+                Messenger.info(player, "You switched your class to " + arenaClass.name());
                 arena.setCoins(arena.coins() - arenaClass.cost());
                 arena.setPlayerClass(player, arenaClass);
+                arena.group().display().update();
                 draw();
             } else {
                 Messenger.warn(player, "You can't afford that");
@@ -130,6 +131,8 @@ final class NextStageInventory extends Inventory {
             super(InventoryType.CHEST_4_ROW, Component.text("Team Upgrades"));
 
             setItemStack(4, HEADER);
+
+            // TODO: Add upgrades
 
             setItemStack(31, Items.BACK);
 

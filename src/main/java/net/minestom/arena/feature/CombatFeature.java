@@ -41,7 +41,11 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
         );
     }
 
-    private void spawnHologram(Entity target, Entity source, float damage) {
+    private void takeKnockbackFromArrow(Entity target, EntityProjectile source) {
+        takeKnockback(target, source.getShooter());
+    }
+
+    private void spawnHologram(Entity target, float damage) {
         damage = MathUtils.round(damage, 2);
 
         new DamageHologram(
@@ -57,6 +61,9 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
             if (!(event.getTarget() instanceof LivingEntity target)) return;
             if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
 
+            // PVP is disabled and two players have attempted to hit each other
+            if (!playerCombat && target instanceof Player && projectile.getShooter() instanceof Player) return;
+
             // Don't apply damage if entity is invulnerable
             final long now = System.currentTimeMillis();
             final long invulnerableUntil = target.getTag(INVULNERABLE_UNTIL_TAG);
@@ -67,8 +74,8 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
             target.damage(DamageType.fromProjectile(projectile.getShooter(), projectile), damage);
             target.setTag(INVULNERABLE_UNTIL_TAG, now + invulnerabilityFunction.applyAsLong(target));
 
-            takeKnockback(target, projectile);
-            spawnHologram(target, projectile, damage);
+            takeKnockbackFromArrow(target, projectile);
+            spawnHologram(target, damage);
 
             projectile.remove();
         }).addListener(EntityAttackEvent.class, event -> {
@@ -91,7 +98,7 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
             target.setTag(INVULNERABLE_UNTIL_TAG, now + invulnerabilityFunction.applyAsLong(target));
 
             takeKnockback(target, event.getEntity());
-            spawnHologram(target, event.getEntity(), damage);
+            spawnHologram(target, damage);
         });
     }
 
