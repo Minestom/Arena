@@ -1,5 +1,6 @@
 package net.minestom.arena.game.mob;
 
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.Items;
@@ -11,6 +12,7 @@ import net.minestom.server.inventory.InventoryType;
 import net.minestom.server.item.Enchantment;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.sound.SoundEvent;
 
 final class NextStageInventory extends Inventory {
     private static final ItemStack HEADER = ItemUtils.stripItalics(ItemStack.builder(Material.PAPER)
@@ -120,8 +122,10 @@ final class NextStageInventory extends Inventory {
                 arena.setPlayerClass(player, arenaClass);
                 arena.group().display().update();
                 draw();
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
             } else {
                 Messenger.warn(player, "You can't afford that");
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
             }
         }
     }

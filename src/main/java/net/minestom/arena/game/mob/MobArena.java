@@ -16,6 +16,7 @@ import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
+import net.minestom.arena.utils.ItemUtils;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.attribute.Attribute;
 import net.minestom.server.attribute.AttributeModifier;
@@ -24,6 +25,7 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
+import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
@@ -35,8 +37,11 @@ import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
+import net.minestom.server.particle.Particle;
+import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
+import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +50,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
@@ -54,6 +61,10 @@ public final class MobArena implements SingleInstanceArena {
     private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
     private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mob-arena", 100f, AttributeOperation.ADDITION);
 
+    private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
+            .displayName(Component.text("Wand"))
+            .set(WAND_TAG, true)
+            .build());
     private static final MobGenerator[] MOB_GENERATORS = {
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
@@ -90,9 +101,9 @@ public final class MobArena implements SingleInstanceArena {
                             ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
                             ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
                     ), 15),
-            new ArenaClass("Healer", "Support your teammates, but you better stay at a safe distance.",
-                    Icons.POTION, TextColor.color(0x3cbea5), Material.POTION, new Kit(
-                            new ItemStack[] { ItemStack.of(Material.BLAZE_ROD).withTag(WAND_TAG, true) },
+            new ArenaClass("Mage", "Fight enemies from far away using your long ranged magic missiles.",
+                    Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD, new Kit(
+                            new ItemStack[] { WAND },
                             null,
                             null,
                             ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
@@ -426,7 +437,58 @@ public final class MobArena implements SingleInstanceArena {
         }, victim -> {
             if (victim instanceof Player) return 500;
             else return 100;
-        }), Features.drop(item -> !item.getTag(Kit.KIT_ITEM_TAG)));
+        }), Features.drop(item ->
+                !item.getTag(Kit.KIT_ITEM_TAG)
+        ), Features.functionalItem(item -> item.getTag(WAND_TAG), player -> {
+            Instance instance = player.getInstance();
+            AtomicReference<Pos> posReference = new AtomicReference<>(player.getPosition().add(0, player.getEyeHeight(), 0).withView(0, -90));
+            AtomicInteger initTicks = new AtomicInteger(5);
+
+            MinecraftServer.getSchedulerManager().submitTask(() -> {
+                if (instance == null) return TaskSchedule.stop();
+
+                Pos pos = posReference.get();
+                if (initTicks.getAndDecrement() <= 0) {
+                    final Point target = player.getTargetBlockPosition(100);
+                    pos = pos.withLookAt(target == null ? player.getPosition().add(player.getPosition().direction().mul(100)) : target);
+                }
+                pos = pos.add(pos.direction());
+
+                final boolean hasHit = instance.getNearbyEntities(pos, 2)
+                        .stream()
+                        .anyMatch(entity -> !(entity instanceof Player));
+                if (!instance.getBlock(pos).isAir() || !instance.getWorldBorder().isInside(pos) || hasHit) {
+                    arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                            Particle.EXPLOSION_EMITTER, pos.x(), pos.y(), pos.z(),
+                            0, 0, 0, 3
+                    ));
+                    arenaInstance.playSound(
+                            Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.NEUTRAL, 1, 1),
+                            pos.x(), pos.y(), pos.z()
+                    );
+                    for (Entity entity : instance.getNearbyEntities(pos, 5)) {
+                        if (entity instanceof LivingEntity livingEntity && !(entity instanceof Player)) {
+                            livingEntity.damage(DamageType.fromPlayer(player), (float) (10 - entity.getDistance(pos)));
+                        }
+                    }
+
+                    return TaskSchedule.stop();
+                }
+
+                arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                        Particle.FIREWORK, true, pos.x(), pos.y(), pos.z(),
+                        0.3f, 0.3f, 0.3f, 0.01f, 50, null
+                ));
+                arenaInstance.playSound(
+                        Sound.sound(SoundEvent.ENTITY_AXOLOTL_SWIM, Sound.Source.NEUTRAL, 1, 1),
+                        pos.x(), pos.y(), pos.z()
+                );
+
+                posReference.set(pos);
+                return TaskSchedule.tick(1);
+            });
+
+        }, 1000));
     }
 
     private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {

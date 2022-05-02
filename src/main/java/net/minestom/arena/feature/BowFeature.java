@@ -22,18 +22,18 @@ import java.util.function.BiFunction;
  * @param projectileGenerator Uses the return value as the entity to shoot (in lambda arg 1 is shooter, arg 2 is power)
  */
 record BowFeature(@NotNull BiFunction<Entity, Double, EntityProjectile> projectileGenerator) implements Feature {
-    private static final Tag<Long> BOW_CHARGE_SINCE_TAG = Tag.Long("bow_charge_since").defaultValue(Long.MAX_VALUE);
+    private static final Tag<Long> CHARGE_SINCE_TAG = Tag.Long("bow_charge_since").defaultValue(Long.MAX_VALUE);
 
     @Override
     public void hook(@NotNull EventNode<InstanceEvent> node) {
         node.addListener(EventListener.builder(PlayerItemAnimationEvent.class)
-                .handler(event -> event.getPlayer().setTag(BOW_CHARGE_SINCE_TAG, System.currentTimeMillis()))
+                .handler(event -> event.getPlayer().setTag(CHARGE_SINCE_TAG, System.currentTimeMillis()))
                 .filter(event -> event.getItemAnimationType() == PlayerItemAnimationEvent.ItemAnimationType.BOW)
                 .build()
         ).addListener(EventListener.builder(ItemUpdateStateEvent.class)
                 .handler(event -> {
                     final Player player = event.getPlayer();
-                    final double chargedFor = (System.currentTimeMillis() - player.getTag(BOW_CHARGE_SINCE_TAG)) / 1000D;
+                    final double chargedFor = (System.currentTimeMillis() - player.getTag(CHARGE_SINCE_TAG)) / 1000D;
                     final double power = MathUtils.clamp((chargedFor * chargedFor + 2 * chargedFor) / 2D, 0, 1);
 
                     if (power > 0.2) {
