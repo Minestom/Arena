@@ -81,7 +81,7 @@ public final class MobArena implements SingleInstanceArena {
 
     private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
             Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
-            new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
+            List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
             null,
             ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
             null,
@@ -91,7 +91,7 @@ public final class MobArena implements SingleInstanceArena {
             KNIGHT_CLASS,
             new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
                     Icons.BOW, TextColor.color(0xf9ff87), Material.BOW, new Kit(
-                            new ItemStack[] { ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW) },
+                            List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
                             null,
                             ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
                             null,
@@ -99,7 +99,7 @@ public final class MobArena implements SingleInstanceArena {
                     ), 10),
             new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
                     Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE, new Kit(
-                            new ItemStack[] { ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1) },
+                            List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
                             ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
                             ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
                             ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
@@ -107,7 +107,7 @@ public final class MobArena implements SingleInstanceArena {
                     ), 15),
             new ArenaClass("Mage", "Fight enemies from far away using your long ranged magic missiles.",
                     Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD, new Kit(
-                            new ItemStack[] { WAND },
+                            List.of(WAND),
                             null,
                             null,
                             ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
@@ -115,7 +115,7 @@ public final class MobArena implements SingleInstanceArena {
                     ), 20),
             new ArenaClass("Berserker", "For when knight doesn't deal enough damage.",
                     Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE, new Kit(
-                            new ItemStack[] { ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4) },
+                            List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4)),
                             null,
                             null,
                             null,

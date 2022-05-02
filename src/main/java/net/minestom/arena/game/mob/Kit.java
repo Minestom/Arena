@@ -2,22 +2,24 @@ package net.minestom.arena.game.mob;
 
 import net.minestom.server.entity.Player;
 import net.minestom.server.inventory.PlayerInventory;
+import net.minestom.server.inventory.TransactionOption;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-record Kit(@NotNull ItemStack[] inventory, @Nullable ItemStack helmet, @Nullable ItemStack chestplate, @Nullable ItemStack leggings, @Nullable ItemStack boots) {
+import java.util.List;
+
+record Kit(@NotNull List<ItemStack> inventory, @Nullable ItemStack helmet, @Nullable ItemStack chestplate, @Nullable ItemStack leggings, @Nullable ItemStack boots) {
     public static final Tag<Boolean> KIT_ITEM_TAG = Tag.Boolean("kit_item").defaultValue(false);
 
     public void apply(Player player) {
         final PlayerInventory playerInventory = player.getInventory();
-        final ItemStack[] items = playerInventory.getItemStacks();
+        final List<ItemStack> items = List.of(playerInventory.getItemStacks());
 
-        for (int i = 0; i < items.length; i++) {
-            if (items[i].getTag(KIT_ITEM_TAG)) {
-                player.getInventory().setItemStack(i, ItemStack.AIR);
-            }
+        for (ItemStack item : items) {
+            if (item.getTag(KIT_ITEM_TAG))
+                player.getInventory().takeItemStack(item, TransactionOption.ALL);
         }
 
         for (ItemStack item : inventory) {
