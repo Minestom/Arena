@@ -65,7 +65,7 @@ public final class MobArena implements SingleInstanceArena {
             .displayName(Component.text("Wand"))
             .set(WAND_TAG, true)
             .build());
-    private static final MobGenerator[] MOB_GENERATORS = {
+    private static final List<MobGenerator> MOB_GENERATORS = List.of(
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
                     .toList(),
@@ -75,16 +75,17 @@ public final class MobArena implements SingleInstanceArena {
             (stage, needed) -> Stream.generate(() -> new SkeletonMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
-    };
-    public static final ArenaClass[] CLASSES = {
-            new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
-                    Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
-                            new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
-                            null,
-                            ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
-                            null,
-                            null
-                    ), 5),
+    );
+    private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
+            Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
+            new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
+            null,
+            ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
+            null,
+            null
+    ), 5);
+    public static final List<ArenaClass> CLASSES = List.of(
+            KNIGHT_CLASS,
             new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
                     Icons.BOW, TextColor.color(0xf9ff87), Material.BOW, new Kit(
                             new ItemStack[] { ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW) },
@@ -117,7 +118,7 @@ public final class MobArena implements SingleInstanceArena {
                             null,
                             null
                     ), 25)
-    };
+    );
 
     private static final int SPAWN_RADIUS = 10;
     private static final int HEIGHT = 16;
@@ -361,7 +362,7 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public ArenaClass playerClass(Player player) {
-        return playerClasses.getOrDefault(player, CLASSES[0]); // Knight class is default
+        return playerClasses.getOrDefault(player, KNIGHT_CLASS); // Knight class is default
     }
 
     public void setPlayerClass(Player player, ArenaClass arenaClass) {

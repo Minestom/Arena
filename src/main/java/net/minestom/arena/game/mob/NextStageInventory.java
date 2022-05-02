@@ -72,9 +72,9 @@ final class NextStageInventory extends Inventory {
             addInventoryCondition((p, slot, c, r) -> {
                 if (slot == 31) player.openInventory(parent);
                 else {
-                    final int length = MobArena.CLASSES.length;
+                    final int length = MobArena.CLASSES.size();
                     for (int i = 0; i < length; i++) {
-                        ArenaClass arenaClass = MobArena.CLASSES[i];
+                        ArenaClass arenaClass = MobArena.CLASSES.get(i);
 
                         if (slot == 13 - length / 2 + i) {
                             switchClass(arenaClass);
@@ -86,32 +86,20 @@ final class NextStageInventory extends Inventory {
         }
 
         private void draw() {
-            final int length = MobArena.CLASSES.length;
+            final int length = MobArena.CLASSES.size();
             for (int i = 0; i < length; i++) {
-                ArenaClass arenaClass = MobArena.CLASSES[i];
+                ArenaClass arenaClass = MobArena.CLASSES.get(i);
 
-                setItemStack(13 - length / 2 + i, ItemUtils.stripItalics(ItemStack.builder(arenaClass.material())
-                        .displayName(Component.text(
-                                arenaClass.icon() + " " + arenaClass.name(),
-                                arenaClass.color()
-                        ))
-                        .lore(
-                                Component.text(arenaClass.description(), NamedTextColor.GRAY),
-                                Component.empty(),
-                                Component.text("Switch to this class for " + arenaClass.cost() + " coins", NamedTextColor.GOLD)
-                        )
-                        .meta(builder -> arena.playerClass(player) == arenaClass
+                setItemStack(13 - length / 2 + i, arenaClass.itemStack().withMeta(
+                        builder -> arena.playerClass(player).equals(arenaClass)
                                 ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
                                 : builder
-                        )
-                        .meta(ItemUtils::hideFlags)
-                        .build()
                 ));
             }
         }
 
         private void switchClass(ArenaClass arenaClass) {
-            if (arena.playerClass(player) == arenaClass) {
+            if (arena.playerClass(player).equals(arenaClass)) {
                 Messenger.warn(player, "You can't switch to your selected class");
                 return;
             }
