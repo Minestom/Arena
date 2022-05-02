@@ -104,11 +104,9 @@ final class NextStageInventory extends Inventory {
                 return;
             }
 
-            if (arena.coins() >= arenaClass.cost()) {
+            if (arena.takeCoins(arenaClass.cost())) {
                 Messenger.info(player, "You switched your class to " + arenaClass.name());
-                arena.setCoins(arena.coins() - arenaClass.cost());
                 arena.setPlayerClass(player, arenaClass);
-                arena.group().display().update();
                 draw();
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
             } else {
@@ -124,16 +122,55 @@ final class NextStageInventory extends Inventory {
 
             setItemStack(4, HEADER);
 
-            // TODO: Add upgrades
+            draw();
 
             setItemStack(31, Items.BACK);
 
             addInventoryCondition((p, s, c, result) -> result.setCancel(true));
             addInventoryCondition((p, slot, c, r) -> {
-                switch (slot) {
-                    case 31 -> player.openInventory(parent);
+                if (slot == 31) player.openInventory(parent);
+                else {
+                    final int length = MobArena.UPGRADES.size();
+                    for (int i = 0; i < length; i++) {
+                        ArenaUpgrade upgrade = MobArena.UPGRADES.get(i);
+
+                        if (slot == 13 - length / 2 + i) {
+                            buyUpgrade(upgrade);
+                            return;
+                        }
+                    }
                 }
             });
+        }
+
+        private void draw() {
+            final int length = MobArena.UPGRADES.size();
+            for (int i = 0; i < length; i++) {
+                ArenaUpgrade upgrade = MobArena.UPGRADES.get(i);
+
+                setItemStack(13 - length / 2 + i, upgrade.itemStack().withMeta(
+                        builder -> arena.hasUpgrade(upgrade)
+                                ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
+                                : builder
+                ));
+            }
+        }
+
+        private void buyUpgrade(ArenaUpgrade upgrade) {
+            if (arena.hasUpgrade(upgrade)) {
+                Messenger.warn(player, "Your group already has this upgrade");
+                return;
+            }
+
+            if (arena.takeCoins(upgrade.cost())) {
+                Messenger.info(player, "You bought the " + upgrade.name() + " upgrade for your team");
+                arena.addUpgrade(upgrade);
+                draw();
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
+            } else {
+                Messenger.warn(player, "You can't afford that");
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
+            }
         }
     }
 }

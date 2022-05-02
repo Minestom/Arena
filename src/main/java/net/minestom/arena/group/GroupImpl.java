@@ -50,6 +50,7 @@ final class GroupImpl implements Group {
 
     @Override
     public void setDisplay(@NotNull GroupDisplay display) {
+        if (this.display != null) this.display.clean();
         this.display = display;
         display.update();
     }

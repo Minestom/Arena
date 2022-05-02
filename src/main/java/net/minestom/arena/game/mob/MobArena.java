@@ -48,7 +48,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -59,12 +58,15 @@ public final class MobArena implements SingleInstanceArena {
     private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
     private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
     private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
-    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mob-arena", 100f, AttributeOperation.ADDITION);
+    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mobarena-attack-speed", 100f, AttributeOperation.ADDITION);
+    private static final AttributeModifier HEALTHCARE_MODIFIER = new AttributeModifier("mobarena-healthcare", 4f, AttributeOperation.ADDITION);
+    private static final AttributeModifier COMBAT_TRAINING_MODIFIER = new AttributeModifier("mobarena-combat-training", 0.1f, AttributeOperation.MULTIPLY_TOTAL);
 
     private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
             .displayName(Component.text("Wand"))
             .set(WAND_TAG, true)
             .build());
+
     private static final List<MobGenerator> MOB_GENERATORS = List.of(
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
@@ -76,6 +78,7 @@ public final class MobArena implements SingleInstanceArena {
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
     );
+
     private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
             Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
             new ItemStack[] { ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2) },
@@ -118,6 +121,26 @@ public final class MobArena implements SingleInstanceArena {
                             null,
                             null
                     ), 25)
+    );
+
+    private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
+            TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, 10);
+    public static final List<ArenaUpgrade> UPGRADES = List.of(
+            new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts.",
+                    TextColor.color(0x63ff52), Material.POTION,
+                    player -> {
+                        // Since this upgrade includes healing, check if they have the modifier first
+                        // before healing them another two hearts
+                        if (!player.getAttribute(Attribute.MAX_HEALTH).getModifiers().contains(HEALTHCARE_MODIFIER)) {
+                            player.getAttribute(Attribute.MAX_HEALTH).addModifier(HEALTHCARE_MODIFIER);
+                            player.setHealth(player.getHealth() + HEALTHCARE_MODIFIER.getAmount());
+                        }
+                    }, 10),
+            new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
+                    TextColor.color(0xff5c3c), Material.IRON_SWORD,
+                    player -> player.getAttribute(Attribute.ATTACK_DAMAGE)
+                            .addModifier(COMBAT_TRAINING_MODIFIER), 10),
+            ALLOYING_UPGRADE
     );
 
     private static final int SPAWN_RADIUS = 10;
@@ -183,7 +206,8 @@ public final class MobArena implements SingleInstanceArena {
     private final BossBar bossBar;
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
-    private final Map<Player, ArenaClass> playerClasses = new ConcurrentHashMap<>();
+    private final Map<Player, ArenaClass> playerClasses = new HashMap<>();
+    private final Set<ArenaUpgrade> upgrades = new HashSet<>();
 
     private int stage = 0;
     private int coins = 0;
@@ -202,8 +226,7 @@ public final class MobArena implements SingleInstanceArena {
         }
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
-            coins++;
-            group.display().update();
+            addCoins(1);
 
             for (Entity entity : arenaInstance.getEntities()) {
                 if (entity instanceof EntityCreature creature && !(creature.isDead())) {
@@ -227,6 +250,13 @@ public final class MobArena implements SingleInstanceArena {
                 deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
 
                 deadPlayer.showBossBar(bossBar);
+            }
+
+            for (ArenaUpgrade upgrade : upgrades) {
+                if (upgrade.consumer() != null)
+                    for (Player player : arenaInstance.getPlayers()) {
+                        upgrade.consumer().accept(player);
+                    }
             }
 
             final int playerCount = arenaInstance.getPlayers().size();
@@ -356,7 +386,20 @@ public final class MobArena implements SingleInstanceArena {
         return coins;
     }
 
-    public void setCoins(int coins) {
+    public boolean takeCoins(int coins) {
+        if (coins() > coins) {
+            setCoins(coins() - coins);
+            return true;
+        }
+
+        return false;
+    }
+
+    public void addCoins(int coins) {
+        setCoins(coins() + coins);
+    }
+
+    private void setCoins(int coins) {
         this.coins = coins;
         group.display().update();
     }
@@ -368,6 +411,18 @@ public final class MobArena implements SingleInstanceArena {
     public void setPlayerClass(Player player, ArenaClass arenaClass) {
         playerClasses.put(player, arenaClass);
         arenaClass.apply(player);
+    }
+
+    public boolean hasUpgrade(ArenaUpgrade upgrade) {
+        return upgrades.contains(upgrade);
+    }
+
+    public void addUpgrade(ArenaUpgrade upgrade) {
+        upgrades.add(upgrade);
+        if (upgrade.consumer() != null)
+            for (Player player : arenaInstance.getPlayers()) {
+                upgrade.consumer().accept(player);
+            }
     }
 
     private Set<Player> deadPlayers() {
@@ -429,7 +484,7 @@ public final class MobArena implements SingleInstanceArena {
                         player.getBoots().getTag(ARMOR_TAG);
 
                 // Armor point = 4% damage reduction
-                final float multi = -0.04f * armorPoints;
+                final float multi = -0.04f * armorPoints * (hasUpgrade(ALLOYING_UPGRADE) ? 1.25f : 1);
 
                 damage *= 1 + multi;
             }

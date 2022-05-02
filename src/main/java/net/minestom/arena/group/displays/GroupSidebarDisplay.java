@@ -59,4 +59,11 @@ public abstract class GroupSidebarDisplay implements GroupDisplay {
             sidebar.addViewer(player);
         }
     }
+
+    @Override
+    public void clean() {
+        for (Player viewer : sidebar.getViewers()) {
+            sidebar.removeViewer(viewer);
+        }
+    }
 }
