@@ -1,5 +1,6 @@
 package net.minestom.arena;
 
+import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
@@ -67,6 +68,9 @@ public final class Lobby extends InstanceContainer {
 
     void onFirstSpawn(Player player) {
         player.sendPackets(Lobby.MAP_PACKETS);
+
+        final Group group = Group.findGroup(player);
+        group.setDisplay(new LobbySidebarDisplay(group));
     }
 
     void onArenaFinish(Player player) {

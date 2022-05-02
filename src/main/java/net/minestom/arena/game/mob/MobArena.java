@@ -6,8 +6,9 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.title.Title;
-import net.minestom.arena.Items;
+import net.minestom.arena.Icons;
 import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
@@ -15,6 +16,8 @@ import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
+import net.minestom.arena.utils.ItemUtils;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.attribute.Attribute;
 import net.minestom.server.attribute.AttributeModifier;
 import net.minestom.server.attribute.AttributeOperation;
@@ -22,6 +25,8 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
+import net.minestom.server.entity.damage.DamageType;
+import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
@@ -30,17 +35,39 @@ import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
+import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.Material;
+import net.minestom.server.particle.Particle;
+import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
+import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
+import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
-    private static final MobGenerator[] MOB_GENERATORS = {
+    private static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
+    private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
+    private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
+    private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
+    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mobarena-attack-speed", 100f, AttributeOperation.ADDITION);
+    private static final AttributeModifier HEALTHCARE_MODIFIER = new AttributeModifier("mobarena-healthcare", 4f, AttributeOperation.ADDITION);
+    private static final AttributeModifier COMBAT_TRAINING_MODIFIER = new AttributeModifier("mobarena-combat-training", 0.1f, AttributeOperation.MULTIPLY_TOTAL);
+
+    private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
+            .displayName(Component.text("Wand"))
+            .set(WAND_TAG, true)
+            .build());
+
+    private static final List<MobGenerator> MOB_GENERATORS = List.of(
             (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed + 1))
                     .toList(),
@@ -50,11 +77,71 @@ public final class MobArena implements SingleInstanceArena {
             (stage, needed) -> Stream.generate(() -> new SkeletonMob(stage))
                     .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
                     .toList()
-    };
-    private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mob-arena", 100f, AttributeOperation.ADDITION);
-    private static final Tag<Integer> WEAPON_TIER_TAG = Tag.Integer("weaponTier").defaultValue(-1);
-    private static final Tag<Integer> ARMOR_TIER_TAG = Tag.Integer("armorTier").defaultValue(-1);
-    static final Tag<Boolean> WEAPON_TAG = Tag.Boolean("weapon").defaultValue(false);
+    );
+
+    private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
+            Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
+            List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
+            null,
+            ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
+            null,
+            null
+    ), 5);
+    public static final List<ArenaClass> CLASSES = List.of(
+            KNIGHT_CLASS,
+            new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
+                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW, new Kit(
+                            List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
+                            null,
+                            ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
+                            null,
+                            null
+                    ), 10),
+            new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
+                    Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE, new Kit(
+                            List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
+                            ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
+                            ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                            ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
+                            ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
+                    ), 15),
+            new ArenaClass("Mage", "Fight enemies from far away using your long ranged magic missiles.",
+                    Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD, new Kit(
+                            List.of(WAND),
+                            null,
+                            null,
+                            ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
+                            null
+                    ), 20),
+            new ArenaClass("Berserker", "For when knight doesn't deal enough damage.",
+                    Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE, new Kit(
+                            List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4)),
+                            null,
+                            null,
+                            null,
+                            null
+                    ), 25)
+    );
+
+    private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
+            TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, 10);
+    public static final List<ArenaUpgrade> UPGRADES = List.of(
+            new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts.",
+                    TextColor.color(0x63ff52), Material.POTION,
+                    player -> {
+                        // Since this upgrade includes healing, check if they have the modifier first
+                        // before healing them another two hearts
+                        if (!player.getAttribute(Attribute.MAX_HEALTH).getModifiers().contains(HEALTHCARE_MODIFIER)) {
+                            player.getAttribute(Attribute.MAX_HEALTH).addModifier(HEALTHCARE_MODIFIER);
+                            player.setHealth(player.getHealth() + HEALTHCARE_MODIFIER.getAmount());
+                        }
+                    }, 10),
+            new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
+                    TextColor.color(0xff5c3c), Material.IRON_SWORD,
+                    player -> player.getAttribute(Attribute.ATTACK_DAMAGE)
+                            .addModifier(COMBAT_TRAINING_MODIFIER), 10),
+            ALLOYING_UPGRADE
+    );
 
     private static final int SPAWN_RADIUS = 10;
     private static final int HEIGHT = 16;
@@ -119,11 +206,15 @@ public final class MobArena implements SingleInstanceArena {
     private final BossBar bossBar;
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
+    private final Map<Player, ArenaClass> playerClasses = new HashMap<>();
+    private final Set<ArenaUpgrade> upgrades = new HashSet<>();
 
     private int stage = 0;
+    private int coins = 0;
 
     public MobArena(Group group) {
         this.group = group;
+        group.setDisplay(new MobArenaSidebarDisplay(this));
 
         // Show boss bar
         bossBar = BossBar.bossBar(Component.text("Loading..."), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
@@ -135,9 +226,7 @@ public final class MobArena implements SingleInstanceArena {
         }
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
-            ItemEntity item = new ItemEntity(Items.COIN);
-            item.setGlowing(true);
-            item.setInstance(arenaInstance, event.getEntity().getPosition());
+            addCoins(1);
 
             for (Entity entity : arenaInstance.getEntities()) {
                 if (entity instanceof EntityCreature creature && !(creature.isDead())) {
@@ -163,6 +252,13 @@ public final class MobArena implements SingleInstanceArena {
                 deadPlayer.showBossBar(bossBar);
             }
 
+            for (ArenaUpgrade upgrade : upgrades) {
+                if (upgrade.consumer() != null)
+                    for (Player player : arenaInstance.getPlayers()) {
+                        upgrade.consumer().accept(player);
+                    }
+            }
+
             final int playerCount = arenaInstance.getPlayers().size();
             final String playerOrPlayers = "player" + (playerCount == 1 ? "" : "s");
 
@@ -185,10 +281,6 @@ public final class MobArena implements SingleInstanceArena {
 
             player.setInstance(Lobby.INSTANCE);
 
-            // Reset tags (player has to buy everything again if they die)
-            player.removeTag(WEAPON_TIER_TAG);
-            player.removeTag(ARMOR_TIER_TAG);
-
             event.setChatMessage(null);
             Messenger.info(player, "You died. Your last stage was " + stage);
         }).addListener(RemoveEntityFromInstanceEvent.class, event -> {
@@ -208,7 +300,7 @@ public final class MobArena implements SingleInstanceArena {
 
             if (!(target instanceof NextStageNPC)) return;
             if (!hasContinued(player)) {
-                player.openInventory(new MobShopInventory(player, this));
+                player.openInventory(new NextStageInventory(player, this));
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), target);
             } else {
                 Messenger.warn(player, "You already continued");
@@ -220,12 +312,15 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public void continueToNextStage(Player player) {
-        continued.add(player);
+        if (!continued.add(player)) return;
 
         final int continuedCount = continued.size();
         final int haveToContinue = arenaInstance.getPlayers().size();
+        final int untilStart = haveToContinue - continuedCount;
 
-        if (continuedCount >= haveToContinue) {
+        if (untilStart <= 0) {
+            Messenger.info(group.audience(), player.getUsername() + " has continued. Starting the next wave.");
+
             bossBar.name(Component.text("Wave starting..."));
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
@@ -234,10 +329,10 @@ public final class MobArena implements SingleInstanceArena {
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
         } else {
-            final int playerCount = haveToContinue - continuedCount;
-            final String playerOrPlayers = "player" + (playerCount == 1 ? "" : "s");
+            Messenger.info(group.audience(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
 
-            bossBar.name(Component.text("Stage cleared! Waiting for " + playerCount + " more " + playerOrPlayers + " to continue"));
+            final String playerOrPlayers = "player" + (untilStart == 1 ? "" : "s");
+            bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
             bossBar.progress((float) continuedCount / haveToContinue);
             bossBar.color(BossBar.Color.GREEN);
         }
@@ -251,6 +346,11 @@ public final class MobArena implements SingleInstanceArena {
                 entity.remove();
                 break;
             }
+        }
+
+        for (Player member : group.members()) {
+            member.setHealth(member.getHealth() + 4); // Heal 2 hearts
+            playerClass(member).apply(member);
         }
 
         List<ArenaMob> mobs = generateMobs(stage, mobCount);
@@ -282,20 +382,47 @@ public final class MobArena implements SingleInstanceArena {
         return continued.contains(player);
     }
 
-    public int currentWeaponTier(Player player) {
-        return player.getTag(WEAPON_TIER_TAG);
+    public int coins() {
+        return coins;
     }
 
-    public int currentArmorTier(Player player) {
-        return player.getTag(ARMOR_TIER_TAG);
+    public boolean takeCoins(int coins) {
+        if (coins() > coins) {
+            setCoins(coins() - coins);
+            return true;
+        }
+
+        return false;
     }
 
-    public void setWeaponTier(Player player, int tier) {
-        player.setTag(WEAPON_TIER_TAG, tier);
+    public void addCoins(int coins) {
+        setCoins(coins() + coins);
     }
 
-    public void setArmorTier(Player player, int tier) {
-        player.setTag(ARMOR_TIER_TAG, tier);
+    private void setCoins(int coins) {
+        this.coins = coins;
+        group.display().update();
+    }
+
+    public ArenaClass playerClass(Player player) {
+        return playerClasses.getOrDefault(player, KNIGHT_CLASS); // Knight class is default
+    }
+
+    public void setPlayerClass(Player player, ArenaClass arenaClass) {
+        playerClasses.put(player, arenaClass);
+        arenaClass.apply(player);
+    }
+
+    public boolean hasUpgrade(ArenaUpgrade upgrade) {
+        return upgrades.contains(upgrade);
+    }
+
+    public void addUpgrade(ArenaUpgrade upgrade) {
+        upgrades.add(upgrade);
+        if (upgrade.consumer() != null)
+            for (Player player : arenaInstance.getPlayers()) {
+                upgrade.consumer().accept(player);
+            }
     }
 
     private Set<Player> deadPlayers() {
@@ -327,31 +454,97 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.combat(false, (attacker, victim) -> {
+        return List.of(Features.bow((entity, power) -> {
+            final EntityProjectile projectile = new EntityProjectile(entity, EntityType.ARROW);
+            final ArrowMeta meta = (ArrowMeta) projectile.getEntityMeta();
+            meta.setCritical(power >= 0.9);
+            projectile.scheduleRemove(Duration.of(100, TimeUnit.SERVER_TICK));
+
+            return projectile;
+        }), Features.combat(false, (attacker, victim) -> {
             float damage = 1;
             if (attacker instanceof LivingEntity livingEntity) {
                 damage = livingEntity.getAttributeValue(Attribute.ATTACK_DAMAGE);
+            } else if (attacker instanceof EntityProjectile projectile && projectile.getShooter() instanceof Player player) {
+                final float movementSpeed = (float) (projectile.getVelocity().length() / MinecraftServer.TICK_PER_SECOND);
+                damage = movementSpeed * player.getAttributeValue(Attribute.ATTACK_DAMAGE);
             }
 
             if (attacker instanceof Player player) {
-                final boolean isWeapon = player.getItemInMainHand().getTag(WEAPON_TAG);
-                final float multi = 0.2f * (currentWeaponTier(player) + 1);
+                final int tier = player.getItemInMainHand().getTag(MELEE_TAG);
+                final float multi = 0.1f * tier; // 0 (no weapon)
 
-                if (isWeapon) damage *= 1 + multi;
+                damage *= 1 + multi;
             }
 
             if (victim instanceof Player player) {
-                final boolean hasArmor = !player.getChestplate().isAir();
-                final float multi = -0.1f * (currentArmorTier(player) + 1);
+                int armorPoints = player.getHelmet().getTag(ARMOR_TAG) +
+                        player.getChestplate().getTag(ARMOR_TAG) +
+                        player.getLeggings().getTag(ARMOR_TAG) +
+                        player.getBoots().getTag(ARMOR_TAG);
 
-                if (hasArmor) damage *= 1 + multi;
+                // Armor point = 4% damage reduction
+                final float multi = -0.04f * armorPoints * (hasUpgrade(ALLOYING_UPGRADE) ? 1.25f : 1);
+
+                damage *= 1 + multi;
             }
 
             return damage;
         }, victim -> {
             if (victim instanceof Player) return 500;
             else return 100;
-        }), Features.drop());
+        }), Features.drop(item ->
+                !item.getTag(Kit.KIT_ITEM_TAG)
+        ), Features.functionalItem(item -> item.getTag(WAND_TAG), player -> {
+            Instance instance = player.getInstance();
+            AtomicReference<Pos> posReference = new AtomicReference<>(player.getPosition().add(0, player.getEyeHeight(), 0).withView(0, -90));
+            AtomicInteger initTicks = new AtomicInteger(5);
+
+            MinecraftServer.getSchedulerManager().submitTask(() -> {
+                if (instance == null) return TaskSchedule.stop();
+
+                Pos pos = posReference.get();
+                if (initTicks.getAndDecrement() <= 0) {
+                    final Point target = player.getTargetBlockPosition(100);
+                    pos = pos.withLookAt(target == null ? player.getPosition().add(player.getPosition().direction().mul(100)) : target);
+                }
+                pos = pos.add(pos.direction());
+
+                final boolean hasHit = instance.getNearbyEntities(pos, 2)
+                        .stream()
+                        .anyMatch(entity -> !(entity instanceof Player));
+                if (!instance.getBlock(pos).isAir() || !instance.getWorldBorder().isInside(pos) || hasHit) {
+                    arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                            Particle.EXPLOSION_EMITTER, pos.x(), pos.y(), pos.z(),
+                            0, 0, 0, 3
+                    ));
+                    arenaInstance.playSound(
+                            Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.NEUTRAL, 1, 1),
+                            pos.x(), pos.y(), pos.z()
+                    );
+                    for (Entity entity : instance.getNearbyEntities(pos, 5)) {
+                        if (entity instanceof LivingEntity livingEntity && !(entity instanceof Player)) {
+                            livingEntity.damage(DamageType.fromPlayer(player), (float) (10 - entity.getDistance(pos)));
+                        }
+                    }
+
+                    return TaskSchedule.stop();
+                }
+
+                arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                        Particle.FIREWORK, true, pos.x(), pos.y(), pos.z(),
+                        0.3f, 0.3f, 0.3f, 0.01f, 50, null
+                ));
+                arenaInstance.playSound(
+                        Sound.sound(SoundEvent.ENTITY_AXOLOTL_SWIM, Sound.Source.NEUTRAL, 1, 1),
+                        pos.x(), pos.y(), pos.z()
+                );
+
+                posReference.set(pos);
+                return TaskSchedule.tick(1);
+            });
+
+        }, 1000));
     }
 
     private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
