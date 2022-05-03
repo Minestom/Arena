@@ -26,11 +26,12 @@ import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToLongFunction;
 
 /**
- * @param playerCombat Allow player combat
- * @param damageFunction Uses the return value as damage to apply (in lambda arg 1 is attacker, arg 2 is victim)
+ * @param playerCombat            Allow player combat
+ * @param damageFunction          Uses the return value as damage to apply (in lambda arg 1 is attacker, arg 2 is victim)
  * @param invulnerabilityFunction Uses the return value as time an entity is invulnerable after getting attacked (in lambda arg 1 is victim)
  */
-record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> damageFunction, ToLongFunction<Entity> invulnerabilityFunction) implements Feature {
+record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> damageFunction,
+                     ToLongFunction<Entity> invulnerabilityFunction) implements Feature {
     private static final Tag<Long> INVULNERABLE_UNTIL_TAG = Tag.Long("invulnerable_until").defaultValue(0L);
 
     private void takeKnockback(Entity target, Entity source) {

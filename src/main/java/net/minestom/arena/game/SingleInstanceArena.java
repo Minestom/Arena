@@ -44,8 +44,8 @@ public interface SingleInstanceArena extends Arena {
 
         CompletableFuture<?>[] futures =
                 group().members().stream()
-                    .map(player -> player.setInstance(instance, spawnPosition(player)))
-                    .toArray(CompletableFuture<?>[]::new);
+                        .map(player -> player.setInstance(instance, spawnPosition(player)))
+                        .toArray(CompletableFuture<?>[]::new);
 
         return CompletableFuture.allOf(futures).thenRun(this::start);
     }
