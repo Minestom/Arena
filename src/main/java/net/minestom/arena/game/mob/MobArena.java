@@ -30,6 +30,7 @@ import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
+import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
@@ -115,11 +116,11 @@ public final class MobArena implements SingleInstanceArena {
                     ), 20),
             new ArenaClass("Berserker", "For when knight doesn't deal enough damage.",
                     Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE, new Kit(
-                            List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 4)),
+                            List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 5)),
                             null,
                             null,
                             null,
-                            null
+                            ItemStack.of(Material.GOLDEN_BOOTS).withTag(ARMOR_TAG, 2)
                     ), 25)
     );
 
@@ -497,26 +498,27 @@ public final class MobArena implements SingleInstanceArena {
                 !item.getTag(Kit.KIT_ITEM_TAG)
         ), Features.functionalItem(item -> item.getTag(WAND_TAG), player -> {
             Instance instance = player.getInstance();
-            AtomicReference<Pos> posReference = new AtomicReference<>(player.getPosition().add(0, player.getEyeHeight(), 0).withView(0, -90));
-            AtomicInteger initTicks = new AtomicInteger(5);
+            AtomicReference<Pos> atomicPos = new AtomicReference<>(player.getPosition().add(0, player.getEyeHeight(), 0));
+            AtomicInteger atomicAge = new AtomicInteger();
 
             MinecraftServer.getSchedulerManager().submitTask(() -> {
                 if (instance == null) return TaskSchedule.stop();
 
-                Pos pos = posReference.get();
-                if (initTicks.getAndDecrement() <= 0) {
-                    final Point target = player.getTargetBlockPosition(100);
-                    pos = pos.withLookAt(target == null ? player.getPosition().add(player.getPosition().direction().mul(100)) : target);
-                }
-                pos = pos.add(pos.direction());
+                final Pos playerEyes = player.getPosition().add(0, player.getEyeHeight(), 0);
+                final Pos pos = atomicPos.getAndUpdate(p -> p.withLookAt(playerEyes.add(playerEyes.direction().mul(30)))
+                        .add(p.direction()));
+                final int age = atomicAge.getAndIncrement();
 
-                final boolean hasHit = instance.getNearbyEntities(pos, 2)
+                if (instance.getNearbyEntities(pos, 2)
                         .stream()
-                        .anyMatch(entity -> !(entity instanceof Player));
-                if (!instance.getBlock(pos).isAir() || !instance.getWorldBorder().isInside(pos) || hasHit) {
+                        .anyMatch(entity -> entity instanceof ArenaMob) ||
+                        !instance.getBlock(pos).isAir() ||
+                        !instance.getWorldBorder().isInside(pos) ||
+                        age >= 30) {
+
                     arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
-                            Particle.EXPLOSION_EMITTER, pos.x(), pos.y(), pos.z(),
-                            0, 0, 0, 3
+                            Particle.EXPLOSION, pos.x(), pos.y(), pos.z(),
+                            0.5f, 0.5f, 0.5f, 5
                     ));
                     arenaInstance.playSound(
                             Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.NEUTRAL, 1, 1),
@@ -524,7 +526,7 @@ public final class MobArena implements SingleInstanceArena {
                     );
                     for (Entity entity : instance.getNearbyEntities(pos, 5)) {
                         if (entity instanceof LivingEntity livingEntity && !(entity instanceof Player)) {
-                            livingEntity.damage(DamageType.fromPlayer(player), (float) (10 - entity.getDistance(pos)));
+                            livingEntity.damage(DamageType.fromPlayer(player), 7);
                         }
                     }
 
@@ -540,11 +542,10 @@ public final class MobArena implements SingleInstanceArena {
                         pos.x(), pos.y(), pos.z()
                 );
 
-                posReference.set(pos);
                 return TaskSchedule.tick(1);
             });
 
-        }, 1000));
+        }, 1500));
     }
 
     private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
