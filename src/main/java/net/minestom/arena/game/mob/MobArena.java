@@ -467,7 +467,9 @@ public final class MobArena extends SingleInstanceArena {
                 Messenger.info(group().audience(), "New objective! Clear stage within " + halfTime.toString());
                 //todo extend messenger to provide nice countdowns
                 final VoidFuture future = new VoidFuture();
-                new VoidFuture().thenRun(halfTime, ignored -> endGame()).thenRun(future::complete);
+                final VoidFuture cdFuture = new VoidFuture();
+                stageMobCDF.thenRun(cdFuture::complete);
+                cdFuture.thenRun(halfTime, ignored -> endGame()).thenRun(future::complete);
                 return future;
             } else {
                 endGame();
