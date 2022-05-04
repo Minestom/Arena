@@ -12,7 +12,7 @@ public abstract class Game {
     private Date start;
     private Date stop;
     private final static Duration END_TIMEOUT = Duration.ofMinutes(10);
-    enum State { CREATED, INITIALIZING, STARTING, STARTED, ENDING, ENDED }
+    public enum State { CREATED, INITIALIZING, STARTING, STARTED, ENDING, ENDED }
 
     public final VoidFuture getGameFuture() {
         return this.gameFuture;
