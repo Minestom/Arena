@@ -19,11 +19,10 @@ public class VoidFuture extends CompletableFuture<Void> {
         this.complete(null);
     }
 
-    public CompletableFuture<Boolean> thenRun(Duration timeout, BooleanConsumer action) {
+    public CompletableFuture<Void> thenRun(Duration timeout, BooleanConsumer action) {
         final CompletableFuture<Boolean> future = new CompletableFuture<>();
         CompletableFuture.delayedExecutor(timeout.toNanos(), TimeUnit.NANOSECONDS).execute(() -> future.complete(true));
         this.thenRun(() -> future.complete(false));
-        future.thenAccept(action);
-        return future;
+        return future.thenAccept(action);
     }
 }
