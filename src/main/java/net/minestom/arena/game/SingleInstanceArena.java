@@ -1,5 +1,6 @@
 package net.minestom.arena.game;
 
+import net.minestom.arena.LobbySidebarDisplay;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.utils.VoidFuture;
 import net.minestom.server.MinecraftServer;
@@ -28,7 +29,7 @@ public abstract class SingleInstanceArena extends Arena {
         // Register this arena
         MinecraftServer.getInstanceManager().registerInstance(instance);
 
-        instance.eventNode().addListener(RemoveEntityFromInstanceEvent.class, (event) -> {
+        instance.eventNode().addListener(RemoveEntityFromInstanceEvent.class, event -> {
             // We don't care about entities, only players.
             if (!(event.getEntity() instanceof Player)) return;
             // Ensure there is only this player in the instance
@@ -57,6 +58,7 @@ public abstract class SingleInstanceArena extends Arena {
     protected final VoidFuture onStop(boolean normalEnding) {
         // All players have left. We can remove this instance once the player is removed.
         instance().scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance()));
+        group().setDisplay(new LobbySidebarDisplay(group()));
         return handleOnStop(normalEnding);
     }
 }
