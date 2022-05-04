@@ -5,8 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 
-public interface Arena {
-    @NotNull Group group();
-
-    @NotNull CompletableFuture<Void> init();
+public abstract class Arena extends Game {
+    @NotNull
+    protected abstract Group group();
 }

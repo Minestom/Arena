@@ -1,6 +1,7 @@
 package net.minestom.arena.game;
 
 import net.minestom.arena.feature.Feature;
+import net.minestom.arena.utils.VoidFuture;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
@@ -11,17 +12,18 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public interface SingleInstanceArena extends Arena {
-    @NotNull Instance instance();
+public abstract class SingleInstanceArena extends Arena {
+    @NotNull
+    protected abstract Instance instance();
 
-    @NotNull Pos spawnPosition(@NotNull Player player);
+    @NotNull
+    protected abstract Pos spawnPosition(@NotNull Player player);
 
-    @NotNull List<Feature> features();
-
-    void start();
+    @NotNull
+    protected abstract List<Feature> features();
 
     @Override
-    default @NotNull CompletableFuture<Void> init() {
+    public final VoidFuture init() {
         Instance instance = instance();
         // Register this arena
         MinecraftServer.getInstanceManager().registerInstance(instance);
@@ -31,8 +33,8 @@ public interface SingleInstanceArena extends Arena {
             if (!(event.getEntity() instanceof Player)) return;
             // Ensure there is only this player in the instance
             if (instance.getPlayers().size() > 1) return;
-            // All players have left. We can remove this instance once the player is removed.
-            instance.scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
+            // Handle shutdown
+            stop(true);
         });
 
         for (Feature feature : features()) {
@@ -44,6 +46,17 @@ public interface SingleInstanceArena extends Arena {
                     .map(player -> player.setInstance(instance, spawnPosition(player)))
                     .toArray(CompletableFuture<?>[]::new);
 
-        return CompletableFuture.allOf(futures).thenRun(this::start);
+        final VoidFuture future = new VoidFuture();
+        CompletableFuture.allOf(futures).thenRun(future::complete);
+        return future;
+    }
+
+    protected abstract VoidFuture handleOnStop(boolean normalEnding);
+
+    @Override
+    protected final VoidFuture onStop(boolean normalEnding) {
+        // All players have left. We can remove this instance once the player is removed.
+        instance().scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance()));
+        return handleOnStop(normalEnding);
     }
 }
