@@ -15,8 +15,10 @@ import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
+import net.minestom.arena.utils.CountDownFuture;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.arena.utils.ItemUtils;
+import net.minestom.arena.utils.VoidFuture;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.attribute.Attribute;
 import net.minestom.server.attribute.AttributeModifier;
@@ -30,7 +32,6 @@ import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
-import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
@@ -54,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-public final class MobArena implements SingleInstanceArena {
+public final class MobArena extends SingleInstanceArena {
     private static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
     private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
     private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
@@ -146,6 +147,8 @@ public final class MobArena implements SingleInstanceArena {
 
     private static final int SPAWN_RADIUS = 10;
     private static final int HEIGHT = 16;
+    private boolean stageInProgress;
+    private CountDownFuture stageMobCDF;
 
     public static final class MobArenaInstance extends InstanceContainer {
         private final JNoise noise = JNoise.newBuilder()
@@ -228,48 +231,22 @@ public final class MobArena implements SingleInstanceArena {
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
             addCoins(1);
-
-            for (Entity entity : arenaInstance.getEntities()) {
-                if (entity instanceof EntityCreature creature && !(creature.isDead())) {
-                    // -1 for the mob that is dying right now
-                    final int mobsLeft = (int) arenaInstance.getEntities().stream().filter(e -> e instanceof ArenaMob).count() - 1;
-                    final int mobCount = (int) (stage * 1.5);
-                    final String mobOrMobs = " mob" + (mobCount == 1 ? "" : "s");
-
-                    bossBar.name(Component.text("Kill mobs! " + mobsLeft + mobOrMobs + " remaining"));
-                    bossBar.progress((float) mobsLeft / mobCount);
-                    bossBar.color(BossBar.Color.RED);
-
-                    return; // Round hasn't ended yet
-                }
+            if (event.getEntity() instanceof ArenaMob) {
+                stageMobCDF.countDown();
             }
 
-            // Revive dead players
-            for (Player deadPlayer : deadPlayers()) {
-                deadPlayer.setInstance(arenaInstance, spawnPosition(deadPlayer));
+            final int mobsLeft = (int) stageMobCDF.getCount();
 
-                deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
+            if (mobsLeft > 0) {
+                final int mobCount = stageMobCDF.getInitialCount();
+                final String mobOrMobs = " mob" + (mobCount == 1 ? "" : "s");
 
-                deadPlayer.showBossBar(bossBar);
+                bossBar.name(Component.text("Kill mobs! " + mobsLeft + mobOrMobs + " remaining"));
+                bossBar.progress((float) mobsLeft / mobCount);
+                bossBar.color(BossBar.Color.RED);
+            } else {
+                onStageCleared();
             }
-
-            for (ArenaUpgrade upgrade : upgrades) {
-                if (upgrade.consumer() != null)
-                    for (Player player : arenaInstance.getPlayers()) {
-                        upgrade.consumer().accept(player);
-                    }
-            }
-
-            final int playerCount = arenaInstance.getPlayers().size();
-            final String playerOrPlayers = "player" + (playerCount == 1 ? "" : "s");
-
-            bossBar.name(Component.text("Stage cleared! Waiting for " + playerCount + " more " + playerOrPlayers + " to continue"));
-            bossBar.progress(0);
-            bossBar.color(BossBar.Color.GREEN);
-
-            group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
-            Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
-            new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
         }).addListener(PickupItemEvent.class, event -> {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
@@ -293,8 +270,6 @@ public final class MobArena implements SingleInstanceArena {
 
             // Hide boss bar
             player.hideBossBar(bossBar);
-
-            Messenger.info(player, "You left the arena. Your last stage was " + stage);
         }).addListener(PlayerEntityInteractEvent.class, event -> {
             Player player = event.getPlayer();
             Entity target = event.getTarget();
@@ -312,8 +287,48 @@ public final class MobArena implements SingleInstanceArena {
         // TODO: Cancel armor unequip
     }
 
+    private void endGame() {
+        for (Player member : group().members()) {
+            member.setInstance(Lobby.INSTANCE);
+            Messenger.info(group().audience(), "You left the arena. Your last stage was " + stage);
+        }
+    }
+
+    private void onStageCleared() {
+        if (getState() == State.ENDING) endGame();
+        stageInProgress = false;
+        // Revive dead players
+        for (Player deadPlayer : deadPlayers()) {
+            deadPlayer.setInstance(arenaInstance, spawnPosition(deadPlayer));
+
+            deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
+
+            deadPlayer.showBossBar(bossBar);
+        }
+
+        for (ArenaUpgrade upgrade : upgrades) {
+            if (upgrade.consumer() != null)
+                for (Player player : arenaInstance.getPlayers()) {
+                    upgrade.consumer().accept(player);
+                }
+        }
+
+        final int playerCount = arenaInstance.getPlayers().size();
+        final String playerOrPlayers = "player" + (playerCount == 1 ? "" : "s");
+
+        bossBar.name(Component.text("Stage cleared! Waiting for " + playerCount + " more " + playerOrPlayers + " to continue"));
+        bossBar.progress(0);
+        bossBar.color(BossBar.Color.GREEN);
+
+        group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
+        Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
+        new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
+    }
+
     public void continueToNextStage(Player player) {
         if (!continued.add(player)) return;
+        // Don't allow to start a new stage if shutdown is scheduled
+        if (getState() == State.ENDING) return;
 
         final int continuedCount = continued.size();
         final int haveToContinue = arenaInstance.getPlayers().size();
@@ -340,6 +355,7 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public void nextStage() {
+        stageInProgress = true;
         stage++;
         int mobCount = (int) (stage * 1.5);
         for (Entity entity : arenaInstance.getEntities()) {
@@ -377,6 +393,8 @@ public final class MobArena implements SingleInstanceArena {
         bossBar.name(Component.text("Kill mobs! " + mobCount + mobOrMobs + " remaining"));
         bossBar.progress(1f);
         bossBar.color(BossBar.Color.RED);
+
+        stageMobCDF = new CountDownFuture(mobCount);
     }
 
     public boolean hasContinued(Player player) {
@@ -434,8 +452,28 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     @Override
-    public void start() {
+    protected VoidFuture onStart() {
         nextStage();
+        return VoidFuture.completedFuture();
+    }
+
+    @Override
+    protected VoidFuture handleOnStop(boolean normalEnding) {
+        if (normalEnding) {
+            endGame();
+        } else {
+            if (stageInProgress) {
+                final Duration halfTime = getEndTimeout().dividedBy(2);
+                Messenger.info(group().audience(), "New objective! Clear stage within " + halfTime.toString());
+                //todo extend messenger to provide nice countdowns
+                final VoidFuture future = new VoidFuture();
+                new VoidFuture().thenRun(halfTime, ignored -> endGame()).thenRun(future::complete);
+                return future;
+            } else {
+                endGame();
+            }
+        }
+        return VoidFuture.completedFuture();
     }
 
     @Override

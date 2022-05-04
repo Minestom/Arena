@@ -49,6 +49,7 @@ public abstract class SingleInstanceArena extends Arena {
 
         final VoidFuture future = new VoidFuture();
         CompletableFuture.allOf(futures).thenRun(future::complete);
+        group().members().forEach(Player::refreshCommands);
         return future;
     }
 
