@@ -4,7 +4,6 @@ import net.minestom.arena.utils.VoidFuture;
 
 import java.time.Duration;
 import java.util.Date;
-import java.util.concurrent.*;
 
 public abstract class Game {
     private final VoidFuture gameFuture = new VoidFuture();
