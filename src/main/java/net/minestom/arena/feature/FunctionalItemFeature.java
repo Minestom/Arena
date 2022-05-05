@@ -6,6 +6,7 @@ import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.PlayerHandAnimationEvent;
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.item.ItemStack;
+import net.minestom.server.network.packet.server.play.SetCooldownPacket;
 import net.minestom.server.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,6 +28,7 @@ record FunctionalItemFeature(Predicate<ItemStack> trigger, Consumer<Player> cons
 
                     if (now - lastUse >= cooldown) {
                         player.setTag(lastUseTag, now);
+                        player.sendPacket(new SetCooldownPacket(player.getItemInHand(event.getHand()).material().id(), (int) (cooldown/50)));
                         consumer.accept(player);
                     }
                 })
