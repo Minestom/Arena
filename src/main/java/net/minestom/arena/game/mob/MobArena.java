@@ -14,6 +14,9 @@ import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.SingleInstanceArena;
+import net.minestom.arena.game.mob.upgrades.AlloyingUpgrade;
+import net.minestom.arena.game.mob.upgrades.CombatUpgrade;
+import net.minestom.arena.game.mob.upgrades.HealthcareUpgrade;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.arena.utils.ItemUtils;
@@ -30,7 +33,6 @@ import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
-import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
@@ -124,23 +126,10 @@ public final class MobArena implements SingleInstanceArena {
                     ), 25)
     );
 
-    private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
-            TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, 10);
+    private static final ArenaUpgrade ALLOYING_UPGRADE = new AlloyingUpgrade();
     public static final List<ArenaUpgrade> UPGRADES = List.of(
-            new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts.",
-                    TextColor.color(0x63ff52), Material.POTION,
-                    player -> {
-                        // Since this upgrade includes healing, check if they have the modifier first
-                        // before healing them another two hearts
-                        if (!player.getAttribute(Attribute.MAX_HEALTH).getModifiers().contains(HEALTHCARE_MODIFIER)) {
-                            player.getAttribute(Attribute.MAX_HEALTH).addModifier(HEALTHCARE_MODIFIER);
-                            player.setHealth(player.getHealth() + HEALTHCARE_MODIFIER.getAmount());
-                        }
-                    }, 10),
-            new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
-                    TextColor.color(0xff5c3c), Material.IRON_SWORD,
-                    player -> player.getAttribute(Attribute.ATTACK_DAMAGE)
-                            .addModifier(COMBAT_TRAINING_MODIFIER), 10),
+            new HealthcareUpgrade(),
+            new CombatUpgrade(),
             ALLOYING_UPGRADE
     );
 
@@ -253,12 +242,7 @@ public final class MobArena implements SingleInstanceArena {
                 deadPlayer.showBossBar(bossBar);
             }
 
-            for (ArenaUpgrade upgrade : upgrades) {
-                if (upgrade.consumer() != null)
-                    for (Player player : arenaInstance.getPlayers()) {
-                        upgrade.consumer().accept(player);
-                    }
-            }
+            for (ArenaUpgrade upgrade : upgrades) for (Player player : arenaInstance.getPlayers()) upgrade.apply(player);
 
             final int playerCount = arenaInstance.getPlayers().size();
             final String playerOrPlayers = "player" + (playerCount == 1 ? "" : "s");
@@ -420,10 +404,7 @@ public final class MobArena implements SingleInstanceArena {
 
     public void addUpgrade(ArenaUpgrade upgrade) {
         upgrades.add(upgrade);
-        if (upgrade.consumer() != null)
-            for (Player player : arenaInstance.getPlayers()) {
-                upgrade.consumer().accept(player);
-            }
+        for (Player player : arenaInstance.getPlayers()) upgrade.apply(player);
     }
 
     private Set<Player> deadPlayers() {
