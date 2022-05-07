@@ -388,7 +388,7 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public boolean takeCoins(int coins) {
-        if (coins() > coins) {
+        if (coins() >= coins) {
             setCoins(coins() - coins);
             return true;
         }
