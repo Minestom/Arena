@@ -4,6 +4,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 /lobby/
+/leaderboard.dat
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
