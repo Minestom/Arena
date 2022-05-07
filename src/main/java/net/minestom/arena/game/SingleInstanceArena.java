@@ -3,7 +3,6 @@ package net.minestom.arena.game;
 import net.minestom.arena.LobbySidebarDisplay;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.group.Group;
-import net.minestom.arena.utils.VoidFuture;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
@@ -27,7 +26,7 @@ public abstract class SingleInstanceArena extends Game {
     protected abstract List<Feature> features();
 
     @Override
-    public final VoidFuture init() {
+    public final CompletableFuture<Void> init() {
         Instance instance = instance();
         // Register this arena
         MinecraftServer.getInstanceManager().registerInstance(instance);
@@ -38,31 +37,32 @@ public abstract class SingleInstanceArena extends Game {
             // Ensure there is only this player in the instance
             if (instance.getPlayers().size() > 1) return;
             // Handle shutdown
-            stop(true);
+            end();
         });
 
         for (Feature feature : features()) {
             feature.hook(instance.eventNode());
         }
 
+        //TODO Move to start
         CompletableFuture<?>[] futures =
                 group().members().stream()
                     .map(player -> player.setInstance(instance, spawnPosition(player)))
                     .toArray(CompletableFuture<?>[]::new);
 
-        final VoidFuture future = new VoidFuture();
-        CompletableFuture.allOf(futures).thenRun(future::complete);
+        final CompletableFuture<Void> future = new CompletableFuture<>();
+        CompletableFuture.allOf(futures).thenRun(() -> future.complete(null));
         group().members().forEach(Player::refreshCommands);
         return future;
     }
 
-    protected abstract VoidFuture handleOnStop(boolean normalEnding);
+    protected abstract CompletableFuture<Void> handleOnStop();
 
     @Override
-    protected final VoidFuture onStop(boolean normalEnding) {
+    protected final CompletableFuture<Void> onEnd() {
         // All players have left. We can remove this instance once the player is removed.
         instance().scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance()));
         group().setDisplay(new LobbySidebarDisplay(group()));
-        return handleOnStop(normalEnding);
+        return handleOnStop();
     }
 }

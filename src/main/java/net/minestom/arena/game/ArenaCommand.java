@@ -23,8 +23,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+//TODO Rename to game
 public final class ArenaCommand extends Command {
-    private static final Map<String, Function<Group, Arena>> ARENAS = Map.of(
+    private static final Map<String, Function<Group, Game>> ARENAS = Map.of(
             "mob", MobArena::new);
 
     public ArenaCommand() {
