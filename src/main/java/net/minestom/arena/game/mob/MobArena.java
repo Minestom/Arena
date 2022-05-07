@@ -320,9 +320,8 @@ public final class MobArena extends SingleInstanceArena {
     }
 
     public void continueToNextStage(Player player) {
+        if (getState().isAfter(GameState.STARTED)) return;
         if (!continued.add(player)) return;
-        // Don't allow to start a new stage if shutdown is scheduled
-        if (getState() == GameState.ENDING) return;
 
         final int continuedCount = continued.size();
         final int haveToContinue = arenaInstance.getPlayers().size();
