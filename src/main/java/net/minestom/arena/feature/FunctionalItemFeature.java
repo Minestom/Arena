@@ -31,6 +31,7 @@ record FunctionalItemFeature(Predicate<ItemStack> trigger, Consumer<Player> cons
                     }
                 })
                 .filter(event -> trigger.test(event.getPlayer().getItemInHand(event.getHand())))
+                .filter(event -> event.getPlayer().getOpenInventory() == null)
                 .build()
         );
     }

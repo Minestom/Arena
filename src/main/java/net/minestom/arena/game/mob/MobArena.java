@@ -406,6 +406,7 @@ public final class MobArena implements SingleInstanceArena {
     public void setPlayerClass(Player player, ArenaClass arenaClass) {
         playerClasses.put(player, arenaClass);
         arenaClass.apply(player);
+        group.display().update();
     }
 
     public int getUpgrade(ArenaUpgrade upgrade) {

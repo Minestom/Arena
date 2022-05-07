@@ -16,6 +16,7 @@ import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.PlayerChatEvent;
+import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
@@ -64,6 +65,11 @@ public final class Main {
                 final Player player = event.getPlayer();
                 event.setSpawningInstance(Lobby.INSTANCE);
                 player.setRespawnPoint(new Pos(0.5, 16, 0.5));
+
+                Audiences.all().sendMessage(Component.text(
+                        player.getUsername() + " has joined",
+                        NamedTextColor.GREEN
+                ));
             });
 
             handler.addListener(PlayerSpawnEvent.class, event -> {
@@ -75,6 +81,12 @@ public final class Main {
                 player.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1f, 1f));
                 player.setEnableRespawnScreen(false);
             });
+
+            // Logout
+            handler.addListener(PlayerDisconnectEvent.class, event -> Audiences.all().sendMessage(Component.text(
+                    event.getPlayer().getUsername() + " has left",
+                    NamedTextColor.RED
+            )));
 
             // Chat
             handler.addListener(PlayerChatEvent.class, chatEvent -> {

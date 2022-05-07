@@ -105,7 +105,7 @@ final class NextStageInventory extends Inventory {
             }
 
             if (arena.takeCoins(arenaClass.cost())) {
-                Messenger.info(player, "You switched your class to " + arenaClass.name());
+                Messenger.info(arena.group(), player.getUsername() + " switched their class to " + arenaClass.name());
                 arena.setPlayerClass(player, arenaClass);
                 draw();
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
@@ -155,7 +155,7 @@ final class NextStageInventory extends Inventory {
 
         private void buyUpgrade(ArenaUpgrade upgrade) {
             if (arena.takeCoins(upgrade.cost())) {
-                Messenger.info(player, "You bought the " + upgrade.name() + " upgrade for your team");
+                Messenger.info(arena.group(), player.getUsername() + " bought the " + upgrade.name() + " upgrade");
                 arena.addUpgrade(upgrade);
                 draw();
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
