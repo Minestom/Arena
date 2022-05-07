@@ -156,7 +156,7 @@ public abstract class Game {
      * @return {@link #getGameFuture()}
      */
     public final CompletableFuture<Void> shutdown() {
-        if (!tryAdvance(GameState.SHUTTINGDOWN)) {
+        if (!tryAdvance(GameState.SHUTTING_DOWN)) {
             return getGameFuture();
         }
         ConcurrentUtils.thenRunOrTimeout(onShutdown(END_TIMEOUT), END_TIMEOUT, (timeoutReached) -> {
