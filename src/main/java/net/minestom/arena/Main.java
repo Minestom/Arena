@@ -47,6 +47,7 @@ public final class Main {
             manager.register(new ArenaCommand());
             manager.register(new StopCommand());
             manager.register(new LeaveCommand());
+            manager.register(new PingCommand());
         }
 
         // Events
