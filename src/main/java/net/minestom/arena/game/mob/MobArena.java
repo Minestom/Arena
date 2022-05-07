@@ -30,7 +30,6 @@ import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
-import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
@@ -164,13 +163,11 @@ public final class MobArena implements SingleInstanceArena {
                 for (int x = 0; x < unit.size().x(); x++) {
                     for (int z = 0; z < unit.size().z(); z++) {
                         Point bottom = start.add(x, 0, z);
-                        synchronized (noise) { // Synchronization is necessary for JNoise
-                            // Ensure flat terrain in the fighting area
-                            final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
-                            double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
-                            height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
-                            unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
-                        }
+                        // Ensure flat terrain in the fighting area
+                        final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
+                        double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
+                        height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
+                        unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
                     }
                 }
             });
