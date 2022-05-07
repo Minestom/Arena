@@ -5,15 +5,14 @@ import net.minestom.arena.utils.ConcurrentUtils;
 import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Game {
     private final CompletableFuture<Void> gameFuture = new CompletableFuture<>();
-    private GameState state = GameState.CREATED;
+    private final AtomicReference<GameState> state = new AtomicReference<>(GameState.CREATED);
     private Date start;
     private Date end;
     private final static Duration END_TIMEOUT = Duration.ofMinutes(10);
-    private final ReentrantLock stateLock = new ReentrantLock();
 
     /**
      * Used to get a future that represents this game life
@@ -33,7 +32,7 @@ public abstract class Game {
     }
 
     public final GameState getState() {
-        return this.state;
+        return this.state.get();
     }
 
     /**
@@ -65,30 +64,19 @@ public abstract class Game {
      * @throws RuntimeException if called when the state isn't {@link GameState#CREATED}
      */
     public final CompletableFuture<Void> start() {
-        this.stateLock.lock();
-        if (this.state.isAfter(GameState.CREATED)) {
+        if (!this.state.compareAndSet(GameState.CREATED, GameState.INITIALIZING)) {
             throw new RuntimeException("Cannot start a Game twice!");
         }
-        this.state = GameState.INITIALIZING;
-        this.stateLock.unlock();
         init().thenRun(() -> {
-            this.stateLock.lock();
-            if (this.state != GameState.INITIALIZING) {
+            if (!this.state.compareAndSet(GameState.INITIALIZING, GameState.STARTING)) {
                 // A shutdown has been initiated during initialization, don't start the game
-                this.stateLock.unlock();
                 return;
             }
-            this.state = GameState.STARTING;
-            this.stateLock.unlock();
             onStart().thenRun(() -> {
-                this.stateLock.lock();
-                if (this.state != GameState.STARTING) {
+                if (!this.state.compareAndSet(GameState.STARTING, GameState.STARTED)) {
                     // A shutdown has been initiated during game start, don't change state
-                    this.stateLock.unlock();
                     return;
                 }
-                this.state = GameState.STARTED;
-                this.stateLock.unlock();
                 this.start = new Date();
             });
         });
@@ -122,24 +110,16 @@ public abstract class Game {
      * @return {@link #getGameFuture()}
      */
     public final CompletableFuture<Void> shutdown() {
-        this.stateLock.lock();
-        if (this.state.isAfter(GameState.ENDING)) {
-            this.stateLock.unlock();
+        if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDING, GameState.SHUTTINGDOWN)) {
             return getGameFuture();
         }
-        this.state = GameState.SHUTTINGDOWN;
-        this.stateLock.unlock();
         ConcurrentUtils.thenRunOrTimeout(onShutdown(END_TIMEOUT), END_TIMEOUT, (timeoutReached) -> {
             if (timeoutReached) {
-                this.stateLock.lock();
-                if (this.state.isAfter(GameState.ENDING)) {
+                if (!ConcurrentUtils.compareAndSet(this.state, GameState::isOrBefore, GameState.ENDING, GameState.KILLED)) {
                     // The game ended already, we can safely return
-                    this.stateLock.unlock();
                     return;
                 }
                 // Kill game
-                this.state = GameState.KILLED;
-                this.stateLock.unlock();
                 this.end = new Date();
                 this.gameFuture.complete(null);
                 this.kill();
@@ -160,22 +140,14 @@ public abstract class Game {
      * @return {@link #getGameFuture()}
      */
     public final CompletableFuture<Void> end() {
-        this.stateLock.lock();
-        if (this.state.isOrAfter(GameState.ENDING)) {
-            this.stateLock.unlock();
+        if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDING)) {
             return getGameFuture();
         }
-        this.state = GameState.ENDING;
-        this.stateLock.unlock();
         onEnd().thenRun(() -> {
-            this.stateLock.lock();
-            if (this.state == GameState.KILLED) {
+            if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDED)) {
                 // Game was killed, don't alter the state
-                this.stateLock.unlock();
                 return;
             }
-            this.state = GameState.ENDED;
-            this.stateLock.unlock();
             this.end = new Date();
             this.gameFuture.complete(null);
         });

@@ -6,6 +6,8 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiPredicate;
 
 public final class ConcurrentUtils {
     private ConcurrentUtils() {
@@ -48,5 +50,20 @@ public final class ConcurrentUtils {
             }
         });
         return future;
+    }
+
+    public static <V> boolean compareAndSet(AtomicReference<V> reference, BiPredicate<V, V> predicate, V testValue, V newValue) {
+        V prev = reference.get();
+        for (;;) {
+            if (predicate.test(prev, testValue)) {
+                if (prev == (prev = reference.getAndSet(newValue))) return true;
+            } else {
+                if (prev == (prev = reference.getAndSet(prev))) return false;
+            }
+        }
+    }
+
+    public static <V> boolean compareAndSet(AtomicReference<V> reference, BiPredicate<V, V> predicate, V newValue) {
+        return compareAndSet(reference, predicate, newValue, newValue);
     }
 }

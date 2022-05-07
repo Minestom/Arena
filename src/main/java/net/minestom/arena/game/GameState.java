@@ -9,6 +9,14 @@ public enum GameState {
         this.sequence = sequence;
     }
 
+    public boolean isBefore(GameState state) {
+        return this.sequence < state.sequence;
+    }
+
+    public boolean isOrBefore(GameState state) {
+        return this.sequence <= state.sequence;
+    }
+
     public boolean isAfter(GameState state) {
         return this.sequence > state.sequence;
     }
