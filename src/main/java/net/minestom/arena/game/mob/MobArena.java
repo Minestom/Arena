@@ -586,6 +586,21 @@ public final class MobArena extends SingleInstanceArena {
         }, 1500));
     }
 
+    @Override
+    public Set<Player> getAllPlayers() {
+        return group().members();
+    }
+
+    @Override
+    public Set<Player> getPlayers() {
+        return group.members();
+    }
+
+    @Override
+    public Set<Player> getSpectators() {
+        return Collections.emptySet();
+    }
+
     private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
         List<ArenaMob> mobs = new ArrayList<>();
         while (needed > 0) {
