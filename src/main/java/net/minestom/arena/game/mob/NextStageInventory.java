@@ -105,7 +105,7 @@ final class NextStageInventory extends Inventory {
             }
 
             if (arena.takeCoins(arenaClass.cost())) {
-                Messenger.info(player, "You switched your class to " + arenaClass.name());
+                Messenger.info(arena.group(), player.getUsername() + " switched their class to " + arenaClass.name());
                 arena.setPlayerClass(player, arenaClass);
                 draw();
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
@@ -146,24 +146,16 @@ final class NextStageInventory extends Inventory {
         private void draw() {
             final int length = MobArena.UPGRADES.size();
             for (int i = 0; i < length; i++) {
-                ArenaUpgrade upgrade = MobArena.UPGRADES.get(i);
+                final ArenaUpgrade upgrade = MobArena.UPGRADES.get(i);
+                final int level = arena.getUpgrade(upgrade);
 
-                setItemStack(13 - length / 2 + i, upgrade.itemStack().withMeta(
-                        builder -> arena.hasUpgrade(upgrade)
-                                ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
-                                : builder
-                ));
+                setItemStack(13 - length / 2 + i, upgrade.itemStack(level));
             }
         }
 
         private void buyUpgrade(ArenaUpgrade upgrade) {
-            if (arena.hasUpgrade(upgrade)) {
-                Messenger.warn(player, "Your group already has this upgrade");
-                return;
-            }
-
             if (arena.takeCoins(upgrade.cost())) {
-                Messenger.info(player, "You bought the " + upgrade.name() + " upgrade for your team");
+                Messenger.info(arena.group(), player.getUsername() + " bought the " + upgrade.name() + " upgrade");
                 arena.addUpgrade(upgrade);
                 draw();
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_YES, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
