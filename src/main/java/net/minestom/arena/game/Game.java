@@ -42,16 +42,21 @@ public abstract class Game {
     public final GameState getState() {
         return this.state.get();
     }
+
     public abstract Set<Player> getAllPlayers();
+
     public abstract Set<Player> getPlayers();
+
     public abstract Set<Player> getSpectators();
 
     public Audience getAllPlayersAudience() {
         return PacketGroupingAudience.of(getAllPlayers());
     }
+
     public Audience getPlayersAudience() {
         return PacketGroupingAudience.of(getPlayers());
     }
+
     public Audience getSpectatorsAudience() {
         return PacketGroupingAudience.of(getSpectators());
     }
