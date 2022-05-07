@@ -23,8 +23,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+//TODO Rename to game
 public final class ArenaCommand extends Command {
-    private static final Map<String, Function<Group, Arena>> ARENAS = Map.of(
+    private static final Map<String, Function<Group, Game>> ARENAS = Map.of(
             "mob", MobArena::new);
 
     public ArenaCommand() {
@@ -50,15 +51,8 @@ public final class ArenaCommand extends Command {
             return;
         }
 
-        if (GameManager.canStartGame(group.audience())) {
-            Arena arena = ARENAS.get(type).apply(group);
-            if (arena instanceof Game game) {
-                GameManager.registerGame(game);
-            } else {
-                LOGGER.warn("Arena with type '"+type+"' doesn't extend Game, graceful shutdown of this arena isn't possible!");
-            }
-
-            arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
+        if (GameManager.canStartGame(group)) {
+            ARENAS.get(type).apply(group).start();
         }
     }
 
