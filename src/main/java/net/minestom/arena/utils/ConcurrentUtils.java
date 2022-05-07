@@ -8,6 +8,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
+import java.util.stream.Stream;
 
 public final class ConcurrentUtils {
     private ConcurrentUtils() {
@@ -65,5 +66,9 @@ public final class ConcurrentUtils {
 
     public static <V> boolean testAndSet(AtomicReference<V> reference, BiPredicate<V, V> predicate, V newValue) {
         return testAndSet(reference, predicate, newValue, newValue);
+    }
+
+    public static CompletableFuture<Void> joinFutureStream(Stream<CompletableFuture<?>> futureStream) {
+        return CompletableFuture.allOf(futureStream.toArray(CompletableFuture[]::new));
     }
 }
