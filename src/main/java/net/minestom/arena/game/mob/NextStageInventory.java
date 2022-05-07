@@ -147,12 +147,7 @@ final class NextStageInventory extends Inventory {
             final int length = MobArena.UPGRADES.size();
             for (int i = 0; i < length; i++) {
                 ArenaUpgrade upgrade = MobArena.UPGRADES.get(i);
-
-                setItemStack(13 - length / 2 + i, upgrade.itemStack().withMeta(
-                        builder -> arena.hasUpgrade(upgrade)
-                                ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
-                                : builder
-                ));
+                setItemStack(13 - length / 2 + i, upgrade.itemStack(arena.hasUpgrade(upgrade)));
             }
         }
 

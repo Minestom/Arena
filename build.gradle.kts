@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("com.github.johnrengelman.shadow") version "7.1.0"
+    id("io.freefair.lombok") version "6.4.3"
 }
 
 tasks {
