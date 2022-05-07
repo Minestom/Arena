@@ -75,8 +75,7 @@ public final class Main {
             handler.addListener(PlayerSpawnEvent.class, event -> {
                 if (!event.isFirstSpawn()) return;
                 final Player player = event.getPlayer();
-                Messenger.info(player, "Welcome to the Minestom Demo Server.");
-                Messenger.info(player, "Use /arena to play!");
+                Messenger.info(player, "Welcome to Minestom Arena, use /arena to play!");
                 player.setGameMode(GameMode.ADVENTURE);
                 player.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1f, 1f));
                 player.setEnableRespawnScreen(false);
@@ -109,7 +108,7 @@ public final class Main {
                 final long ramUsage = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024;
 
                 final Component header = Component.newline()
-                        .append(Component.text("Minestom Arena Demo", Messenger.PINK_COLOR))
+                        .append(Component.text("Minestom Arena", Messenger.PINK_COLOR))
                         .append(Component.newline()).append(Component.text("Players: " + players.size()))
                         .append(Component.newline()).append(Component.newline())
                         .append(Component.text("RAM USAGE: " + ramUsage + " MB", NamedTextColor.GRAY).append(Component.newline())
