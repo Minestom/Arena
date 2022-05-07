@@ -2,6 +2,7 @@ package net.minestom.arena.game;
 
 import net.minestom.arena.LobbySidebarDisplay;
 import net.minestom.arena.feature.Feature;
+import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.VoidFuture;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
@@ -13,7 +14,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public abstract class SingleInstanceArena extends Arena {
+public abstract class SingleInstanceArena extends Game {
+    @NotNull
+    protected abstract Group group();
     @NotNull
     protected abstract Instance instance();
 
