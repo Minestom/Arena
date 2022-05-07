@@ -118,22 +118,19 @@ public final class MobArena implements SingleInstanceArena {
             new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts.",
                     TextColor.color(0x63ff52), Material.POTION,
                     (player, count) -> {
-                        final float amount = 4 * count;
                         final AttributeModifier modifier = new AttributeModifier(
-                                HEALTHCARE_UUID, "mobarena-healthcare", amount,
+                                HEALTHCARE_UUID, "mobarena-healthcare", 4 * count,
                                 AttributeOperation.ADDITION
                         );
 
                         player.getAttribute(Attribute.MAX_HEALTH).removeModifier(modifier);
                         player.getAttribute(Attribute.MAX_HEALTH).addModifier(modifier);
-                        player.setHealth(player.getHealth() + amount / 2f);
                     }, 10),
             new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
                     TextColor.color(0xff5c3c), Material.IRON_SWORD,
                     (player, count) -> {
-                        final float amount = 0.1f * count;
                         final AttributeModifier modifier = new AttributeModifier(
-                                COMBAT_TRAINING_UUID, "mobarena-combat-training", amount,
+                                COMBAT_TRAINING_UUID, "mobarena-combat-training", 0.1f * count,
                                 AttributeOperation.MULTIPLY_TOTAL
                         );
 
@@ -483,9 +480,11 @@ public final class MobArena implements SingleInstanceArena {
                         player.getBoots().getTag(ARMOR_TAG);
 
                 // Armor point = 4% damage reduction
-                final float multi = (float) (-0.04f * armorPoints * Math.pow(1.25f, getUpgrade(ALLOYING_UPGRADE)));
+                // 20 armor points = max reduction
+                // 1 armor point + 76 alloying = max reduction
+                final float multi = -0.04f * armorPoints * (1 + 0.25f * getUpgrade(ALLOYING_UPGRADE));
 
-                damage *= Math.max(1 + multi, 0.1);
+                damage *= Math.max(1 + multi, 0.2);
             }
 
             return damage;
