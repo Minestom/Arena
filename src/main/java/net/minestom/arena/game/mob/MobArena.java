@@ -601,6 +601,12 @@ public final class MobArena extends SingleInstanceArena {
         return Collections.emptySet();
     }
 
+    @Override
+    public boolean spectate(Player player) {
+        //TODO implement spectating
+        return false;
+    }
+
     private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
         List<ArenaMob> mobs = new ArrayList<>();
         while (needed > 0) {
