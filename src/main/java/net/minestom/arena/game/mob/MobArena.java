@@ -51,7 +51,6 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
@@ -288,16 +287,6 @@ public final class MobArena implements SingleInstanceArena {
 
             // Hide boss bar
             player.hideBossBar(bossBar);
-
-            // Save score
-            Lobby.MOB_LEADERBOARD.addEntry(
-                    group.members()
-                            .stream()
-                            .map(Player::getUsername)
-                            .sorted(String::compareTo) // Ensure alphabetical order in group names so group can't show up on leaderboard twice
-                            .collect(Collectors.joining(", ")),
-                    stage
-            );
 
             Messenger.info(player, "You left the arena. Your last stage was " + stage);
         }).addListener(PlayerEntityInteractEvent.class, event -> {
