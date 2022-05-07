@@ -452,7 +452,7 @@ public final class MobArena extends SingleInstanceArena {
     protected CompletableFuture<Void> onShutdown(Duration shutdownTimeout) {
         if (stageInProgress) {
             final Duration halfTime = shutdownTimeout.dividedBy(2);
-            Messenger.info(group().audience(), "New objective! Clear stage within " + halfTime.toString());
+            Messenger.info(group(), "New objective! Clear stage within " + halfTime.toString());
             //TODO extend messenger to provide nice countdowns
             return ConcurrentUtils.thenRunOrTimeout(ConcurrentUtils.futureFromCountdown(mobCountDownLatch), halfTime, (timeoutReached) -> {
                 //TODO decide game outcome
@@ -467,7 +467,7 @@ public final class MobArena extends SingleInstanceArena {
         final CountDownLatch countDownLatch = new CountDownLatch(group.members().size());
         for (Player member : group().members()) {
             member.setInstance(Lobby.INSTANCE).thenRun(countDownLatch::countDown);
-            Messenger.info(group().audience(), "You left the arena. Your last stage was " + stage);
+            Messenger.info(group(), "You left the arena. Your last stage was " + stage);
         }
         return ConcurrentUtils.futureFromCountdown(countDownLatch);
     }
