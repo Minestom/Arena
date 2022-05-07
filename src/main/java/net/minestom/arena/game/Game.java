@@ -122,11 +122,11 @@ public abstract class Game {
      * @return {@link #getGameFuture()}
      */
     public final CompletableFuture<Void> end() {
-        if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDING)) {
+        if (!tryAdvance(GameState.ENDING)) {
             return getGameFuture();
         }
         onEnd().thenRun(() -> {
-            if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDED)) {
+            if (!tryAdvance(GameState.ENDED)) {
                 // Game was killed, don't alter the state
                 return;
             }
@@ -156,12 +156,12 @@ public abstract class Game {
      * @return {@link #getGameFuture()}
      */
     public final CompletableFuture<Void> shutdown() {
-        if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDING, GameState.SHUTTINGDOWN)) {
+        if (!tryAdvance(GameState.SHUTTINGDOWN)) {
             return getGameFuture();
         }
         ConcurrentUtils.thenRunOrTimeout(onShutdown(END_TIMEOUT), END_TIMEOUT, (timeoutReached) -> {
             if (timeoutReached) {
-                if (!ConcurrentUtils.compareAndSet(this.state, GameState::isOrBefore, GameState.ENDING, GameState.KILLED)) {
+                if (!tryAdvance(GameState.KILLED)) {
                     // The game ended already, we can safely return
                     return;
                 }
@@ -181,4 +181,17 @@ public abstract class Game {
      * Called when the game didn't finish in time after {@link #shutdown()} has been called
      */
     protected void kill() {}
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Utils
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Advance game state
+     *
+     * @return true if the game state advanced, false otherwise
+     */
+    private boolean tryAdvance(GameState newState) {
+        return ConcurrentUtils.testAndSet(this.state, GameState::isBefore, newState);
+    }
 }

@@ -52,7 +52,7 @@ public final class ConcurrentUtils {
         return future;
     }
 
-    public static <V> boolean compareAndSet(AtomicReference<V> reference, BiPredicate<V, V> predicate, V testValue, V newValue) {
+    public static <V> boolean testAndSet(AtomicReference<V> reference, BiPredicate<V, V> predicate, V testValue, V newValue) {
         for (;;) {
             V prev = reference.get();
             if (predicate.test(prev, testValue)) {
@@ -63,7 +63,7 @@ public final class ConcurrentUtils {
         }
     }
 
-    public static <V> boolean compareAndSet(AtomicReference<V> reference, BiPredicate<V, V> predicate, V newValue) {
-        return compareAndSet(reference, predicate, newValue, newValue);
+    public static <V> boolean testAndSet(AtomicReference<V> reference, BiPredicate<V, V> predicate, V newValue) {
+        return testAndSet(reference, predicate, newValue, newValue);
     }
 }
