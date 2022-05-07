@@ -149,7 +149,7 @@ final class NextStageInventory extends Inventory {
                 ArenaUpgrade upgrade = MobArena.UPGRADES.get(i);
 
                 setItemStack(13 - length / 2 + i, upgrade.itemStack().withMeta(
-                        builder -> arena.hasUpgrade(upgrade)
+                        builder -> arena.getUpgrade(upgrade) != 0
                                 ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
                                 : builder
                 ));
@@ -157,11 +157,6 @@ final class NextStageInventory extends Inventory {
         }
 
         private void buyUpgrade(ArenaUpgrade upgrade) {
-            if (arena.hasUpgrade(upgrade)) {
-                Messenger.warn(player, "Your group already has this upgrade");
-                return;
-            }
-
             if (arena.takeCoins(upgrade.cost())) {
                 Messenger.info(player, "You bought the " + upgrade.name() + " upgrade for your team");
                 arena.addUpgrade(upgrade);

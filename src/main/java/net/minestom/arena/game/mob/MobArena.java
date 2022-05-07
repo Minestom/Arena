@@ -30,7 +30,6 @@ import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
-import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
@@ -60,8 +59,6 @@ public final class MobArena implements SingleInstanceArena {
     private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
     private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
     private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mobarena-attack-speed", 100f, AttributeOperation.ADDITION);
-    private static final AttributeModifier HEALTHCARE_MODIFIER = new AttributeModifier("mobarena-healthcare", 4f, AttributeOperation.ADDITION);
-    private static final AttributeModifier COMBAT_TRAINING_MODIFIER = new AttributeModifier("mobarena-combat-training", 0.1f, AttributeOperation.MULTIPLY_TOTAL);
 
     private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
             .displayName(Component.text("Wand"))
@@ -126,21 +123,35 @@ public final class MobArena implements SingleInstanceArena {
 
     private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
             TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, 10);
+    private static final UUID HEALTHCARE_UUID = new UUID(9354678, 3425896);
+    private static final UUID COMBAT_TRAINING_UUID = new UUID(24539786, 23945687);
+
     public static final List<ArenaUpgrade> UPGRADES = List.of(
             new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts.",
                     TextColor.color(0x63ff52), Material.POTION,
-                    player -> {
-                        // Since this upgrade includes healing, check if they have the modifier first
-                        // before healing them another two hearts
-                        if (!player.getAttribute(Attribute.MAX_HEALTH).getModifiers().contains(HEALTHCARE_MODIFIER)) {
-                            player.getAttribute(Attribute.MAX_HEALTH).addModifier(HEALTHCARE_MODIFIER);
-                            player.setHealth(player.getHealth() + HEALTHCARE_MODIFIER.getAmount());
-                        }
+                    (player, count) -> {
+                        final float amount = 4 * count;
+                        final AttributeModifier modifier = new AttributeModifier(
+                                HEALTHCARE_UUID, "mobarena-healthcare", amount,
+                                AttributeOperation.ADDITION
+                        );
+
+                        player.getAttribute(Attribute.MAX_HEALTH).removeModifier(modifier);
+                        player.getAttribute(Attribute.MAX_HEALTH).addModifier(modifier);
+                        player.setHealth(player.getHealth() + amount / 2f);
                     }, 10),
             new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
                     TextColor.color(0xff5c3c), Material.IRON_SWORD,
-                    player -> player.getAttribute(Attribute.ATTACK_DAMAGE)
-                            .addModifier(COMBAT_TRAINING_MODIFIER), 10),
+                    (player, count) -> {
+                        final float amount = 0.1f * count;
+                        final AttributeModifier modifier = new AttributeModifier(
+                                COMBAT_TRAINING_UUID, "mobarena-combat-training", amount,
+                                AttributeOperation.MULTIPLY_TOTAL
+                        );
+
+                        player.getAttribute(Attribute.ATTACK_DAMAGE).removeModifier(modifier);
+                        player.getAttribute(Attribute.ATTACK_DAMAGE).addModifier(modifier);
+                    }, 10),
             ALLOYING_UPGRADE
     );
 
@@ -208,7 +219,7 @@ public final class MobArena implements SingleInstanceArena {
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
     private final Map<Player, ArenaClass> playerClasses = new HashMap<>();
-    private final Set<ArenaUpgrade> upgrades = new HashSet<>();
+    private final Map<ArenaUpgrade, Integer> upgrades = new HashMap<>();
 
     private int stage = 0;
     private int coins = 0;
@@ -253,10 +264,10 @@ public final class MobArena implements SingleInstanceArena {
                 deadPlayer.showBossBar(bossBar);
             }
 
-            for (ArenaUpgrade upgrade : upgrades) {
-                if (upgrade.consumer() != null)
+            for (Map.Entry<ArenaUpgrade, Integer> entry : upgrades.entrySet()) {
+                if (entry.getKey().consumer() != null)
                     for (Player player : arenaInstance.getPlayers()) {
-                        upgrade.consumer().accept(player);
+                        entry.getKey().consumer().accept(player, entry.getValue());
                     }
             }
 
@@ -414,15 +425,16 @@ public final class MobArena implements SingleInstanceArena {
         arenaClass.apply(player);
     }
 
-    public boolean hasUpgrade(ArenaUpgrade upgrade) {
-        return upgrades.contains(upgrade);
+    public int getUpgrade(ArenaUpgrade upgrade) {
+        return upgrades.getOrDefault(upgrade, 0);
     }
 
     public void addUpgrade(ArenaUpgrade upgrade) {
-        upgrades.add(upgrade);
+        final int level = getUpgrade(upgrade) + 1;
+        upgrades.put(upgrade, level);
         if (upgrade.consumer() != null)
             for (Player player : arenaInstance.getPlayers()) {
-                upgrade.consumer().accept(player);
+                upgrade.consumer().accept(player, level);
             }
     }
 
@@ -485,7 +497,7 @@ public final class MobArena implements SingleInstanceArena {
                         player.getBoots().getTag(ARMOR_TAG);
 
                 // Armor point = 4% damage reduction
-                final float multi = -0.04f * armorPoints * (hasUpgrade(ALLOYING_UPGRADE) ? 1.25f : 1);
+                final float multi = (float) (-0.04f * armorPoints * Math.pow(1.25f, getUpgrade(ALLOYING_UPGRADE)));
 
                 damage *= 1 + multi;
             }
