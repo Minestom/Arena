@@ -497,7 +497,7 @@ public final class MobArena implements SingleInstanceArena {
                 // Armor point = 4% damage reduction
                 final float multi = (float) (-0.04f * armorPoints * Math.pow(1.25f, getUpgrade(ALLOYING_UPGRADE)));
 
-                damage *= 1 + multi;
+                damage *= Math.max(1 + multi, 0.1);
             }
 
             return damage;
