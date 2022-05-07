@@ -1,7 +1,7 @@
 package net.minestom.arena.game;
 
 public enum GameState {
-    CREATED(0), INITIALIZING(1), STARTING(2), STARTED(2), ENDING(3), SHUTTINGDOWN(3), ENDED(4), KILLED(4);
+    CREATED(0), INITIALIZING(1), STARTING(2), STARTED(3), ENDING(4), SHUTTINGDOWN(4), ENDED(5), KILLED(5);
 
     private final int sequence;
 
