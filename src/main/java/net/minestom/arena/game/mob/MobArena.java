@@ -63,8 +63,6 @@ public final class MobArena extends SingleInstanceArena {
     private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
     private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
     private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mobarena-attack-speed", 100f, AttributeOperation.ADDITION);
-    private static final AttributeModifier HEALTHCARE_MODIFIER = new AttributeModifier("mobarena-healthcare", 4f, AttributeOperation.ADDITION);
-    private static final AttributeModifier COMBAT_TRAINING_MODIFIER = new AttributeModifier("mobarena-combat-training", 0.1f, AttributeOperation.MULTIPLY_TOTAL);
 
     private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
             .displayName(Component.text("Wand"))
@@ -84,66 +82,65 @@ public final class MobArena extends SingleInstanceArena {
     );
 
     private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
-            Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
-            List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
-            null,
-            ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
-            null,
-            null
-    ), 5);
+            Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD,
+            new Kit(List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
+                    Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4))),
+            5);
     public static final List<ArenaClass> CLASSES = List.of(
             KNIGHT_CLASS,
             new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
-                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW, new Kit(
-                            List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
-                            null,
-                            ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
-                            null,
-                            null
-                    ), 10),
+                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW,
+                    new Kit(List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
+                            Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3))),
+                    10),
             new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
-                    Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE, new Kit(
-                            List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
-                            ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
-                            ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
-                            ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
-                            ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
-                    ), 15),
+                    Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE,
+                    new Kit(List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
+                            Map.of(EquipmentSlot.HELMET, ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
+                                    EquipmentSlot.CHESTPLATE, ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                                    EquipmentSlot.LEGGINGS, ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
+                                    EquipmentSlot.BOOTS, ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1))),
+                    15),
             new ArenaClass("Mage", "Fight enemies from far away using your long ranged magic missiles.",
-                    Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD, new Kit(
-                            List.of(WAND),
-                            null,
-                            null,
-                            ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
-                            null
-                    ), 20),
+                    Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD,
+                    new Kit(List.of(WAND),
+                            Map.of(EquipmentSlot.LEGGINGS, ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2))),
+                    20),
             new ArenaClass("Berserker", "For when knight doesn't deal enough damage.",
-                    Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE, new Kit(
-                            List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 5)),
-                            null,
-                            null,
-                            null,
-                            ItemStack.of(Material.GOLDEN_BOOTS).withTag(ARMOR_TAG, 2)
-                    ), 25)
+                    Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE,
+                    new Kit(List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 5)),
+                            Map.of(EquipmentSlot.BOOTS, ItemStack.of(Material.GOLDEN_BOOTS).withTag(ARMOR_TAG, 2))),
+                    25)
     );
 
     private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
             TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, 10);
+    private static final UUID HEALTHCARE_UUID = new UUID(9354678, 3425896);
+    private static final UUID COMBAT_TRAINING_UUID = new UUID(24539786, 23945687);
+
     public static final List<ArenaUpgrade> UPGRADES = List.of(
             new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts.",
                     TextColor.color(0x63ff52), Material.POTION,
-                    player -> {
-                        // Since this upgrade includes healing, check if they have the modifier first
-                        // before healing them another two hearts
-                        if (!player.getAttribute(Attribute.MAX_HEALTH).getModifiers().contains(HEALTHCARE_MODIFIER)) {
-                            player.getAttribute(Attribute.MAX_HEALTH).addModifier(HEALTHCARE_MODIFIER);
-                            player.setHealth(player.getHealth() + HEALTHCARE_MODIFIER.getAmount());
-                        }
+                    (player, count) -> {
+                        final AttributeModifier modifier = new AttributeModifier(
+                                HEALTHCARE_UUID, "mobarena-healthcare", 4 * count,
+                                AttributeOperation.ADDITION
+                        );
+
+                        player.getAttribute(Attribute.MAX_HEALTH).removeModifier(modifier);
+                        player.getAttribute(Attribute.MAX_HEALTH).addModifier(modifier);
                     }, 10),
             new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
                     TextColor.color(0xff5c3c), Material.IRON_SWORD,
-                    player -> player.getAttribute(Attribute.ATTACK_DAMAGE)
-                            .addModifier(COMBAT_TRAINING_MODIFIER), 10),
+                    (player, count) -> {
+                        final AttributeModifier modifier = new AttributeModifier(
+                                COMBAT_TRAINING_UUID, "mobarena-combat-training", 0.1f * count,
+                                AttributeOperation.MULTIPLY_TOTAL
+                        );
+
+                        player.getAttribute(Attribute.ATTACK_DAMAGE).removeModifier(modifier);
+                        player.getAttribute(Attribute.ATTACK_DAMAGE).addModifier(modifier);
+                    }, 10),
             ALLOYING_UPGRADE
     );
 
@@ -170,13 +167,11 @@ public final class MobArena extends SingleInstanceArena {
                 for (int x = 0; x < unit.size().x(); x++) {
                     for (int z = 0; z < unit.size().z(); z++) {
                         Point bottom = start.add(x, 0, z);
-                        synchronized (noise) { // Synchronization is necessary for JNoise
-                            // Ensure flat terrain in the fighting area
-                            final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
-                            double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
-                            height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
-                            unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
-                        }
+                        // Ensure flat terrain in the fighting area
+                        final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
+                        double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
+                        height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
+                        unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
                     }
                 }
             });
@@ -214,7 +209,7 @@ public final class MobArena extends SingleInstanceArena {
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
     private final Map<Player, ArenaClass> playerClasses = new HashMap<>();
-    private final Set<ArenaUpgrade> upgrades = new HashSet<>();
+    private final Map<ArenaUpgrade, Integer> upgrades = new HashMap<>();
 
     private int stage = 0;
     private int coins = 0;
@@ -225,7 +220,7 @@ public final class MobArena extends SingleInstanceArena {
 
         // Show boss bar
         bossBar = BossBar.bossBar(Component.text("Loading..."), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
-        group.audience().showBossBar(bossBar);
+        group.showBossBar(bossBar);
 
         // Remove attack indicator
         for (Player member : group.members()) {
@@ -300,10 +295,10 @@ public final class MobArena extends SingleInstanceArena {
             deadPlayer.showBossBar(bossBar);
         }
 
-        for (ArenaUpgrade upgrade : upgrades) {
-            if (upgrade.consumer() != null)
+        for (Map.Entry<ArenaUpgrade, Integer> entry : upgrades.entrySet()) {
+            if (entry.getKey().consumer() != null)
                 for (Player player : arenaInstance.getPlayers()) {
-                    upgrade.consumer().accept(player);
+                    entry.getKey().consumer().accept(player, entry.getValue());
                 }
         }
 
@@ -314,8 +309,8 @@ public final class MobArena extends SingleInstanceArena {
         bossBar.progress(0);
         bossBar.color(BossBar.Color.GREEN);
 
-        group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
-        Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
+        group().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
+        Messenger.info(group(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
         new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
     }
 
@@ -328,17 +323,17 @@ public final class MobArena extends SingleInstanceArena {
         final int untilStart = haveToContinue - continuedCount;
 
         if (untilStart <= 0) {
-            Messenger.info(group.audience(), player.getUsername() + " has continued. Starting the next wave.");
+            Messenger.info(group(), player.getUsername() + " has continued. Starting the next wave.");
 
             bossBar.name(Component.text("Wave starting..."));
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
 
-            Messenger.countdown(group().audience(), 3)
+            Messenger.countdown(group(), 3)
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
         } else {
-            Messenger.info(group.audience(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
+            Messenger.info(group(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
 
             final String playerOrPlayers = "player" + (untilStart == 1 ? "" : "s");
             bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
@@ -400,7 +395,7 @@ public final class MobArena extends SingleInstanceArena {
     }
 
     public boolean takeCoins(int coins) {
-        if (coins() > coins) {
+        if (coins() >= coins) {
             setCoins(coins() - coins);
             return true;
         }
@@ -424,17 +419,19 @@ public final class MobArena extends SingleInstanceArena {
     public void setPlayerClass(Player player, ArenaClass arenaClass) {
         playerClasses.put(player, arenaClass);
         arenaClass.apply(player);
+        group.display().update();
     }
 
-    public boolean hasUpgrade(ArenaUpgrade upgrade) {
-        return upgrades.contains(upgrade);
+    public int getUpgrade(ArenaUpgrade upgrade) {
+        return upgrades.getOrDefault(upgrade, 0);
     }
 
     public void addUpgrade(ArenaUpgrade upgrade) {
-        upgrades.add(upgrade);
+        final int level = getUpgrade(upgrade) + 1;
+        upgrades.put(upgrade, level);
         if (upgrade.consumer() != null)
             for (Player player : arenaInstance.getPlayers()) {
-                upgrade.consumer().accept(player);
+                upgrade.consumer().accept(player, level);
             }
     }
 
@@ -522,9 +519,11 @@ public final class MobArena extends SingleInstanceArena {
                         player.getBoots().getTag(ARMOR_TAG);
 
                 // Armor point = 4% damage reduction
-                final float multi = -0.04f * armorPoints * (hasUpgrade(ALLOYING_UPGRADE) ? 1.25f : 1);
+                // 20 armor points = max reduction
+                // 1 armor point + 76 alloying = max reduction
+                final float multi = -0.04f * armorPoints * (1 + 0.25f * getUpgrade(ALLOYING_UPGRADE));
 
-                damage *= 1 + multi;
+                damage *= Math.max(1 + multi, 0.2);
             }
 
             return damage;
