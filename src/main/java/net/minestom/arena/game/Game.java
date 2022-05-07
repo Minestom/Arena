@@ -14,6 +14,10 @@ public abstract class Game {
     private Date end;
     private final static Duration END_TIMEOUT = Duration.ofMinutes(10);
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Getter methods
+    ///////////////////////////////////////////////////////////////////////////
+
     /**
      * Used to get a future that represents this game life
      *
@@ -34,6 +38,10 @@ public abstract class Game {
     public final GameState getState() {
         return this.state.get();
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Life cycle methods
+    ///////////////////////////////////////////////////////////////////////////
 
     /**
      * Used to prepare the game for players e.g. generate the world, summon entities, register listeners, etc.
@@ -91,6 +99,27 @@ public abstract class Game {
     protected abstract CompletableFuture<Void> onEnd();
 
     /**
+     * Used to end the game normally, only the first call will execute {@link #onEnd()}
+     * multiple calls to this method will be ignored
+     *
+     * @return {@link #getGameFuture()}
+     */
+    public final CompletableFuture<Void> end() {
+        if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDING)) {
+            return getGameFuture();
+        }
+        onEnd().thenRun(() -> {
+            if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDED)) {
+                // Game was killed, don't alter the state
+                return;
+            }
+            this.end = new Date();
+            this.gameFuture.complete(null);
+        });
+        return getGameFuture();
+    }
+
+    /**
      * Used to prepare the game for ending within the specified timeout
      *
      * @param shutdownTimeout duration in which the game should end
@@ -131,26 +160,8 @@ public abstract class Game {
         return getGameFuture();
     }
 
-    protected void kill() {}
-
     /**
-     * Used to end the game normally, only the first call will execute {@link #onEnd()}
-     * multiple calls to this method will be ignored
-     *
-     * @return {@link #getGameFuture()}
+     * Called when the game didn't finish in time after {@link #shutdown()} has been called
      */
-    public final CompletableFuture<Void> end() {
-        if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDING)) {
-            return getGameFuture();
-        }
-        onEnd().thenRun(() -> {
-            if (!ConcurrentUtils.compareAndSet(this.state, GameState::isBefore, GameState.ENDED)) {
-                // Game was killed, don't alter the state
-                return;
-            }
-            this.end = new Date();
-            this.gameFuture.complete(null);
-        });
-        return getGameFuture();
-    }
+    protected void kill() {}
 }
