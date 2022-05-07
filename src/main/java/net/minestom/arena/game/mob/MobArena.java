@@ -78,47 +78,35 @@ public final class MobArena implements SingleInstanceArena {
     );
 
     private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
-            Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD, new Kit(
-            List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
-            null,
-            ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4),
-            null,
-            null
-    ), 5);
+            Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD,
+            new Kit(List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
+                    Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4))),
+            5);
     public static final List<ArenaClass> CLASSES = List.of(
             KNIGHT_CLASS,
             new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
-                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW, new Kit(
-                    List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
-                    null,
-                    ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
-                    null,
-                    null
-            ), 10),
+                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW,
+                    new Kit(List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
+                            Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3))),
+                    10),
             new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
-                    Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE, new Kit(
-                    List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
-                    ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
-                    ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
-                    ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
-                    ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
-            ), 15),
+                    Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE,
+                    new Kit(List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
+                            Map.of(EquipmentSlot.HELMET, ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
+                                    EquipmentSlot.CHESTPLATE, ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                                    EquipmentSlot.LEGGINGS, ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
+                                    EquipmentSlot.BOOTS, ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1))),
+                    15),
             new ArenaClass("Mage", "Fight enemies from far away using your long ranged magic missiles.",
-                    Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD, new Kit(
-                    List.of(WAND),
-                    null,
-                    null,
-                    ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
-                    null
-            ), 20),
+                    Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD,
+                    new Kit(List.of(WAND),
+                            Map.of(EquipmentSlot.LEGGINGS, ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2))),
+                    20),
             new ArenaClass("Berserker", "For when knight doesn't deal enough damage.",
-                    Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE, new Kit(
-                    List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 5)),
-                    null,
-                    null,
-                    null,
-                    ItemStack.of(Material.GOLDEN_BOOTS).withTag(ARMOR_TAG, 2)
-            ), 25)
+                    Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE,
+                    new Kit(List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 5)),
+                            Map.of(EquipmentSlot.BOOTS, ItemStack.of(Material.GOLDEN_BOOTS).withTag(ARMOR_TAG, 2))),
+                    25)
     );
 
     private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
