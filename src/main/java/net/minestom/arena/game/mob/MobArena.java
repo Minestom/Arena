@@ -89,36 +89,36 @@ public final class MobArena implements SingleInstanceArena {
             KNIGHT_CLASS,
             new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
                     Icons.BOW, TextColor.color(0xf9ff87), Material.BOW, new Kit(
-                            List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
-                            null,
-                            ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
-                            null,
-                            null
-                    ), 10),
+                    List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
+                    null,
+                    ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3),
+                    null,
+                    null
+            ), 10),
             new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
                     Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE, new Kit(
-                            List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
-                            ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
-                            ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
-                            ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
-                            ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
-                    ), 15),
+                    List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
+                    ItemStack.of(Material.CHAINMAIL_HELMET).withTag(ARMOR_TAG, 2),
+                    ItemStack.of(Material.IRON_CHESTPLATE).withTag(ARMOR_TAG, 4),
+                    ItemStack.of(Material.CHAINMAIL_LEGGINGS).withTag(ARMOR_TAG, 3),
+                    ItemStack.of(Material.IRON_BOOTS).withTag(ARMOR_TAG, 1)
+            ), 15),
             new ArenaClass("Mage", "Fight enemies from far away using your long ranged magic missiles.",
                     Icons.POTION, TextColor.color(0x3cbea5), Material.BLAZE_ROD, new Kit(
-                            List.of(WAND),
-                            null,
-                            null,
-                            ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
-                            null
-                    ), 20),
+                    List.of(WAND),
+                    null,
+                    null,
+                    ItemStack.of(Material.LEATHER_LEGGINGS).withTag(ARMOR_TAG, 2),
+                    null
+            ), 20),
             new ArenaClass("Berserker", "For when knight doesn't deal enough damage.",
                     Icons.AXE, TextColor.color(0xbe6464), Material.STONE_AXE, new Kit(
-                            List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 5)),
-                            null,
-                            null,
-                            null,
-                            ItemStack.of(Material.GOLDEN_BOOTS).withTag(ARMOR_TAG, 2)
-                    ), 25)
+                    List.of(ItemStack.of(Material.STONE_AXE).withTag(MELEE_TAG, 5)),
+                    null,
+                    null,
+                    null,
+                    ItemStack.of(Material.GOLDEN_BOOTS).withTag(ARMOR_TAG, 2)
+            ), 25)
     );
 
     private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
@@ -175,13 +175,11 @@ public final class MobArena implements SingleInstanceArena {
                 for (int x = 0; x < unit.size().x(); x++) {
                     for (int z = 0; z < unit.size().z(); z++) {
                         Point bottom = start.add(x, 0, z);
-                        synchronized (noise) { // Synchronization is necessary for JNoise
-                            // Ensure flat terrain in the fighting area
-                            final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
-                            double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
-                            height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
-                            unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
-                        }
+                        // Ensure flat terrain in the fighting area
+                        final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
+                        double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
+                        height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
+                        unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
                     }
                 }
             });
@@ -230,7 +228,7 @@ public final class MobArena implements SingleInstanceArena {
 
         // Show boss bar
         bossBar = BossBar.bossBar(Component.text("Loading..."), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
-        group.audience().showBossBar(bossBar);
+        group.showBossBar(bossBar);
 
         // Remove attack indicator
         for (Player member : group.members()) {
@@ -278,8 +276,8 @@ public final class MobArena implements SingleInstanceArena {
             bossBar.progress(0);
             bossBar.color(BossBar.Color.GREEN);
 
-            group.audience().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
-            Messenger.info(group.audience(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
+            group().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
+            Messenger.info(group(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
             new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
         }).addListener(PickupItemEvent.class, event -> {
             if (event.getEntity() instanceof Player player) {
@@ -331,17 +329,17 @@ public final class MobArena implements SingleInstanceArena {
         final int untilStart = haveToContinue - continuedCount;
 
         if (untilStart <= 0) {
-            Messenger.info(group.audience(), player.getUsername() + " has continued. Starting the next wave.");
+            Messenger.info(group(), player.getUsername() + " has continued. Starting the next wave.");
 
             bossBar.name(Component.text("Wave starting..."));
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
 
-            Messenger.countdown(group().audience(), 3)
+            Messenger.countdown(group(), 3)
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
         } else {
-            Messenger.info(group.audience(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
+            Messenger.info(group(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
 
             final String playerOrPlayers = "player" + (untilStart == 1 ? "" : "s");
             bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
@@ -399,7 +397,7 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     public boolean takeCoins(int coins) {
-        if (coins() > coins) {
+        if (coins() >= coins) {
             setCoins(coins() - coins);
             return true;
         }

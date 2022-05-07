@@ -26,7 +26,7 @@ final class GroupManager {
     public static void transferOwnership(@NotNull GroupImpl group, @NotNull Player newLeader) {
         groups.remove(group.leader());
         group.setLeader(newLeader);
-        Messenger.info(group.audience(), "Group ownership has been transferred to " + newLeader.getUsername());
+        Messenger.info(group, "Group ownership has been transferred to " + newLeader.getUsername());
         groups.put(newLeader, group);
     }
 

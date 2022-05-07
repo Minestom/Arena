@@ -1,12 +1,10 @@
 package net.minestom.arena.group;
 
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.group.displays.GroupDisplay;
-import net.minestom.server.adventure.audience.PacketGroupingAudience;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,7 +16,6 @@ import java.util.WeakHashMap;
 final class GroupImpl implements Group {
     private final Set<Player> players = new HashSet<>();
     private final Set<Player> pendingInvites = Collections.newSetFromMap(new WeakHashMap<>());
-    private final Audience audience = PacketGroupingAudience.of(players);
 
     private Player leader;
     private GroupDisplay display;
@@ -36,11 +33,6 @@ final class GroupImpl implements Group {
     @Override
     public @NotNull Set<Player> members() {
         return Set.copyOf(players);
-    }
-
-    @Override
-    public @NotNull Audience audience() {
-        return audience;
     }
 
     @Override
