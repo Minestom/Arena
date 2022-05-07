@@ -9,32 +9,16 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class Game {
     private final CompletableFuture<Void> gameFuture = new CompletableFuture<>();
-    private State state = State.CREATED;
+    private GameState state = GameState.CREATED;
     private Date start;
     private Date end;
     private final static Duration END_TIMEOUT = Duration.ofMinutes(10);
-    public enum State {
-        CREATED(0), INITIALIZING(1), STARTING(2), STARTED(2), ENDING(3), SHUTTINGDOWN(3), ENDED(4), KILLED(4);
-
-        private final int sequence;
-        State(int sequence) {
-            this.sequence = sequence;
-        }
-
-        public boolean isAfter(State state) {
-            return this.sequence > state.sequence;
-        }
-
-        public boolean isOrAfter(State state) {
-            return this.sequence >= state.sequence;
-        }
-    }
     private final ReentrantLock stateLock = new ReentrantLock();
 
     /**
      * Used to get a future that represents this game life
      *
-     * @return a future that is completed when the game state is either {@link State#ENDED} or {@link State#KILLED}
+     * @return a future that is completed when the game state is either {@link GameState#ENDED} or {@link GameState#KILLED}
      */
     public final CompletableFuture<Void> getGameFuture() {
         return this.gameFuture;
@@ -48,7 +32,7 @@ public abstract class Game {
         return end;
     }
 
-    public final State getState() {
+    public final GameState getState() {
         return this.state;
     }
 
@@ -70,40 +54,40 @@ public abstract class Game {
     /**
      * Used to start the game, the start sequence is the following (note that a shutdown will interrupt this flow):
      * <ol>
-     *     <li>Set state to {@link State#INITIALIZING}</li>
+     *     <li>Set state to {@link GameState#INITIALIZING}</li>
      *     <li>Execute {@link #init()}</li>
-     *     <li>Set state to {@link State#STARTING}</li>
+     *     <li>Set state to {@link GameState#STARTING}</li>
      *     <li>Execute {@link #onStart()}</li>
-     *     <li>Set state to {@link State#STARTED}</li>
+     *     <li>Set state to {@link GameState#STARTED}</li>
      * </ol>
      *
      * @return {@link #getGameFuture()}
-     * @throws RuntimeException if called when the state isn't {@link State#CREATED}
+     * @throws RuntimeException if called when the state isn't {@link GameState#CREATED}
      */
     public final CompletableFuture<Void> start() {
         this.stateLock.lock();
-        if (this.state.isAfter(State.CREATED)) {
+        if (this.state.isAfter(GameState.CREATED)) {
             throw new RuntimeException("Cannot start a Game twice!");
         }
-        this.state = State.INITIALIZING;
+        this.state = GameState.INITIALIZING;
         this.stateLock.unlock();
         init().thenRun(() -> {
             this.stateLock.lock();
-            if (this.state != State.INITIALIZING) {
+            if (this.state != GameState.INITIALIZING) {
                 // A shutdown has been initiated during initialization, don't start the game
                 this.stateLock.unlock();
                 return;
             }
-            this.state = State.STARTING;
+            this.state = GameState.STARTING;
             this.stateLock.unlock();
             onStart().thenRun(() -> {
                 this.stateLock.lock();
-                if (this.state != State.STARTING) {
+                if (this.state != GameState.STARTING) {
                     // A shutdown has been initiated during game start, don't change state
                     this.stateLock.unlock();
                     return;
                 }
-                this.state = State.STARTED;
+                this.state = GameState.STARTED;
                 this.stateLock.unlock();
                 this.start = new Date();
             });
@@ -139,22 +123,22 @@ public abstract class Game {
      */
     public final CompletableFuture<Void> shutdown() {
         this.stateLock.lock();
-        if (this.state.isAfter(State.ENDING)) {
+        if (this.state.isAfter(GameState.ENDING)) {
             this.stateLock.unlock();
             return getGameFuture();
         }
-        this.state = State.SHUTTINGDOWN;
+        this.state = GameState.SHUTTINGDOWN;
         this.stateLock.unlock();
         ConcurrentUtils.thenRunOrTimeout(onShutdown(END_TIMEOUT), END_TIMEOUT, (timeoutReached) -> {
             if (timeoutReached) {
                 this.stateLock.lock();
-                if (this.state.isAfter(State.ENDING)) {
+                if (this.state.isAfter(GameState.ENDING)) {
                     // The game ended already, we can safely return
                     this.stateLock.unlock();
                     return;
                 }
                 // Kill game
-                this.state = State.KILLED;
+                this.state = GameState.KILLED;
                 this.stateLock.unlock();
                 this.end = new Date();
                 this.gameFuture.complete(null);
@@ -177,20 +161,20 @@ public abstract class Game {
      */
     public final CompletableFuture<Void> end() {
         this.stateLock.lock();
-        if (this.state.isOrAfter(State.ENDING)) {
+        if (this.state.isOrAfter(GameState.ENDING)) {
             this.stateLock.unlock();
             return getGameFuture();
         }
-        this.state = State.ENDING;
+        this.state = GameState.ENDING;
         this.stateLock.unlock();
         onEnd().thenRun(() -> {
             this.stateLock.lock();
-            if (this.state == State.KILLED) {
+            if (this.state == GameState.KILLED) {
                 // Game was killed, don't alter the state
                 this.stateLock.unlock();
                 return;
             }
-            this.state = State.ENDED;
+            this.state = GameState.ENDED;
             this.stateLock.unlock();
             this.end = new Date();
             this.gameFuture.complete(null);

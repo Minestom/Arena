@@ -13,6 +13,7 @@ import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
+import net.minestom.arena.game.GameState;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.ConcurrentUtils;
@@ -321,7 +322,7 @@ public final class MobArena extends SingleInstanceArena {
     public void continueToNextStage(Player player) {
         if (!continued.add(player)) return;
         // Don't allow to start a new stage if shutdown is scheduled
-        if (getState() == State.ENDING) return;
+        if (getState() == GameState.ENDING) return;
 
         final int continuedCount = continued.size();
         final int haveToContinue = arenaInstance.getPlayers().size();
@@ -348,7 +349,7 @@ public final class MobArena extends SingleInstanceArena {
     }
 
     public void nextStage() {
-        if (this.getState().isAfter(State.STARTED)) return;
+        if (this.getState().isAfter(GameState.STARTED)) return;
         stageInProgress = true;
         stage++;
         initialMobCount = (int) (stage * 1.5);
