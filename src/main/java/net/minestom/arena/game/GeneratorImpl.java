@@ -1,5 +1,6 @@
-package net.minestom.arena.game.mob;
+package net.minestom.arena.game;
 
+import net.minestom.server.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -7,58 +8,58 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.IntFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
-record MobGeneratorImpl<T extends ArenaMob>(IntFunction<T> supplier,
-                                            Predicate<GenerationContext> shouldGenerate) implements MobGenerator<T> {
+record GeneratorImpl<T extends Entity, G extends GenerationContext>(Function<G, T> function,
+                                       Predicate<G> shouldGenerate) implements Generator<T, G> {
 
     @Override
-    public @NotNull Optional<T> generate(@NotNull GenerationContext context) {
+    public @NotNull Optional<T> generate(@NotNull G context) {
         return shouldGenerate.test(context)
-                ? Optional.of(supplier.apply(context.stage()))
+                ? Optional.of(function.apply(context))
                 : Optional.empty();
     }
 
-    static final class Builder<T extends ArenaMob> implements MobGenerator.Builder<T> {
-        final IntFunction<T> supplier;
-        final List<Condition> conditions = new ArrayList<>();
-        final List<Controller> controllers = new ArrayList<>();
-        final List<Preference> preferences = new ArrayList<>();
+    static final class Builder<T extends Entity, G extends GenerationContext> implements Generator.Builder<T, G> {
+        final Function<G, T> function;
+        final List<Condition<G>> conditions = new ArrayList<>();
+        final List<Controller<G>> controllers = new ArrayList<>();
+        final List<Preference<G>> preferences = new ArrayList<>();
 
         double chance = 1;
 
-        Builder(@NotNull IntFunction<T> supplier) {
-            this.supplier = supplier;
+        Builder(@NotNull Function<G, T> function) {
+            this.function = function;
         }
 
         @Override
-        public MobGenerator.@NotNull Builder<T> chance(double chance) {
+        public Generator.@NotNull Builder<T, G> chance(double chance) {
             this.chance = chance;
             return this;
         }
 
         @Override
-        public @NotNull MobGenerator.Builder<T> condition(@NotNull Condition condition) {
+        public @NotNull Generator.Builder<T, G> condition(@NotNull Condition<G> condition) {
             conditions.add(condition);
             return this;
         }
 
         @Override
-        public MobGenerator.@NotNull Builder<T> controller(@NotNull Controller controller) {
+        public Generator.@NotNull Builder<T, G> controller(@NotNull Controller<G> controller) {
             controllers.add(controller);
             return this;
         }
 
         @Override
-        public @NotNull MobGenerator.Builder<T> preference(@NotNull Preference preference) {
+        public @NotNull Generator.Builder<T, G> preference(@NotNull Preference<G> preference) {
             preferences.add(preference);
             return this;
         }
 
         @Override
-        public @NotNull MobGenerator<T> build() {
-            return new MobGeneratorImpl<>(supplier, context -> {
+        public @NotNull Generator<T, G> build() {
+            return new GeneratorImpl<>(function, context -> {
                 final Random random = ThreadLocalRandom.current();
 
                 // Chance
@@ -66,24 +67,24 @@ record MobGeneratorImpl<T extends ArenaMob>(IntFunction<T> supplier,
                     return false;
 
                 // Conditions
-                for (Condition condition : conditions) {
+                for (Condition<G> condition : conditions) {
                     if (!condition.isMet(context))
                         return false;
                 }
 
                 // Controllers
-                for (Controller controller : controllers) {
-                    switch (controller.isSatisfied(context)) {
-                        case GENERATE:
+                for (Controller<G> controller : controllers) {
+                    switch (controller.control(context)) {
+                        case ALLOW:
                             return true;
-                        case ENOUGH:
+                        case DISALLOW:
                             return false;
-                    };
+                    }
                 }
 
                 // Preferences
                 double score = 0;
-                for (Preference preference : preferences) {
+                for (Preference<G> preference : preferences) {
                     score += preference.isPreferred(context) * preference.weight();
                 }
                 final double chance = score / preferences.stream()

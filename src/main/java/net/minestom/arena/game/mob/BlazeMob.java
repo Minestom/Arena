@@ -20,8 +20,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 final class BlazeMob extends ArenaMob {
-    public BlazeMob(int stage) {
-        super(EntityType.BLAZE, stage);
+    public BlazeMob(MobGenerationContext context) {
+        super(EntityType.BLAZE, context.stage());
         RangedAttackGoal rangedAttackGoal = new RangedAttackGoal(
                 this, Duration.of(10, TimeUnit.SERVER_TICK),
                 16, 12, false, 1, 0.5);

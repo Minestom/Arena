@@ -13,6 +13,7 @@ import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
+import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
@@ -30,7 +31,6 @@ import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
-import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
@@ -129,23 +129,31 @@ public final class MobArena implements SingleInstanceArena {
             ALLOYING_UPGRADE
     );
 
-    private static final List<MobGenerator<? extends ArenaMob>> MOB_GENERATORS = List.of(
-            MobGenerator.builder(ZombieMob::new)
+    private static Generator.Condition<MobGenerationContext> hasClass(@NotNull ArenaClass arenaClass) {
+        return context -> context.arena().instance()
+                .getPlayers()
+                .stream()
+                .anyMatch(player -> context.arena().playerClass(player)
+                        .equals(arenaClass));
+    }
+
+    private static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
+            Generator.builder(ZombieMob::new)
                     .chance(0.5)
                     .build(),
-            MobGenerator.builder(SpiderMob::new)
+            Generator.builder(SpiderMob::new)
                     .chance(0.33)
                     .condition(context -> context.stage() >= 2)
-                    .controller(MobGenerator.Controller.maxCount(2))
+                    .controller(Generator.Controller.maxCount(2))
                     .build(),
-            MobGenerator.builder(SkeletonMob::new)
+            Generator.builder(SkeletonMob::new)
                     .chance(0.33)
                     .condition(context -> context.stage() >= 4)
                     .build(),
-            MobGenerator.builder(BlazeMob::new)
+            Generator.builder(BlazeMob::new)
                     .chance(0.1)
                     .condition(context -> context.stage() >= 6)
-                    .condition(MobGenerator.Condition.hasClass(ARCHER_CLASS))
+                    .condition(hasClass(ARCHER_CLASS))
                     .preference(context -> context.group()
                             .members().size() >= 2 ? 1 : 0.5)
                     .build()
@@ -314,36 +322,6 @@ public final class MobArena implements SingleInstanceArena {
             }
         });
 
-        final String key = Long.toString(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE), 16);
-        System.out.println("Testing key is " + key);
-        arenaInstance.eventNode().addListener(PlayerChatEvent.class, event -> {
-            final Player player = event.getPlayer();
-            final String message = event.getMessage();
-
-            event.setCancelled(true);
-            if (message.equals(key + " coins")) addCoins(10);
-            else if (message.equals(key + " stage")) nextStage();
-            else if (message.equals(key + " clear")) {
-                for (Entity entity : arenaInstance.getEntities()) {
-                    if (entity instanceof ArenaMob arenaMob)
-                        arenaMob.kill();
-                }
-            } else if (message.startsWith(key + " class #")) {
-                setPlayerClass(
-                        player,
-                        CLASSES.get(Integer.parseInt(message.substring(key.length() + 8)))
-                );
-            } else if (message.startsWith(key + " spawn #")) {
-                MOB_GENERATORS.get(Integer.parseInt(message.substring(key.length() + 8)))
-                        .generate(new GenerationContext(this, 0))
-                        .ifPresent(entity -> entity.setInstance(arenaInstance, player.getPosition()));
-            } else if (message.startsWith(key + " immortal")) {
-                player.setInvulnerable(!player.isInvulnerable());
-            } else if (message.startsWith(key + " strong")) {
-                player.getInventory().addItemStack(ItemStack.builder(Material.COOKED_CHICKEN).set(MELEE_TAG, 10000).build());
-            } else event.setCancelled(false);
-        });
-
         // TODO: Cancel armor unequip
     }
 
@@ -380,7 +358,7 @@ public final class MobArena implements SingleInstanceArena {
 
     public void nextStage() {
         stage++;
-        int needed = (int) (stage * 1.5);
+        int amount = (int) (stage * 1.5);
         for (Entity entity : arenaInstance.getEntities()) {
             if (entity instanceof NextStageNPC) {
                 entity.remove();
@@ -393,7 +371,7 @@ public final class MobArena implements SingleInstanceArena {
             playerClass(member).apply(member);
         }
 
-        for (Entity entity : MobGenerator.generateAll(MOB_GENERATORS, this, needed)) {
+        for (Entity entity : Generator.generateAll(MOB_GENERATORS, amount, () -> new MobGenerationContext(this))) {
             entity.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
                     .mul(SPAWN_RADIUS, 0, SPAWN_RADIUS)
@@ -401,17 +379,17 @@ public final class MobArena implements SingleInstanceArena {
                     .add(0, HEIGHT, 0));
         }
 
-        final String mobOrMobs = " mob" + (needed == 1 ? "" : "s");
+        final String mobOrMobs = " mob" + (amount == 1 ? "" : "s");
 
         arenaInstance.showTitle(Title.title(
                 Component.text("Stage " + stage, NamedTextColor.GREEN),
-                Component.text(needed + mobOrMobs)
+                Component.text(amount + mobOrMobs)
         ));
 
         arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 2f));
         Messenger.info(arenaInstance, "Stage " + stage + " has begun! Kill all the mobs to proceed to the next stage");
 
-        bossBar.name(Component.text("Kill mobs! " + needed + mobOrMobs + " remaining"));
+        bossBar.name(Component.text("Kill mobs! " + amount + mobOrMobs + " remaining"));
         bossBar.progress(1f);
         bossBar.color(BossBar.Color.RED);
     }
