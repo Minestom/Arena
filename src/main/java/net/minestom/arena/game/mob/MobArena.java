@@ -14,6 +14,7 @@ import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.GameState;
+import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.ConcurrentUtils;
@@ -31,6 +32,7 @@ import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
+import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
@@ -45,6 +47,7 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
+import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,7 +58,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 public final class MobArena extends SingleInstanceArena {
     private static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
@@ -69,30 +71,19 @@ public final class MobArena extends SingleInstanceArena {
             .set(WAND_TAG, true)
             .build());
 
-    private static final List<MobGenerator> MOB_GENERATORS = List.of(
-            (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
-                    .limit(ThreadLocalRandom.current().nextInt(needed + 1))
-                    .toList(),
-            (stage, needed) -> Stream.generate(() -> new SpiderMob(stage))
-                    .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .toList(),
-            (stage, needed) -> Stream.generate(() -> new SkeletonMob(stage))
-                    .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .toList()
-    );
-
     private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
             Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD,
             new Kit(List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
                     Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4))),
             5);
+    private static final ArenaClass ARCHER_CLASS = new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
+            Icons.BOW, TextColor.color(0xf9ff87), Material.BOW,
+            new Kit(List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
+                    Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3))),
+            10);
     public static final List<ArenaClass> CLASSES = List.of(
             KNIGHT_CLASS,
-            new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
-                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW,
-                    new Kit(List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
-                            Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3))),
-                    10),
+            ARCHER_CLASS,
             new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
                     Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE,
                     new Kit(List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
@@ -142,6 +133,29 @@ public final class MobArena extends SingleInstanceArena {
                         player.getAttribute(Attribute.ATTACK_DAMAGE).addModifier(modifier);
                     }, 10),
             ALLOYING_UPGRADE
+    );
+
+    private static Generator.Condition<MobGenerationContext> hasClass(@NotNull ArenaClass arenaClass) {
+        return context -> context.arena().instance()
+                .getPlayers()
+                .stream()
+                .anyMatch(player -> context.arena().playerClass(player)
+                        .equals(arenaClass));
+    }
+
+    private static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
+            Generator.builder(ZombieMob::new)
+                    .chance(0.5)
+                    .build(),
+            Generator.builder(SpiderMob::new)
+                    .chance(0.33)
+                    .condition(context -> context.stage() >= 2)
+                    .controller(Generator.Controller.maxCount(2))
+                    .build(),
+            Generator.builder(SkeletonMob::new)
+                    .chance(0.33)
+                    .condition(context -> context.stage() >= 4)
+                    .build()
     );
 
     private static final int SPAWN_RADIUS = 10;
@@ -248,7 +262,7 @@ public final class MobArena extends SingleInstanceArena {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
             } else {
-                // Don't allow other mobs to pick up items
+                // Don't want other mobs to pick up items
                 event.setCancelled(true);
             }
         }).addListener(PlayerDeathEvent.class, event -> {
@@ -279,9 +293,18 @@ public final class MobArena extends SingleInstanceArena {
                 Messenger.warn(player, "You already continued");
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), target);
             }
-        });
+        }).addListener(InventoryPreClickEvent.class, event -> {
+            final int slot = event.getSlot();
+            final ItemStack clickedItem = event.getClickedItem();
+            final ItemStack cursorItem = event.getCursorItem();
 
-        // TODO: Cancel armor unequip
+            if (!(slot >= PlayerInventoryUtils.HELMET_SLOT && slot <= PlayerInventoryUtils.BOOTS_SLOT))
+                return;
+
+            if (clickedItem.getTag(Kit.KIT_ITEM_TAG) || cursorItem.getTag(Kit.KIT_ITEM_TAG)) {
+                event.setCancelled(true);
+            }
+        });
     }
 
     private void onStageCleared() {
@@ -342,6 +365,10 @@ public final class MobArena extends SingleInstanceArena {
         }
     }
 
+    public int stage() {
+        return stage;
+    }
+
     public void nextStage() {
         if (this.getState().isAfter(GameState.STARTED)) return;
         stageInProgress = true;
@@ -359,14 +386,12 @@ public final class MobArena extends SingleInstanceArena {
             playerClass(member).apply(member);
         }
 
-        List<ArenaMob> mobs = generateMobs(stage, initialMobCount);
-        for (ArenaMob mob : mobs) {
-            mob.setInstance(arenaInstance, Vec.ONE
+        for (Entity entity : Generator.generateAll(MOB_GENERATORS, initialMobCount, () -> new MobGenerationContext(this))) {
+            entity.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
                     .mul(SPAWN_RADIUS, 0, SPAWN_RADIUS)
                     .asPosition()
-                    .add(0, HEIGHT, 0)
-            );
+                    .add(0, HEIGHT, 0));
         }
 
         final String mobOrMobs = " mob" + (initialMobCount == 1 ? "" : "s");
@@ -582,22 +607,5 @@ public final class MobArena extends SingleInstanceArena {
             });
 
         }, 1500));
-    }
-
-    private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
-        List<ArenaMob> mobs = new ArrayList<>();
-        while (needed > 0) {
-            for (MobGenerator generator : MOB_GENERATORS) {
-                if (needed <= 0) {
-                    return mobs;
-                }
-
-                List<? extends ArenaMob> generatedMobs = generator.generate(stage, needed);
-                mobs.addAll(generatedMobs);
-                needed -= generatedMobs.size();
-            }
-        }
-
-        return mobs;
     }
 }

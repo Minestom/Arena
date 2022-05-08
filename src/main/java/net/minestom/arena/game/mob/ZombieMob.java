@@ -12,14 +12,14 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 final class ZombieMob extends ArenaMob {
-    public ZombieMob(int stage) {
-        super(EntityType.ZOMBIE, stage);
+    public ZombieMob(MobGenerationContext context) {
+        super(EntityType.ZOMBIE, context.stage());
         addAIGroup(
                 List.of(new MeleeAttackGoal(this, 1.2, 20, TimeUnit.SERVER_TICK)),
                 List.of(new ClosestEntityTarget(this, 32, Player.class))
         );
 
-        boolean isBaby = stage >= 5 && ThreadLocalRandom.current().nextBoolean();
+        boolean isBaby = context.stage() >= 5 && ThreadLocalRandom.current().nextBoolean();
         ((ZombieMeta) entityMeta).setBaby(isBaby);
         if (isBaby) {
             getAttribute(Attribute.MAX_HEALTH).setBaseValue(getMaxHealth() / 2);
