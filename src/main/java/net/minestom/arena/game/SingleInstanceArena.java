@@ -47,10 +47,8 @@ public abstract class SingleInstanceArena extends Game {
                     .map(player -> player.setInstance(instance, spawnPosition(player)))
                     .toArray(CompletableFuture<?>[]::new);
 
-        final CompletableFuture<Void> future = new CompletableFuture<>();
-        CompletableFuture.allOf(futures).thenRun(() -> future.complete(null));
         group().members().forEach(Player::refreshCommands);
-        return future;
+        return CompletableFuture.allOf(futures);
     }
 
     protected abstract CompletableFuture<Void> handleOnStop();
