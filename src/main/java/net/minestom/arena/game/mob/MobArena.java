@@ -13,6 +13,7 @@ import net.minestom.arena.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
+import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
@@ -53,7 +54,6 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 public final class MobArena implements SingleInstanceArena {
     private static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
@@ -67,30 +67,19 @@ public final class MobArena implements SingleInstanceArena {
             .set(WAND_TAG, true)
             .build());
 
-    private static final List<MobGenerator> MOB_GENERATORS = List.of(
-            (stage, needed) -> Stream.generate(() -> new ZombieMob(stage))
-                    .limit(ThreadLocalRandom.current().nextInt(needed + 1))
-                    .toList(),
-            (stage, needed) -> Stream.generate(() -> new SpiderMob(stage))
-                    .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .toList(),
-            (stage, needed) -> Stream.generate(() -> new SkeletonMob(stage))
-                    .limit(ThreadLocalRandom.current().nextInt(needed / 2 + 1))
-                    .toList()
-    );
-
     private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
             Icons.SWORD, TextColor.color(0xbebebe), Material.STONE_SWORD,
             new Kit(List.of(ItemStack.of(Material.STONE_SWORD).withTag(MELEE_TAG, 2)),
                     Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.CHAINMAIL_CHESTPLATE).withTag(ARMOR_TAG, 4))),
             5);
+    private static final ArenaClass ARCHER_CLASS = new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
+            Icons.BOW, TextColor.color(0xf9ff87), Material.BOW,
+            new Kit(List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
+                    Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3))),
+            10);
     public static final List<ArenaClass> CLASSES = List.of(
             KNIGHT_CLASS,
-            new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
-                    Icons.BOW, TextColor.color(0xf9ff87), Material.BOW,
-                    new Kit(List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
-                            Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3))),
-                    10),
+            ARCHER_CLASS,
             new ArenaClass("Tank", "Very beefy, helps your teammates safely deal damage.",
                     Icons.SHIELD, TextColor.color(0x6b8ebe), Material.IRON_CHESTPLATE,
                     new Kit(List.of(ItemStack.of(Material.WOODEN_SWORD).withTag(MELEE_TAG, 1)),
@@ -140,6 +129,29 @@ public final class MobArena implements SingleInstanceArena {
                         player.getAttribute(Attribute.ATTACK_DAMAGE).addModifier(modifier);
                     }, 10),
             ALLOYING_UPGRADE
+    );
+
+    private static Generator.Condition<MobGenerationContext> hasClass(@NotNull ArenaClass arenaClass) {
+        return context -> context.arena().instance()
+                .getPlayers()
+                .stream()
+                .anyMatch(player -> context.arena().playerClass(player)
+                        .equals(arenaClass));
+    }
+
+    private static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
+            Generator.builder(ZombieMob::new)
+                    .chance(0.5)
+                    .build(),
+            Generator.builder(SpiderMob::new)
+                    .chance(0.33)
+                    .condition(context -> context.stage() >= 2)
+                    .controller(Generator.Controller.maxCount(2))
+                    .build(),
+            Generator.builder(SkeletonMob::new)
+                    .chance(0.33)
+                    .condition(context -> context.stage() >= 4)
+                    .build()
     );
 
     private static final int SPAWN_RADIUS = 10;
@@ -233,7 +245,7 @@ public final class MobArena implements SingleInstanceArena {
                     final String mobOrMobs = " mob" + (mobCount == 1 ? "" : "s");
 
                     bossBar.name(Component.text("Kill mobs! " + mobsLeft + mobOrMobs + " remaining"));
-                    bossBar.progress((float) mobsLeft / mobCount);
+                    bossBar.progress(MathUtils.clamp((float) mobsLeft / mobCount, 0, 1));
                     bossBar.color(BossBar.Color.RED);
 
                     return; // Round hasn't ended yet
@@ -270,7 +282,7 @@ public final class MobArena implements SingleInstanceArena {
             if (event.getEntity() instanceof Player player) {
                 player.getInventory().addItemStack(event.getItemStack());
             } else {
-                // Don't allow other mobs to pick up items
+                // Don't want other mobs to pick up items
                 event.setCancelled(true);
             }
         }).addListener(PlayerDeathEvent.class, event -> {
@@ -344,9 +356,13 @@ public final class MobArena implements SingleInstanceArena {
         }
     }
 
+    public int stage() {
+        return stage;
+    }
+
     public void nextStage() {
         stage++;
-        int mobCount = (int) (stage * 1.5);
+        int amount = (int) (stage * 1.5);
         for (Entity entity : arenaInstance.getEntities()) {
             if (entity instanceof NextStageNPC) {
                 entity.remove();
@@ -359,27 +375,25 @@ public final class MobArena implements SingleInstanceArena {
             playerClass(member).apply(member);
         }
 
-        List<ArenaMob> mobs = generateMobs(stage, mobCount);
-        for (ArenaMob mob : mobs) {
-            mob.setInstance(arenaInstance, Vec.ONE
+        for (Entity entity : Generator.generateAll(MOB_GENERATORS, amount, () -> new MobGenerationContext(this))) {
+            entity.setInstance(arenaInstance, Vec.ONE
                     .rotateAroundY(ThreadLocalRandom.current().nextDouble(2 * Math.PI))
                     .mul(SPAWN_RADIUS, 0, SPAWN_RADIUS)
                     .asPosition()
-                    .add(0, HEIGHT, 0)
-            );
+                    .add(0, HEIGHT, 0));
         }
 
-        final String mobOrMobs = " mob" + (mobCount == 1 ? "" : "s");
+        final String mobOrMobs = " mob" + (amount == 1 ? "" : "s");
 
         arenaInstance.showTitle(Title.title(
                 Component.text("Stage " + stage, NamedTextColor.GREEN),
-                Component.text(mobCount + mobOrMobs)
+                Component.text(amount + mobOrMobs)
         ));
 
         arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 2f));
         Messenger.info(arenaInstance, "Stage " + stage + " has begun! Kill all the mobs to proceed to the next stage");
 
-        bossBar.name(Component.text("Kill mobs! " + mobCount + mobOrMobs + " remaining"));
+        bossBar.name(Component.text("Kill mobs! " + amount + mobOrMobs + " remaining"));
         bossBar.progress(1f);
         bossBar.color(BossBar.Color.RED);
     }
@@ -555,22 +569,5 @@ public final class MobArena implements SingleInstanceArena {
             });
 
         }, 1500));
-    }
-
-    private static @NotNull List<ArenaMob> generateMobs(int stage, int needed) {
-        List<ArenaMob> mobs = new ArrayList<>();
-        while (needed > 0) {
-            for (MobGenerator generator : MOB_GENERATORS) {
-                if (needed <= 0) {
-                    return mobs;
-                }
-
-                List<? extends ArenaMob> generatedMobs = generator.generate(stage, needed);
-                mobs.addAll(generatedMobs);
-                needed -= generatedMobs.size();
-            }
-        }
-
-        return mobs;
     }
 }
