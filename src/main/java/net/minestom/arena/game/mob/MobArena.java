@@ -29,6 +29,7 @@ import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
+import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
@@ -43,6 +44,7 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
+import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
@@ -301,9 +303,18 @@ public final class MobArena implements SingleInstanceArena {
                 Messenger.warn(player, "You already continued");
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), target);
             }
-        });
+        }).addListener(InventoryPreClickEvent.class, event -> {
+            final int slot = event.getSlot();
+            final ItemStack clickedItem = event.getClickedItem();
+            final ItemStack cursorItem = event.getCursorItem();
 
-        // TODO: Cancel armor unequip
+            if (!(slot >= PlayerInventoryUtils.HELMET_SLOT && slot <= PlayerInventoryUtils.BOOTS_SLOT))
+                return;
+
+            if (clickedItem.getTag(Kit.KIT_ITEM_TAG) || cursorItem.getTag(Kit.KIT_ITEM_TAG)) {
+                event.setCancelled(true);
+            }
+        });
     }
 
     public void continueToNextStage(Player player) {
