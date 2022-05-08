@@ -332,13 +332,13 @@ public final class MobArena extends SingleInstanceArena {
         bossBar.progress(0);
         bossBar.color(BossBar.Color.GREEN);
 
-        getGroup().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
-        Messenger.info(getGroup(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
+        group().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
+        Messenger.info(group(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
         new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
     }
 
     public void continueToNextStage(Player player) {
-        if (getState().isAfter(GameState.STARTED)) return;
+        if (state().isAfter(GameState.STARTED)) return;
         if (!continued.add(player)) return;
 
         final int continuedCount = continued.size();
@@ -346,17 +346,17 @@ public final class MobArena extends SingleInstanceArena {
         final int untilStart = haveToContinue - continuedCount;
 
         if (untilStart <= 0) {
-            Messenger.info(getGroup(), player.getUsername() + " has continued. Starting the next wave.");
+            Messenger.info(group(), player.getUsername() + " has continued. Starting the next wave.");
 
             bossBar.name(Component.text("Wave starting..."));
             bossBar.progress(1);
             bossBar.color(BossBar.Color.BLUE);
 
-            Messenger.countdown(getGroup(), 3)
+            Messenger.countdown(group(), 3)
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
         } else {
-            Messenger.info(getGroup(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
+            Messenger.info(group(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
 
             final String playerOrPlayers = "player" + (untilStart == 1 ? "" : "s");
             bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
@@ -370,7 +370,7 @@ public final class MobArena extends SingleInstanceArena {
     }
 
     public void nextStage() {
-        if (this.getState().isAfter(GameState.STARTED)) return;
+        if (this.state().isAfter(GameState.STARTED)) return;
         stageInProgress = true;
         stage++;
         initialMobCount = (int) (stage * 1.5);
@@ -477,7 +477,7 @@ public final class MobArena extends SingleInstanceArena {
     protected CompletableFuture<Void> onShutdown(Duration shutdownTimeout) {
         if (stageInProgress) {
             final Duration halfTime = shutdownTimeout.dividedBy(2);
-            Messenger.info(getGroup(), "New objective! Clear stage within " + halfTime.toString());
+            Messenger.info(group(), "New objective! Clear stage within " + halfTime.toString());
             //TODO extend messenger to provide nice countdowns
             return ConcurrentUtils.thenRunOrTimeout(ConcurrentUtils.futureFromCountdown(mobCountDownLatch), halfTime, (timeoutReached) -> {
                 //TODO decide game outcome
@@ -490,15 +490,15 @@ public final class MobArena extends SingleInstanceArena {
     @Override
     protected CompletableFuture<Void> handleOnStop() {
         final CountDownLatch countDownLatch = new CountDownLatch(group.members().size());
-        for (Player member : getGroup().members()) {
+        for (Player member : group().members()) {
             member.setInstance(Lobby.INSTANCE).thenRun(countDownLatch::countDown);
-            Messenger.info(getGroup(), "You left the arena. Your last stage was " + stage);
+            Messenger.info(group(), "You left the arena. Your last stage was " + stage);
         }
         return ConcurrentUtils.futureFromCountdown(countDownLatch);
     }
 
     @Override
-    public @NotNull Group getGroup() {
+    public @NotNull Group group() {
         return group;
     }
 

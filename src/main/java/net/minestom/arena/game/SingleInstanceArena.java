@@ -43,13 +43,13 @@ public abstract class SingleInstanceArena extends Game {
 
         //TODO Move to start
         CompletableFuture<?>[] futures =
-                getGroup().members().stream()
+                group().members().stream()
                     .map(player -> player.setInstance(instance, spawnPosition(player)))
                     .toArray(CompletableFuture<?>[]::new);
 
         final CompletableFuture<Void> future = new CompletableFuture<>();
         CompletableFuture.allOf(futures).thenRun(() -> future.complete(null));
-        getGroup().members().forEach(Player::refreshCommands);
+        group().members().forEach(Player::refreshCommands);
         return future;
     }
 
@@ -59,7 +59,7 @@ public abstract class SingleInstanceArena extends Game {
     protected final CompletableFuture<Void> onEnd() {
         // All players have left. We can remove this instance once the player is removed.
         instance().scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance()));
-        getGroup().setDisplay(new LobbySidebarDisplay(getGroup()));
+        group().setDisplay(new LobbySidebarDisplay(group()));
         return handleOnStop();
     }
 }

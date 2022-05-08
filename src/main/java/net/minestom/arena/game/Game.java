@@ -4,15 +4,15 @@ import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.ConcurrentUtils;
 
 import java.time.Duration;
-import java.util.Date;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Game {
     private final CompletableFuture<Void> gameFuture = new CompletableFuture<>();
     private final AtomicReference<GameState> state = new AtomicReference<>(GameState.CREATED);
-    private Date start;
-    private Date end;
+    private Instant startDate;
+    private Instant endDate;
     private final static Duration END_TIMEOUT = Duration.ofMinutes(10);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -24,23 +24,23 @@ public abstract class Game {
      *
      * @return a future that is completed when the game state is either {@link GameState#ENDED} or {@link GameState#KILLED}
      */
-    public final CompletableFuture<Void> getGameFuture() {
+    public final CompletableFuture<Void> gameFuture() {
         return this.gameFuture;
     }
 
-    public final Date getStartDate() {
-        return start;
+    public final Instant startDate() {
+        return startDate;
     }
 
-    public final Date getStopDate() {
-        return end;
+    public final Instant stopDate() {
+        return endDate;
     }
 
-    public final GameState getState() {
+    public final GameState state() {
         return this.state.get();
     }
 
-    public abstract Group getGroup();
+    public abstract Group group();
 
     ///////////////////////////////////////////////////////////////////////////
     // Life cycle methods
@@ -71,7 +71,7 @@ public abstract class Game {
      *     <li>Set state to {@link GameState#STARTED}</li>
      * </ol>
      *
-     * @return {@link #getGameFuture()}
+     * @return {@link #gameFuture()}
      * @throws RuntimeException if called when the state isn't {@link GameState#CREATED}
      */
     public final CompletableFuture<Void> start() {
@@ -88,10 +88,10 @@ public abstract class Game {
                     // A shutdown has been initiated during game start, don't change state
                     return;
                 }
-                this.start = new Date();
+                this.startDate = Instant.now();
             });
         });
-        return getGameFuture();
+        return gameFuture();
     }
 
     /**
@@ -105,21 +105,21 @@ public abstract class Game {
      * Used to end the game normally, only the first call will execute {@link #onEnd()}
      * multiple calls to this method will be ignored
      *
-     * @return {@link #getGameFuture()}
+     * @return {@link #gameFuture()}
      */
     public final CompletableFuture<Void> end() {
         if (!tryAdvance(GameState.ENDING)) {
-            return getGameFuture();
+            return gameFuture();
         }
         onEnd().thenRun(() -> {
             if (!tryAdvance(GameState.ENDED)) {
                 // Game was killed, don't alter the state
                 return;
             }
-            this.end = new Date();
+            this.endDate = Instant.now();
             this.gameFuture.complete(null);
         });
-        return getGameFuture();
+        return gameFuture();
     }
 
     /**
@@ -139,11 +139,11 @@ public abstract class Game {
      *     or if it was reached, but <b>(B)</b> the game already ended then return otherwise <b>(C)</b> kill the game</li>
      * </ol>
      *
-     * @return {@link #getGameFuture()}
+     * @return {@link #gameFuture()}
      */
     public final CompletableFuture<Void> shutdown() {
         if (!tryAdvance(GameState.SHUTTING_DOWN)) {
-            return getGameFuture();
+            return gameFuture();
         }
         ConcurrentUtils.thenRunOrTimeout(onShutdown(END_TIMEOUT), END_TIMEOUT, (timeoutReached) -> {
             if (timeoutReached) {
@@ -152,7 +152,7 @@ public abstract class Game {
                     return;
                 }
                 // Kill game
-                this.end = new Date();
+                this.endDate = Instant.now();
                 this.gameFuture.complete(null);
                 this.kill();
             } else {
@@ -160,7 +160,7 @@ public abstract class Game {
                 end();
             }
         });
-        return getGameFuture();
+        return gameFuture();
     }
 
     /**
