@@ -56,10 +56,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class MobArena implements SingleInstanceArena {
-    private static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
-    private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
-    private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
-    private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
+    static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
+    static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
+    static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
+    static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
     private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mobarena-attack-speed", 100f, AttributeOperation.ADDITION);
 
     private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
@@ -131,15 +131,7 @@ public final class MobArena implements SingleInstanceArena {
             ALLOYING_UPGRADE
     );
 
-    private static Generator.Condition<MobGenerationContext> hasClass(@NotNull ArenaClass arenaClass) {
-        return context -> context.arena().instance()
-                .getPlayers()
-                .stream()
-                .anyMatch(player -> context.arena().playerClass(player)
-                        .equals(arenaClass));
-    }
-
-    private static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
+    static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
             Generator.builder(ZombieMob::new)
                     .chance(0.5)
                     .build(),
@@ -165,9 +157,11 @@ public final class MobArena implements SingleInstanceArena {
                         .setOctaves(6)
                         .build())
                 .build();
+        final MobArena arena; //temp
 
-        public MobArenaInstance() {
+        public MobArenaInstance(MobArena arena) {
             super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
+            this.arena = arena;
             getWorldBorder().setDiameter(100);
             setGenerator(unit -> {
                 final Point start = unit.absoluteStart();
@@ -213,7 +207,7 @@ public final class MobArena implements SingleInstanceArena {
 
     private final Group group;
     private final BossBar bossBar;
-    private final Instance arenaInstance = new MobArenaInstance();
+    private final Instance arenaInstance = new MobArenaInstance(this);
     private final Set<Player> continued = new HashSet<>();
     private final Map<Player, ArenaClass> playerClasses = new HashMap<>();
     private final Map<ArenaUpgrade, Integer> upgrades = new HashMap<>();

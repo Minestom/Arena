@@ -4,6 +4,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.game.ArenaCommand;
+import net.minestom.arena.game.mob.MobTestCommand;
 import net.minestom.arena.group.GroupCommand;
 import net.minestom.arena.group.GroupEvent;
 import net.minestom.arena.utils.ResourceUtils;
@@ -49,6 +50,7 @@ public final class Main {
             manager.register(new ArenaCommand());
             manager.register(new StopCommand());
             manager.register(new LeaveCommand());
+            manager.register(new MobTestCommand());
             manager.register(new PingCommand());
         }
 
