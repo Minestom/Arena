@@ -75,10 +75,12 @@ record GeneratorImpl<T extends Entity, G extends GenerationContext>(Function<G, 
                 // Controllers
                 for (Controller<G> controller : controllers) {
                     switch (controller.control(context)) {
-                        case ALLOW:
+                        case ALLOW -> {
                             return true;
-                        case DISALLOW:
+                        }
+                        case DISALLOW -> {
                             return false;
+                        }
                     }
                 }
 
