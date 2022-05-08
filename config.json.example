@@ -1,0 +1,14 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 25565
+  },
+  "proxy": {
+    "secret": "none"
+  },
+  "permissions": {
+    "operators": [
+      "Your username here"
+    ]
+  }
+}
