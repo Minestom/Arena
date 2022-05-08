@@ -1,13 +1,10 @@
 package net.minestom.arena.game;
 
-import net.kyori.adventure.audience.Audience;
+import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.ConcurrentUtils;
-import net.minestom.server.adventure.audience.PacketGroupingAudience;
-import net.minestom.server.entity.Player;
 
 import java.time.Duration;
 import java.util.Date;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,23 +40,7 @@ public abstract class Game {
         return this.state.get();
     }
 
-    public abstract Set<Player> getAllPlayers();
-
-    public abstract Set<Player> getPlayers();
-
-    public abstract Set<Player> getSpectators();
-
-    public Audience getAllPlayersAudience() {
-        return PacketGroupingAudience.of(getAllPlayers());
-    }
-
-    public Audience getPlayersAudience() {
-        return PacketGroupingAudience.of(getPlayers());
-    }
-
-    public Audience getSpectatorsAudience() {
-        return PacketGroupingAudience.of(getSpectators());
-    }
+    public abstract Group getGroup();
 
     ///////////////////////////////////////////////////////////////////////////
     // Life cycle methods
@@ -186,18 +167,6 @@ public abstract class Game {
      * Called when the game didn't finish in time after {@link #shutdown()} has been called
      */
     protected void kill() {}
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Misc
-    ///////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Used to start spectating the game
-     *
-     * @param player the player to add as a spectator
-     * @return true if they've been added, false otherwise
-     */
-    public abstract boolean spectate(Player player);
 
     ///////////////////////////////////////////////////////////////////////////
     // Utils

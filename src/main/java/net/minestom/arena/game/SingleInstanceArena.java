@@ -2,7 +2,6 @@ package net.minestom.arena.game;
 
 import net.minestom.arena.LobbySidebarDisplay;
 import net.minestom.arena.feature.Feature;
-import net.minestom.arena.group.Group;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Player;
@@ -14,8 +13,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class SingleInstanceArena extends Game {
-    @NotNull
-    protected abstract Group group();
     @NotNull
     protected abstract Instance instance();
 
@@ -46,13 +43,13 @@ public abstract class SingleInstanceArena extends Game {
 
         //TODO Move to start
         CompletableFuture<?>[] futures =
-                group().members().stream()
+                getGroup().members().stream()
                     .map(player -> player.setInstance(instance, spawnPosition(player)))
                     .toArray(CompletableFuture<?>[]::new);
 
         final CompletableFuture<Void> future = new CompletableFuture<>();
         CompletableFuture.allOf(futures).thenRun(() -> future.complete(null));
-        group().members().forEach(Player::refreshCommands);
+        getGroup().members().forEach(Player::refreshCommands);
         return future;
     }
 
@@ -62,7 +59,7 @@ public abstract class SingleInstanceArena extends Game {
     protected final CompletableFuture<Void> onEnd() {
         // All players have left. We can remove this instance once the player is removed.
         instance().scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance()));
-        group().setDisplay(new LobbySidebarDisplay(group()));
+        getGroup().setDisplay(new LobbySidebarDisplay(getGroup()));
         return handleOnStop();
     }
 }
