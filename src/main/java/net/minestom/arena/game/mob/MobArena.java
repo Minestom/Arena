@@ -489,12 +489,9 @@ public final class MobArena extends SingleInstanceArena {
 
     @Override
     protected CompletableFuture<Void> handleOnStop() {
-        final CountDownLatch countDownLatch = new CountDownLatch(group.members().size());
-        for (Player member : group().members()) {
-            member.setInstance(Lobby.INSTANCE).thenRun(countDownLatch::countDown);
-            Messenger.info(group(), "You left the arena. Your last stage was " + stage);
-        }
-        return ConcurrentUtils.futureFromCountdown(countDownLatch);
+        Messenger.info(group(), "You left the arena. Your last stage was " + stage);
+        return CompletableFuture.allOf(group().members().stream().map(p -> p.setInstance(Lobby.INSTANCE))
+                .toArray(CompletableFuture[]::new));
     }
 
     @Override
