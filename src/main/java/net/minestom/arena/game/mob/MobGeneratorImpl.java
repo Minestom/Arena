@@ -2,27 +2,30 @@ package net.minestom.arena.game.mob;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.BiPredicate;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.function.Predicate;
 
 record MobGeneratorImpl<T extends ArenaMob>(IntFunction<T> supplier,
-                                            BiPredicate<MobArena, Integer> shouldGenerate) implements MobGenerator<T> {
+                                            Predicate<GenerationContext> shouldGenerate) implements MobGenerator<T> {
 
     @Override
-    public @NotNull Queue<T> generate(@NotNull MobArena arena, int needed) {
-        return Stream.generate(() -> shouldGenerate.test(arena, needed) ? supplier.apply(arena.stage()) : null)
-                .limit(needed).filter(Objects::nonNull)
-                .collect(Collectors.toCollection(ArrayDeque::new));
+    public @NotNull Optional<T> generate(@NotNull GenerationContext context) {
+        return shouldGenerate.test(context)
+                ? Optional.of(supplier.apply(context.stage()))
+                : Optional.empty();
     }
 
     static final class Builder<T extends ArenaMob> implements MobGenerator.Builder<T> {
         final IntFunction<T> supplier;
         final List<Condition> conditions = new ArrayList<>();
+        final List<Controller> controllers = new ArrayList<>();
         final List<Preference> preferences = new ArrayList<>();
+
         double chance = 1;
 
         Builder(@NotNull IntFunction<T> supplier) {
@@ -30,8 +33,20 @@ record MobGeneratorImpl<T extends ArenaMob>(IntFunction<T> supplier,
         }
 
         @Override
+        public MobGenerator.@NotNull Builder<T> chance(double chance) {
+            this.chance = chance;
+            return this;
+        }
+
+        @Override
         public @NotNull MobGenerator.Builder<T> condition(@NotNull Condition condition) {
             conditions.add(condition);
+            return this;
+        }
+
+        @Override
+        public MobGenerator.@NotNull Builder<T> controller(@NotNull Controller controller) {
+            controllers.add(controller);
             return this;
         }
 
@@ -42,14 +57,8 @@ record MobGeneratorImpl<T extends ArenaMob>(IntFunction<T> supplier,
         }
 
         @Override
-        public MobGenerator.@NotNull Builder<T> chance(double chance) {
-            this.chance = chance;
-            return this;
-        }
-
-        @Override
-        public MobGenerator<T> build() {
-            return new MobGeneratorImpl<>(supplier, (arena, needed) -> {
+        public @NotNull MobGenerator<T> build() {
+            return new MobGeneratorImpl<>(supplier, context -> {
                 final Random random = ThreadLocalRandom.current();
 
                 // Chance
@@ -58,14 +67,24 @@ record MobGeneratorImpl<T extends ArenaMob>(IntFunction<T> supplier,
 
                 // Conditions
                 for (Condition condition : conditions) {
-                    if (!condition.test(arena))
+                    if (!condition.isMet(context))
                         return false;
+                }
+
+                // Controllers
+                for (Controller controller : controllers) {
+                    switch (controller.isSatisfied(context)) {
+                        case GENERATE:
+                            return true;
+                        case ENOUGH:
+                            return false;
+                    };
                 }
 
                 // Preferences
                 double score = 0;
                 for (Preference preference : preferences) {
-                    score += preference.applyAsDouble(arena) * preference.weight();
+                    score += preference.isPreferred(context) * preference.weight();
                 }
                 final double chance = score / preferences.stream()
                         .mapToDouble(Preference::weight)

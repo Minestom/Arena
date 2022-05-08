@@ -30,6 +30,7 @@ import net.minestom.server.entity.metadata.arrow.ArrowMeta;
 import net.minestom.server.event.entity.EntityDeathEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.item.PickupItemEvent;
+import net.minestom.server.event.player.PlayerChatEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
@@ -128,23 +129,24 @@ public final class MobArena implements SingleInstanceArena {
             ALLOYING_UPGRADE
     );
 
-    private static final List<MobGenerator<?>> MOB_GENERATORS = List.of(
+    private static final List<MobGenerator<? extends ArenaMob>> MOB_GENERATORS = List.of(
             MobGenerator.builder(ZombieMob::new)
                     .chance(0.5)
                     .build(),
             MobGenerator.builder(SpiderMob::new)
                     .chance(0.33)
-                    .condition(arena -> arena.stage >= 2)
+                    .condition(context -> context.stage() >= 2)
+                    .controller(MobGenerator.Controller.maxCount(2))
                     .build(),
             MobGenerator.builder(SkeletonMob::new)
                     .chance(0.33)
-                    .condition(arena -> arena.stage >= 4)
+                    .condition(context -> context.stage() >= 4)
                     .build(),
             MobGenerator.builder(BlazeMob::new)
                     .chance(0.1)
-                    .condition(arena -> arena.stage >= 6)
+                    .condition(context -> context.stage() >= 6)
                     .condition(MobGenerator.Condition.hasClass(ARCHER_CLASS))
-                    .preference(arena -> arena.group()
+                    .preference(context -> context.group()
                             .members().size() >= 2 ? 1 : 0.5)
                     .build()
     );
@@ -310,6 +312,36 @@ public final class MobArena implements SingleInstanceArena {
                 Messenger.warn(player, "You already continued");
                 player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), target);
             }
+        });
+
+        final String key = Long.toString(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE), 16);
+        System.out.println("Testing key is " + key);
+        arenaInstance.eventNode().addListener(PlayerChatEvent.class, event -> {
+            final Player player = event.getPlayer();
+            final String message = event.getMessage();
+
+            event.setCancelled(true);
+            if (message.equals(key + " coins")) addCoins(10);
+            else if (message.equals(key + " stage")) nextStage();
+            else if (message.equals(key + " clear")) {
+                for (Entity entity : arenaInstance.getEntities()) {
+                    if (entity instanceof ArenaMob arenaMob)
+                        arenaMob.kill();
+                }
+            } else if (message.startsWith(key + " class #")) {
+                setPlayerClass(
+                        player,
+                        CLASSES.get(Integer.parseInt(message.substring(key.length() + 8)))
+                );
+            } else if (message.startsWith(key + " spawn #")) {
+                MOB_GENERATORS.get(Integer.parseInt(message.substring(key.length() + 8)))
+                        .generate(new GenerationContext(this, 0))
+                        .ifPresent(entity -> entity.setInstance(arenaInstance, player.getPosition()));
+            } else if (message.startsWith(key + " immortal")) {
+                player.setInvulnerable(!player.isInvulnerable());
+            } else if (message.startsWith(key + " strong")) {
+                player.getInventory().addItemStack(ItemStack.builder(Material.COOKED_CHICKEN).set(MELEE_TAG, 10000).build());
+            } else event.setCancelled(false);
         });
 
         // TODO: Cancel armor unequip

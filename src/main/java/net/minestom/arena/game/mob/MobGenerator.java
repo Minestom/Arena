@@ -1,12 +1,14 @@
 package net.minestom.arena.game.mob;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minestom.server.entity.Entity;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.IntFunction;
-import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 
 sealed interface MobGenerator<T extends ArenaMob> permits MobGeneratorImpl {
@@ -15,42 +17,48 @@ sealed interface MobGenerator<T extends ArenaMob> permits MobGeneratorImpl {
         return new MobGeneratorImpl.Builder<>(supplier);
     }
 
-    static @NotNull Queue<Entity> generateAll(@NotNull List<MobGenerator<? extends ArenaMob>> generators, MobArena arena, int needed) {
-        Queue<Entity> entities = new ArrayDeque<>();
+    static @NotNull List<Entity> generateAll(@NotNull List<MobGenerator<? extends ArenaMob>> generators, @NotNull MobArena arena, int needed) {
+        final Object2IntMap<MobGenerator<? extends ArenaMob>> generated = new Object2IntOpenHashMap<>();
+        final List<Entity> entities = new ArrayList<>();
         while (entities.size() < needed) {
-            List<Entity> list = new ArrayList<>();
-            for (MobGenerator<? extends ArenaMob> generator : generators)
-                list.addAll(generator.generate(arena, needed - entities.size()));
-            Collections.shuffle(list);
-            entities.addAll(list.subList(0, Math.min(needed - entities.size(), list.size())));
+            MobGenerator<? extends ArenaMob> generator = generators.get(ThreadLocalRandom.current().nextInt(generators.size()));
+            Optional<? extends ArenaMob> mob = generator.generate(new GenerationContext(arena, generated.getOrDefault(generator, 0)));
+
+            if (mob.isPresent()) {
+                entities.add(mob.get());
+                generated.computeInt(generator, (g, i) -> i == null ? 1 : i + 1);
+            }
         }
 
         return entities;
     }
 
-    @NotNull Queue<T> generate(@NotNull MobArena arena, int needed);
+    @NotNull Optional<T> generate(@NotNull GenerationContext context);
 
     sealed interface Builder<T extends ArenaMob> permits MobGeneratorImpl.Builder {
         @Contract("_ -> this")
+        @NotNull Builder<T> chance(double chance);
+
+        @Contract("_ -> this")
         @NotNull Builder<T> condition(@NotNull Condition condition);
+
+        @Contract("_ -> this")
+        @NotNull Builder<T> controller(@NotNull Controller controller);
 
         @Contract("_ -> this")
         @NotNull Builder<T> preference(@NotNull Preference preference);
 
         @Contract("_ -> this")
-        @NotNull Builder<T> chance(double chance);
-
-        @Contract("_ -> this")
-        default @NotNull Builder<T> preference(@NotNull ToDoubleFunction<MobArena> toDoubleFunction) {
-            return preference(toDoubleFunction, 1);
+        default @NotNull Builder<T> preference(@NotNull ToDoubleFunction<GenerationContext> isPreferred) {
+            return preference(isPreferred, 1);
         }
 
         @Contract("_, _ -> this")
-        default @NotNull Builder<T> preference(@NotNull ToDoubleFunction<MobArena> toDoubleFunction, double weight) {
+        default @NotNull Builder<T> preference(@NotNull ToDoubleFunction<GenerationContext> isPreferred, double weight) {
             return preference(new Preference() {
                 @Override
-                public double applyAsDouble(MobArena value) {
-                    return toDoubleFunction.applyAsDouble(value);
+                public double isPreferred(@NotNull GenerationContext context) {
+                    return isPreferred.applyAsDouble(context);
                 }
 
                 @Override
@@ -60,21 +68,48 @@ sealed interface MobGenerator<T extends ArenaMob> permits MobGeneratorImpl {
             });
         }
 
-        MobGenerator<T> build();
+        @NotNull MobGenerator<T> build();
     }
 
     @FunctionalInterface
-    interface Condition extends Predicate<MobArena> {
-        static Condition hasClass(ArenaClass arenaClass) {
-            return arena -> arena.instance()
+    interface Condition {
+        boolean isMet(@NotNull GenerationContext context);
+
+        static Condition hasClass(@NotNull ArenaClass arenaClass) {
+            return context -> context.arena().instance()
                     .getPlayers()
                     .stream()
-                    .anyMatch(player -> arena.playerClass(player)
+                    .anyMatch(player -> context.arena().playerClass(player)
                             .equals(arenaClass));
         }
     }
 
-    interface Preference extends ToDoubleFunction<MobArena> {
+    @FunctionalInterface
+    interface Controller {
+        @NotNull Control isSatisfied(@NotNull GenerationContext context);
+
+        enum Control {
+            GENERATE,
+            ENOUGH,
+            OK
+        }
+
+        static @NotNull Controller minCount(int count) {
+            return context -> context.generated() <= count
+                    ? Control.GENERATE
+                    : Control.OK;
+        }
+
+        static @NotNull Controller maxCount(int count) {
+            return context -> context.generated() >= count
+                    ? Control.ENOUGH
+                    : Control.OK;
+        }
+    }
+
+    interface Preference {
+        double isPreferred(@NotNull GenerationContext context);
+
         double weight();
     }
 }
