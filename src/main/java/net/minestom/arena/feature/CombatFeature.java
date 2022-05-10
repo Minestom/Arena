@@ -35,7 +35,7 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
 
     private void takeKnockback(Entity target, Entity source) {
         target.takeKnockback(
-                0.5f,
+                0.3f,
                 Math.sin(source.getPosition().yaw() * (Math.PI / 180)),
                 -Math.cos(source.getPosition().yaw() * (Math.PI / 180))
         );

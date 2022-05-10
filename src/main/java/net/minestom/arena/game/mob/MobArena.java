@@ -339,14 +339,15 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     private void onStageCleared() {
+        if (!stageInProgress) return;
         setStageInProgress(false);
+
         // Revive dead players
-        for (Player deadPlayer : deadPlayers()) {
-            deadPlayer.setInstance(arenaInstance, spawnPosition(deadPlayer));
-
-            deadPlayer.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
-
-            deadPlayer.showBossBar(bossBar);
+        for (Player player : deadPlayers()) {
+            player.setInstance(arenaInstance, spawnPosition(player));
+            player.getAttribute(Attribute.ATTACK_SPEED).addModifier(ATTACK_SPEED_MODIFIER);
+            player.showBossBar(bossBar);
+            playerClass(player).apply(player);
         }
 
         for (Map.Entry<ArenaUpgrade, Integer> entry : upgrades.entrySet()) {

@@ -5,6 +5,7 @@ import net.minestom.arena.group.Group;
 import net.minestom.server.entity.Player;
 import net.minestom.server.scoreboard.Sidebar;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,7 +19,7 @@ public abstract class GroupSidebarDisplay implements GroupDisplay {
     }
 
     private List<Sidebar.ScoreboardLine> createLines() {
-        List<Sidebar.ScoreboardLine> lines = new java.util.ArrayList<>();
+        List<Sidebar.ScoreboardLine> lines = new ArrayList<>();
         for (Player player : group.members()) {
             lines.add(createPlayerLine(player, group));
         }
