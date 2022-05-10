@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+//TODO Rename to game
 public final class ArenaCommand extends Command {
     private static final Map<String, Function<Group, Arena>> ARENAS = Map.of(
             "mob", MobArena::new);
@@ -49,7 +50,9 @@ public final class ArenaCommand extends Command {
             Messenger.warn(player, "You are not the leader of your group!");
             return;
         }
+
         Arena arena = ARENAS.get(type).apply(group);
+        ArenaManager.register(arena);
         arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
     }
 

@@ -19,8 +19,6 @@ public interface SingleInstanceArena extends Arena {
 
     @NotNull List<Feature> features();
 
-    void start();
-
     @Override
     default @NotNull CompletableFuture<Void> init() {
         Instance instance = instance();
@@ -33,7 +31,10 @@ public interface SingleInstanceArena extends Arena {
             // Ensure there is only this player in the instance
             if (instance.getPlayers().size() > 1) return;
             // All players have left. We can remove this instance once the player is removed.
-            instance.scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance));
+            MinecraftServer.getSchedulerManager().scheduleNextTick(() -> {
+                MinecraftServer.getInstanceManager().unregisterInstance(instance);
+                stop();
+            });
 
             group().setDisplay(new LobbySidebarDisplay(group()));
         });
@@ -44,8 +45,8 @@ public interface SingleInstanceArena extends Arena {
 
         CompletableFuture<?>[] futures =
                 group().members().stream()
-                    .map(player -> player.setInstance(instance, spawnPosition(player)))
-                    .toArray(CompletableFuture<?>[]::new);
+                        .map(player -> player.setInstance(instance, spawnPosition(player)))
+                        .toArray(CompletableFuture<?>[]::new);
 
         return CompletableFuture.allOf(futures).thenRun(this::start);
     }
