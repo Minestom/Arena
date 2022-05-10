@@ -6,7 +6,7 @@
 Arena is a demo server made with [Minestom](https://github.com/Minestom/Minestom), as both a showcase for what Minestom is 
 capable of and as a way to teach developers how to work with Minestom.
 
-The demo server is hosted at minestom.net, or you can follow below guide to get it up and running yourself.
+The demo server is hosted at play.minestom.net, or you can follow below guide to get it up and running yourself.
 
 # Table of contents
 - [Install](#install)
@@ -30,7 +30,7 @@ You will then find your jar in ./build/libs/ which you can run with:
 ```shell
 java -jar arena-1.0-SNAPSHOT-all.jar
 ```
-Of course you can also use an IDE which makes this process easier.
+Of course, you can also use an IDE which makes this process easier.
 
 ## Pre-built
 Download the latest release from [here](https://github.com/Minestom/Arena/releases/tag/latest)

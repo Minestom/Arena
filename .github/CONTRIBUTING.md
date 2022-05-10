@@ -1,4 +1,4 @@
-## How to contribute to Minestom
+## How to contribute to Arena
 #### **Did you find a bug?**
 * Open a new GitHub issue if it's not already reported.
 
@@ -16,7 +16,7 @@
 * Ask any question about Arena in the [Discord server](https://discord.gg/Hbuf4msMVF) and then preferably in the #community-server channel.
 
 ## General Contribution Rules
-* By contributing to the Minestom project your code/contribution will be licensed under the [Apache Version 2.0](../LICENSE) license.
+* By contributing to the Minestom project your code/contribution will be licensed under the [Unlicense](../LICENSE) license.
 
 Arena is a community project. We encourage you to contribute! :)
 
