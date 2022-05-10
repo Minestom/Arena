@@ -44,6 +44,7 @@ import net.minestom.server.particle.Particle;
 import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
+import net.minestom.server.timer.ExecutionType;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
@@ -329,7 +330,7 @@ public final class MobArena implements SingleInstanceArena {
                 unregister();
 
                 return TaskSchedule.stop();
-            });
+            }, ExecutionType.ASYNC);
         } else {
             group.setDisplay(new LobbySidebarDisplay(group));
             unregister();
