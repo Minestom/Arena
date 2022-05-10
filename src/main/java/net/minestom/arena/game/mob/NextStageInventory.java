@@ -90,11 +90,11 @@ final class NextStageInventory extends Inventory {
             for (int i = 0; i < length; i++) {
                 ArenaClass arenaClass = MobArena.CLASSES.get(i);
 
-                setItemStack(13 - length / 2 + i, arenaClass.itemStack().withMeta(
-                        builder -> arena.playerClass(player).equals(arenaClass)
-                                ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
-                                : builder
-                ));
+                setItemStack(13 - length / 2 + i, arenaClass.itemStack()
+                        .withMeta(builder -> {
+                            if (arena.playerClass(player).equals(arenaClass))
+                                builder.enchantment(Enchantment.PROTECTION, (short) 1);
+                        }));
             }
         }
 

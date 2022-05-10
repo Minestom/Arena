@@ -28,7 +28,7 @@ record Kit(@NotNull List<ItemStack> inventory, Map<EquipmentSlot, ItemStack> equ
         }
 
         // Equipment
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
+        for (EquipmentSlot slot : EquipmentSlot.armors()) {
             final ItemStack item = equipments.get(slot);
             if (item != null) player.setEquipment(slot, item.withTag(KIT_ITEM_TAG, true));
             else player.setEquipment(slot, ItemStack.AIR);

@@ -12,7 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 
-record ArenaUpgrade(String name, String description, TextColor color, Material material, @Nullable BiConsumer<Player, Integer> consumer, int cost) {
+record ArenaUpgrade(String name, String description, TextColor color, Material material,
+                    @Nullable BiConsumer<Player, Integer> consumer, int cost) {
     public ItemStack itemStack(int level) {
         return ItemUtils.stripItalics(ItemStack.builder(material)
                 .displayName(Component.text(name, color))
@@ -23,9 +24,9 @@ record ArenaUpgrade(String name, String description, TextColor color, Material m
                         Component.text("The current level of this upgrade is " + level, NamedTextColor.GOLD)
                 )
                 .meta(ItemUtils::hideFlags)
-                .meta(builder -> level != 0
-                        ? builder.enchantment(Enchantment.PROTECTION, (short) 1)
-                        : builder)
+                .meta(builder -> {
+                    if (level != 0) builder.enchantment(Enchantment.PROTECTION, (short) 1);
+                })
                 .build()
         );
     }
