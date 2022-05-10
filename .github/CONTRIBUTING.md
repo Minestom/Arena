@@ -16,7 +16,7 @@
 * Ask any question about Arena in the [Discord server](https://discord.gg/Hbuf4msMVF) and then preferably in the #community-server channel.
 
 ## General Contribution Rules
-* By contributing to the Minestom project your code/contribution will be licensed under the [Unlicense](../LICENSE) license.
+* By contributing to the Arena project your code/contribution will be released into the public domain as per the [license](../LICENSE).
 
 Arena is a community project. We encourage you to contribute! :)
 
