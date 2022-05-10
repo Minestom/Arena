@@ -162,11 +162,9 @@ public final class MobArena implements SingleInstanceArena {
                         .setOctaves(6)
                         .build())
                 .build();
-        final MobArena arena; //temp
 
-        public MobArenaInstance(MobArena arena) {
+        public MobArenaInstance() {
             super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
-            this.arena = arena;
             getWorldBorder().setDiameter(100);
             setGenerator(unit -> {
                 final Point start = unit.absoluteStart();
@@ -212,7 +210,7 @@ public final class MobArena implements SingleInstanceArena {
 
     private final Group group;
     private final BossBar bossBar;
-    private final Instance arenaInstance = new MobArenaInstance(this);
+    private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
     private final Map<Player, ArenaClass> playerClasses = new HashMap<>();
     private final Map<ArenaUpgrade, Integer> upgrades = new HashMap<>();

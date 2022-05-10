@@ -1,13 +1,16 @@
 package net.minestom.arena.game.mob;
 
+import net.minestom.arena.game.Arena;
+import net.minestom.arena.game.ArenaManager;
 import net.minestom.arena.utils.CommandUtils;
 import net.minestom.server.command.CommandSender;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.arguments.ArgumentLiteral;
 import net.minestom.server.command.builder.arguments.ArgumentType;
-import net.minestom.server.command.builder.arguments.number.ArgumentInteger;
+import net.minestom.server.command.builder.arguments.number.ArgumentNumber;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
+import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.utils.MathUtils;
@@ -28,10 +31,14 @@ public final class MobTestCommand extends Command {
         final ArgumentLiteral spawn = ArgumentType.Literal("spawn");
         final ArgumentLiteral immortal = ArgumentType.Literal("immortal");
         final ArgumentLiteral strong = ArgumentType.Literal("strong");
+        final ArgumentLiteral damageme = ArgumentType.Literal("damageme");
 
-        final ArgumentInteger coinsAmount = ArgumentType.Integer("amount");
-        final ArgumentInteger classId = ArgumentType.Integer("id");
-        final ArgumentInteger mobType = ArgumentType.Integer("type");
+        final ArgumentNumber<Integer> coinsAmount = ArgumentType.Integer("amount")
+                .between(0, 1000);
+        final ArgumentNumber<Integer> classId = ArgumentType.Integer("id")
+                .between(0, MobArena.CLASSES.size() - 1);
+        final ArgumentNumber<Integer> mobType = ArgumentType.Integer("type")
+                .between(0, MobArena.MOB_GENERATORS.size() - 1);
 
         addSyntax((sender, context) -> arena(sender)
                 .ifPresent(arena -> arena.addCoins(context.get(coinsAmount))), coins, coinsAmount);
@@ -74,13 +81,20 @@ public final class MobTestCommand extends Command {
                 ((Player) sender).getInventory().addItemStack(ItemStack.builder(Material.COOKED_CHICKEN)
                         .set(MobArena.MELEE_TAG, 10000).build()
         ), strong);
+
+        addSyntax((sender, context) -> ((Player) sender).damage(DamageType.VOID, 10), damageme);
     }
 
-    // TODO: Replace with game API once merged
     private static @NotNull Optional<MobArena> arena(CommandSender sender) {
         if (!(sender instanceof Player player)) return Optional.empty();
-        if (!(player.getInstance() instanceof MobArena.MobArenaInstance instance)) return Optional.empty();
 
-        return Optional.of(instance.arena);
+        for (Arena arena : ArenaManager.list()) {
+            if (!(arena instanceof MobArena mobArena)) continue;
+
+            if (arena.group().members().contains(player))
+                return Optional.of(mobArena);
+        }
+
+        return Optional.empty();
     }
 }
