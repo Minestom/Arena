@@ -57,10 +57,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class MobArena implements SingleInstanceArena {
-    private static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
-    private static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
-    private static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
-    private static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
+    static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
+    static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
+    static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
+    static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
     private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mobarena-attack-speed", 100f, AttributeOperation.ADDITION);
 
     private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
@@ -132,7 +132,7 @@ public final class MobArena implements SingleInstanceArena {
             ALLOYING_UPGRADE
     );
 
-    private static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
+    static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
             Generator.builder(ZombieMob::new)
                     .chance(0.5)
                     .build(),

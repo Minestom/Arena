@@ -4,10 +4,10 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.game.ArenaCommand;
+import net.minestom.arena.game.mob.MobTestCommand;
 import net.minestom.arena.group.GroupCommand;
 import net.minestom.arena.group.GroupEvent;
 import net.minestom.arena.utils.ResourceUtils;
-import net.minestom.arena.utils.ServerProperties;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.adventure.audience.Audiences;
 import net.minestom.server.command.CommandManager;
@@ -30,6 +30,8 @@ import net.minestom.server.utils.MathUtils;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static net.minestom.arena.config.ConfigHandler.CONFIG;
+
 public final class Main {
     public static void main(String[] args) {
         MinecraftServer minecraftServer = MinecraftServer.init();
@@ -48,6 +50,7 @@ public final class Main {
             manager.register(new ArenaCommand());
             manager.register(new StopCommand());
             manager.register(new LeaveCommand());
+            manager.register(new MobTestCommand());
             manager.register(new PingCommand());
         }
 
@@ -65,6 +68,10 @@ public final class Main {
                 final Player player = event.getPlayer();
                 event.setSpawningInstance(Lobby.INSTANCE);
                 player.setRespawnPoint(new Pos(0.5, 16, 0.5));
+
+                if (CONFIG.permissions().operators().contains(player.getUsername())) {
+                    player.setPermissionLevel(4);
+                }
 
                 Audiences.all().sendMessage(Component.text(
                         player.getUsername() + " has joined",
@@ -123,16 +130,13 @@ public final class Main {
             }, TaskSchedule.tick(10), TaskSchedule.tick(10));
         }
 
-        final String forwardingSecret = ServerProperties.getForwardingSecret();
-        if (forwardingSecret != null) {
-            VelocityProxy.enable(forwardingSecret);
+        if (CONFIG.proxy().enabled()) {
+            VelocityProxy.enable(CONFIG.proxy().secret());
         } else {
             OpenToLAN.open();
         }
 
-        final String address = ServerProperties.getServerAddress("0.0.0.0");
-        final int port = ServerProperties.getServerPort(25565);
-        minecraftServer.start(address, port);
-        System.out.println("Server startup done! Listening on " + address + ":" + port);
+        minecraftServer.start(CONFIG.server().address());
+        System.out.println("Server startup done! Using configuration " + CONFIG);
     }
 }
