@@ -15,11 +15,6 @@ public interface Arena {
     void stop();
 
     @ApiStatus.NonExtendable
-    default void register() {
-        ArenaManager.register(this);
-    }
-
-    @ApiStatus.NonExtendable
     default void unregister() {
         ArenaManager.unregister(this);
     }

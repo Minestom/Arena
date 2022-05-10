@@ -303,7 +303,6 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public void start() {
-        register();
         nextStage();
     }
 

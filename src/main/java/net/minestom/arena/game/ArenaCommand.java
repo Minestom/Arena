@@ -51,8 +51,9 @@ public final class ArenaCommand extends Command {
             return;
         }
 
-        ARENAS.get(type).apply(group).init()
-                .thenRun(() -> group.members().forEach(Player::refreshCommands));
+        Arena arena = ARENAS.get(type).apply(group);
+        ArenaManager.register(arena);
+        arena.init().thenRun(() -> group.members().forEach(Player::refreshCommands));
     }
 
     private static class ArenaInventory extends Inventory {
