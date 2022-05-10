@@ -7,11 +7,12 @@ import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 public final class ArenaManager {
     private static final List<Arena> ARENAS = new CopyOnWriteArrayList<>();
@@ -42,9 +43,7 @@ public final class ArenaManager {
         for (Player player : MinecraftServer.getConnectionManager().getOnlinePlayers())
             player.kick(Component.text("Server is shutting down", NamedTextColor.RED));
 
-        MinecraftServer.getSchedulerManager()
-                .buildTask(MinecraftServer::stopCleanly)
-                .delay(Duration.ofSeconds(1))
-                .schedule();
+        CompletableFuture.delayedExecutor(1, TimeUnit.SECONDS)
+                .execute(MinecraftServer::stopCleanly);
     }
 }
