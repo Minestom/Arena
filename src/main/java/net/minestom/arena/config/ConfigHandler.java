@@ -22,16 +22,16 @@ public final class ConfigHandler {
     public static final Config CONFIG;
 
     static {
-        Config config;
+        Config config = null;
         try (JsonReader reader = new JsonReader(new FileReader("config.json"))) {
             config = new GsonBuilder()
                     .registerTypeAdapterFactory(new RecordTypeAdapterFactory())
                     .create()
                     .fromJson(reader, Config.class);
-        } catch (IOException e) {
-            config = new Config();
-        }
-        CONFIG = config;
+        } catch (IOException ignored) {}
+
+        if (config == null) CONFIG = new Config();
+        else CONFIG = config;
     }
 
     private ConfigHandler() {}
