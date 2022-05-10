@@ -339,7 +339,7 @@ public final class MobArena implements SingleInstanceArena {
     }
 
     private void onStageCleared() {
-        stageInProgress = false;
+        setStageInProgress(false);
         // Revive dead players
         for (Player deadPlayer : deadPlayers()) {
             deadPlayer.setInstance(arenaInstance, spawnPosition(deadPlayer));
@@ -371,6 +371,8 @@ public final class MobArena implements SingleInstanceArena {
     public void continueToNextStage(Player player) {
         if (!continued.add(player)) return;
 
+        group.display().update();
+
         final int continuedCount = continued.size();
         final int haveToContinue = arenaInstance.getPlayers().size();
         final int untilStart = haveToContinue - continuedCount;
@@ -399,8 +401,17 @@ public final class MobArena implements SingleInstanceArena {
         return stage;
     }
 
+    public boolean stageInProgress() {
+        return stageInProgress;
+    }
+
+    void setStageInProgress(boolean stageInProgress) {
+        this.stageInProgress = stageInProgress;
+        group.display().update();
+    }
+
     public void nextStage() {
-        stageInProgress = true;
+        setStageInProgress(true);
         stage++;
         initialMobCount = (int) (stage * 1.5);
         for (Entity entity : arenaInstance.getEntities()) {
