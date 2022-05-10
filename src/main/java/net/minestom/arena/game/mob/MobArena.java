@@ -313,11 +313,13 @@ public final class MobArena implements SingleInstanceArena {
 
         if (stageInProgress && arenaInstance.getPlayers().size() > 0) {
             final Duration time = Duration.ofSeconds(30);
+            final long timeoutAt = System.currentTimeMillis() + time.toMillis();
             Messenger.warn(group(), "This arena is stopping. You have " + time.getSeconds() + " seconds to complete the stage");
 
             //TODO: Use Messenger to provide nice countdowns
             MinecraftServer.getSchedulerManager().submitTask(() -> {
-                if (stageInProgress && arenaInstance.getPlayers().size() > 0)
+                if (stageInProgress && arenaInstance.getPlayers().size() > 0
+                        && System.currentTimeMillis() < timeoutAt)
                     return TaskSchedule.duration(Duration.ofSeconds(1));
 
                 for (Player player : arenaInstance.getPlayers()) {
