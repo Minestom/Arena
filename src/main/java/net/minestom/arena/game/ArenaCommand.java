@@ -25,7 +25,7 @@ import java.util.function.Function;
 
 //TODO Rename to game
 public final class ArenaCommand extends Command {
-    private static final Map<String, Function<Group, Game>> ARENAS = Map.of(
+    private static final Map<String, Function<Group, Arena>> ARENAS = Map.of(
             "mob", MobArena::new);
 
     public ArenaCommand() {
@@ -50,7 +50,9 @@ public final class ArenaCommand extends Command {
             Messenger.warn(player, "You are not the leader of your group!");
             return;
         }
-        ARENAS.get(type).apply(group).start();
+
+        ARENAS.get(type).apply(group).init()
+                .thenRun(() -> group.members().forEach(Player::refreshCommands));
     }
 
     private static class ArenaInventory extends Inventory {

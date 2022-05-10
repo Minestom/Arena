@@ -12,18 +12,15 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public abstract class SingleInstanceArena extends Game {
-    @NotNull
-    protected abstract Instance instance();
+public interface SingleInstanceArena extends Arena {
+    @NotNull Instance instance();
 
-    @NotNull
-    protected abstract Pos spawnPosition(@NotNull Player player);
+    @NotNull Pos spawnPosition(@NotNull Player player);
 
-    @NotNull
-    protected abstract List<Feature> features();
+    @NotNull List<Feature> features();
 
     @Override
-    public final CompletableFuture<Void> init() {
+    default @NotNull CompletableFuture<Void> init() {
         Instance instance = instance();
         // Register this arena
         MinecraftServer.getInstanceManager().registerInstance(instance);
@@ -33,33 +30,24 @@ public abstract class SingleInstanceArena extends Game {
             if (!(event.getEntity() instanceof Player)) return;
             // Ensure there is only this player in the instance
             if (instance.getPlayers().size() > 1) return;
-            // Handle shutdown
-            end();
+            // All players have left. We can remove this instance once the player is removed.
+            MinecraftServer.getSchedulerManager().scheduleNextTick(() -> {
+                MinecraftServer.getInstanceManager().unregisterInstance(instance);
+                stop();
+            });
+
+            group().setDisplay(new LobbySidebarDisplay(group()));
         });
 
         for (Feature feature : features()) {
             feature.hook(instance.eventNode());
         }
 
-        //TODO Move to start
         CompletableFuture<?>[] futures =
                 group().members().stream()
-                    .map(player -> player.setInstance(instance, spawnPosition(player)))
-                    .toArray(CompletableFuture<?>[]::new);
+                        .map(player -> player.setInstance(instance, spawnPosition(player)))
+                        .toArray(CompletableFuture<?>[]::new);
 
-        final CompletableFuture<Void> future = new CompletableFuture<>();
-        CompletableFuture.allOf(futures).thenRun(() -> future.complete(null));
-        group().members().forEach(Player::refreshCommands);
-        return future;
-    }
-
-    protected abstract CompletableFuture<Void> handleOnStop();
-
-    @Override
-    protected final CompletableFuture<Void> onEnd() {
-        // All players have left. We can remove this instance once the player is removed.
-        instance().scheduleNextTick(ignored -> MinecraftServer.getInstanceManager().unregisterInstance(instance()));
-        group().setDisplay(new LobbySidebarDisplay(group()));
-        return handleOnStop();
+        return CompletableFuture.allOf(futures).thenRun(this::start);
     }
 }

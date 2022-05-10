@@ -2,13 +2,14 @@ package net.minestom.arena.game;
 
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.ConcurrentUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class Game {
+public abstract class AbstractArena implements Arena {
     private final CompletableFuture<Void> gameFuture = new CompletableFuture<>();
     private final AtomicReference<GameState> state = new AtomicReference<>(GameState.CREATED);
     private Instant startDate;
@@ -40,7 +41,7 @@ public abstract class Game {
         return this.state.get();
     }
 
-    public abstract Group group();
+    public abstract @NotNull Group group();
 
     ///////////////////////////////////////////////////////////////////////////
     // Life cycle methods
@@ -52,7 +53,7 @@ public abstract class Game {
      *
      * @return a future that completes when the game can be started with {@link #start()}
      */
-    protected abstract CompletableFuture<Void> init();
+    public abstract @NotNull CompletableFuture<Void> init();
 
     /**
      * Used to start the game, here you can change the players' instance, etc.
@@ -71,12 +72,11 @@ public abstract class Game {
      *     <li>Set state to {@link GameState#STARTED}</li>
      * </ol>
      *
-     * @return {@link #gameFuture()}
      * @throws RuntimeException if called when the state isn't {@link GameState#CREATED}
      */
-    public final CompletableFuture<Void> start() {
+    public final void start() {
         if (!this.state.compareAndSet(GameState.CREATED, GameState.INITIALIZING)) {
-            throw new RuntimeException("Cannot start a Game twice!");
+            throw new RuntimeException("Cannot start a AbstractArena twice!");
         }
         init().thenRun(() -> {
             if (!this.state.compareAndSet(GameState.INITIALIZING, GameState.STARTING)) {
@@ -91,7 +91,6 @@ public abstract class Game {
                 this.startDate = Instant.now();
             });
         });
-        return gameFuture();
     }
 
     /**
@@ -113,7 +112,7 @@ public abstract class Game {
         }
         onEnd().thenRun(() -> {
             if (!tryAdvance(GameState.ENDED)) {
-                // Game was killed, don't alter the state
+                // AbstractArena was killed, don't alter the state
                 return;
             }
             this.endDate = Instant.now();
@@ -145,6 +144,7 @@ public abstract class Game {
         if (!tryAdvance(GameState.SHUTTING_DOWN)) {
             return gameFuture();
         }
+
         ConcurrentUtils.thenRunOrTimeout(onShutdown(END_TIMEOUT), END_TIMEOUT, (timeoutReached) -> {
             if (timeoutReached) {
                 if (!tryAdvance(GameState.KILLED)) {
@@ -179,5 +179,31 @@ public abstract class Game {
      */
     private boolean tryAdvance(GameState newState) {
         return ConcurrentUtils.testAndSet(this.state, GameState::isBefore, newState);
+    }
+
+    public enum GameState {
+        CREATED(0), INITIALIZING(1), STARTING(2), STARTED(3), ENDING(4), SHUTTING_DOWN(4), ENDED(5), KILLED(5);
+
+        private final int sequence;
+
+        GameState(int sequence) {
+            this.sequence = sequence;
+        }
+
+        public boolean isBefore(GameState state) {
+            return this.sequence < state.sequence;
+        }
+
+        public boolean isOrBefore(GameState state) {
+            return this.sequence <= state.sequence;
+        }
+
+        public boolean isAfter(GameState state) {
+            return this.sequence > state.sequence;
+        }
+
+        public boolean isOrAfter(GameState state) {
+            return this.sequence >= state.sequence;
+        }
     }
 }
