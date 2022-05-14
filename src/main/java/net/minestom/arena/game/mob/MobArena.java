@@ -384,7 +384,7 @@ public final class MobArena implements SingleInstanceArena {
         final AtomicInteger countdown = new AtomicInteger((int) ROUND_WAIT_TIME.getSeconds());
         MinecraftServer.getSchedulerManager().submitTask(() -> {
             final int count = countdown.getAndDecrement();
-            
+
             if (stageInProgress() || !ArenaManager.list().contains(this)) {
                 return TaskSchedule.stop();
             }
@@ -484,7 +484,8 @@ public final class MobArena implements SingleInstanceArena {
 
         arenaInstance.showTitle(Title.title(
                 Component.text("Stage " + stage, NamedTextColor.GREEN),
-                Component.text(initialMobCount + mobOrMobs)
+                Component.text(initialMobCount + mobOrMobs),
+                Title.Times.times(Duration.ofMillis(500), Duration.ofSeconds(1), Duration.ofMillis(500))
         ));
 
         arenaInstance.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 2f));
