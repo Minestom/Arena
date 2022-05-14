@@ -345,9 +345,9 @@ public final class MobArena implements SingleInstanceArena {
             playerClass(player).apply(player);
         }
 
-        final Random random = ThreadLocalRandom.current();
         for (Player member : group.members())
-            member.getInventory().addItemStack(Items.COIN.withAmount(stage + random.nextInt(2)));
+            member.getInventory().addItemStack(Items.COIN.withAmount(
+                    (int) Math.ceil(initialMobCount / (double) group.members().size())));
 
         for (Map.Entry<ArenaUpgrade, Integer> entry : upgrades.entrySet()) {
             if (entry.getKey().consumer() != null)

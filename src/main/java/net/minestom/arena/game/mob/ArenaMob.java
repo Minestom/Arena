@@ -2,15 +2,19 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.Items;
 import net.minestom.server.attribute.Attribute;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.EntityType;
+import net.minestom.server.entity.ItemEntity;
 import net.minestom.server.event.entity.EntityDamageEvent;
 import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 abstract class ArenaMob extends EntityCreature {
     private static final int BLOCK_LENGTH = 6;
@@ -29,8 +33,15 @@ abstract class ArenaMob extends EntityCreature {
         setCustomNameVisible(true);
         eventNode().addListener(EntityDamageEvent.class, event ->
                 setCustomName(generateHealthBar(getMaxHealth(), getHealth())))
-            .addListener(EntityDeathEvent.class, event ->
-                setCustomName(generateHealthBar(getMaxHealth(), 0)));
+            .addListener(EntityDeathEvent.class, event ->  {
+                setCustomName(generateHealthBar(getMaxHealth(), 0));
+
+                if (ThreadLocalRandom.current().nextDouble() < 0.1) {
+                    final ItemEntity coin = new ItemEntity(Items.COIN);
+                    coin.setPickupDelay(10, TimeUnit.SERVER_TICK);
+                    coin.setInstance(instance, position);
+                }
+            });
     }
 
     @Contract(pure = true)
