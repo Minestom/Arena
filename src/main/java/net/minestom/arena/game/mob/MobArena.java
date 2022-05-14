@@ -8,10 +8,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.title.Title;
-import net.minestom.arena.Icons;
-import net.minestom.arena.Lobby;
-import net.minestom.arena.LobbySidebarDisplay;
-import net.minestom.arena.Messenger;
+import net.minestom.arena.*;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.Generator;
@@ -216,7 +213,6 @@ public final class MobArena implements SingleInstanceArena {
     private final Map<ArenaUpgrade, Integer> upgrades = new HashMap<>();
 
     private int stage = 0;
-    private int coins = 0;
 
     public MobArena(Group group) {
         this.group = group;
@@ -236,7 +232,6 @@ public final class MobArena implements SingleInstanceArena {
         }
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
-            addCoins(1);
             if (event.getEntity() instanceof ArenaMob) {
                 mobCount.decrementAndGet();
             }
@@ -350,6 +345,10 @@ public final class MobArena implements SingleInstanceArena {
             playerClass(player).apply(player);
         }
 
+        final Random random = ThreadLocalRandom.current();
+        for (Player member : group.members())
+            member.getInventory().addItemStack(Items.COIN.withAmount(stage + random.nextInt(2)));
+
         for (Map.Entry<ArenaUpgrade, Integer> entry : upgrades.entrySet()) {
             if (entry.getKey().consumer() != null)
                 for (Player player : arenaInstance.getPlayers()) {
@@ -454,28 +453,6 @@ public final class MobArena implements SingleInstanceArena {
 
     public boolean hasContinued(Player player) {
         return continued.contains(player);
-    }
-
-    public int coins() {
-        return coins;
-    }
-
-    public boolean takeCoins(int coins) {
-        if (coins() >= coins) {
-            setCoins(coins() - coins);
-            return true;
-        }
-
-        return false;
-    }
-
-    public void addCoins(int coins) {
-        setCoins(coins() + coins);
-    }
-
-    private void setCoins(int coins) {
-        this.coins = coins;
-        group.display().update();
     }
 
     public ArenaClass playerClass(Player player) {
