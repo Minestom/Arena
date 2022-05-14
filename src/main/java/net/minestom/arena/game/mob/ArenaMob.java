@@ -30,7 +30,7 @@ abstract class ArenaMob extends EntityCreature {
         eventNode().addListener(EntityDamageEvent.class, event ->
                 setCustomName(generateHealthBar(getMaxHealth(), getHealth())))
             .addListener(EntityDeathEvent.class, event ->
-                setCustomName(generateHealthBar(getMaxHealth(), 0)));
+                    setCustomName(generateHealthBar(getMaxHealth(), 0)));
     }
 
     @Contract(pure = true)

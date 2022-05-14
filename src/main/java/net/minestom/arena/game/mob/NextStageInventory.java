@@ -9,6 +9,7 @@ import net.minestom.arena.utils.ItemUtils;
 import net.minestom.server.entity.Player;
 import net.minestom.server.inventory.Inventory;
 import net.minestom.server.inventory.InventoryType;
+import net.minestom.server.inventory.TransactionOption;
 import net.minestom.server.item.Enchantment;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
@@ -104,7 +105,7 @@ final class NextStageInventory extends Inventory {
                 return;
             }
 
-            if (arena.takeCoins(arenaClass.cost())) {
+            if (player.getInventory().takeItemStack(Items.COIN.withAmount(arenaClass.cost()), TransactionOption.ALL_OR_NOTHING)) {
                 Messenger.info(arena.group(), player.getUsername() + " switched their class to " + arenaClass.name());
                 arena.setPlayerClass(player, arenaClass);
                 draw();
@@ -154,7 +155,7 @@ final class NextStageInventory extends Inventory {
         }
 
         private void buyUpgrade(ArenaUpgrade upgrade) {
-            if (arena.takeCoins(upgrade.cost())) {
+            if (player.getInventory().takeItemStack(Items.COIN.withAmount(upgrade.cost()), TransactionOption.ALL_OR_NOTHING)) {
                 Messenger.info(arena.group(), player.getUsername() + " bought the " + upgrade.name() + " upgrade");
                 arena.addUpgrade(upgrade);
                 draw();
