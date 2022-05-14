@@ -5,8 +5,10 @@ import de.articdive.jnoise.modules.octavation.OctavationModule;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 import net.minestom.arena.*;
 import net.minestom.arena.feature.Feature;
@@ -345,9 +347,24 @@ public final class MobArena implements SingleInstanceArena {
             playerClass(player).apply(player);
         }
 
-        for (Player member : group.members())
+        TextComponent.Builder builder = Component.text()
+                .append(Component.newline())
+                .append(Component.text("Coins", Messenger.ORANGE_COLOR, TextDecoration.BOLD))
+                .append(Component.newline());
+        for (Player member : group.members()) {
             member.getInventory().addItemStack(Items.COIN.withAmount(
                     (int) Math.ceil(initialMobCount / (double) group.members().size())));
+            final int coins = Arrays.stream(member.getInventory().getItemStacks())
+                    .filter(item -> item.isSimilar(Items.COIN))
+                    .mapToInt(ItemStack::amount)
+                    .sum();
+
+            builder.append(Component.text(member.getUsername(), NamedTextColor.GRAY))
+                    .append(Component.text(" | ", Messenger.PINK_COLOR))
+                    .append(Component.text(coins + " coins", NamedTextColor.GRAY))
+                    .append(Component.newline());
+        }
+        group.sendMessage(builder);
 
         for (Map.Entry<ArenaUpgrade, Integer> entry : upgrades.entrySet()) {
             if (entry.getKey().consumer() != null)
