@@ -14,6 +14,7 @@ import net.minestom.arena.LobbySidebarDisplay;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
+import net.minestom.arena.game.ArenaManager;
 import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
@@ -149,6 +150,9 @@ public final class MobArena implements SingleInstanceArena {
 
     private static final int SPAWN_RADIUS = 10;
     private static final int HEIGHT = 16;
+
+    private static final Duration ROUND_WAIT_TIME = Duration.ofSeconds(30);
+
     private final AtomicInteger mobCount = new AtomicInteger();
     private boolean stageInProgress;
     private int initialMobCount;
@@ -365,8 +369,40 @@ public final class MobArena implements SingleInstanceArena {
         bossBar.color(BossBar.Color.GREEN);
 
         group().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
+        arenaInstance.showTitle(Title.title(
+                Component.text("Stage Cleared", NamedTextColor.GREEN),
+                Component.text(ROUND_WAIT_TIME.getSeconds() + " seconds to prepare for next stage"),
+                Title.Times.times(Duration.ZERO, Duration.ofSeconds(2), Duration.ofMillis(300))
+        ));
         Messenger.info(group(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
         new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
+
+        startForceContinueCountdown();
+    }
+
+    private void startForceContinueCountdown() {
+        final AtomicInteger countdown = new AtomicInteger((int) ROUND_WAIT_TIME.getSeconds());
+        MinecraftServer.getSchedulerManager().submitTask(() -> {
+            final int count = countdown.getAndDecrement();
+            
+            if (stageInProgress() || !ArenaManager.list().contains(this)) {
+                return TaskSchedule.stop();
+            }
+            if (count == 0) {
+                continueToNextStage(false);
+                return TaskSchedule.stop();
+            }
+
+            if (count > 3) {
+                if (count % 10 == 0) {
+                    Messenger.info(group(), count + " seconds remain to prepare for the next stage.");
+                }
+            } else {
+                Messenger.info(group(), count + " seconds remain.");
+            }
+
+            return TaskSchedule.seconds(1);
+        });
     }
 
     public void continueToNextStage(Player player) {
@@ -381,13 +417,8 @@ public final class MobArena implements SingleInstanceArena {
         if (untilStart <= 0) {
             Messenger.info(group(), player.getUsername() + " has continued. Starting the next wave.");
 
-            bossBar.name(Component.text("Wave starting..."));
-            bossBar.progress(1);
-            bossBar.color(BossBar.Color.BLUE);
+            continueToNextStage(true);
 
-            Messenger.countdown(group(), 3)
-                    .thenRun(this::nextStage)
-                    .thenRun(continued::clear);
         } else {
             Messenger.info(group(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
 
@@ -395,6 +426,20 @@ public final class MobArena implements SingleInstanceArena {
             bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
             bossBar.progress((float) continuedCount / haveToContinue);
             bossBar.color(BossBar.Color.GREEN);
+        }
+    }
+
+    private void continueToNextStage(boolean showCountdown) {
+        bossBar.name(Component.text("Wave starting..."));
+        bossBar.progress(1);
+        bossBar.color(BossBar.Color.BLUE);
+        continued.clear();
+
+        if (showCountdown) {
+            Messenger.countdown(group(), 3)
+                    .thenRun(this::nextStage);
+        } else {
+            nextStage();
         }
     }
 
