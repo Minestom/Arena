@@ -24,7 +24,6 @@ record DropFeature(Predicate<ItemStack> allowPredicate) implements Feature {
             ItemEntity itemEntity = new ItemEntity(item);
             itemEntity.setPickupDelay(40, TimeUnit.SERVER_TICK);
             itemEntity.setInstance(event.getInstance(), event.getPlayer().getPosition().add(0, 1.5, 0));
-            itemEntity.setGlowing(true);
             itemEntity.setVelocity(event.getPlayer().getPosition().direction().mul(6));
         });
     }

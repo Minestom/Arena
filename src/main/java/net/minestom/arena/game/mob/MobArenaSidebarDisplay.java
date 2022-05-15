@@ -9,8 +9,6 @@ import net.minestom.arena.group.displays.GroupSidebarDisplay;
 import net.minestom.server.entity.Player;
 import net.minestom.server.scoreboard.Sidebar;
 
-import java.util.List;
-
 final class MobArenaSidebarDisplay extends GroupSidebarDisplay {
     private final MobArena arena;
 
@@ -34,14 +32,6 @@ final class MobArenaSidebarDisplay extends GroupSidebarDisplay {
                 player.getUuid().toString(),
                 icon.append(Component.text(" ")).append(player.getName().color(Messenger.ORANGE_COLOR)),
                 3
-        );
-    }
-
-    @Override
-    protected List<Sidebar.ScoreboardLine> createAdditionalLines() {
-        return List.of(
-                new Sidebar.ScoreboardLine("empty", Component.empty(), 1),
-                new Sidebar.ScoreboardLine("coins", Component.text("Coins: " + arena.coins(), NamedTextColor.WHITE), 0)
         );
     }
 }

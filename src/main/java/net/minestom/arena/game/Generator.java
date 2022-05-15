@@ -1,6 +1,5 @@
 package net.minestom.arena.game;
 
-import net.minestom.server.entity.Entity;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,38 +9,38 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-public sealed interface Generator<T extends Entity, G extends GenerationContext> permits GeneratorImpl {
+public sealed interface Generator<T, G extends GenerationContext> permits GeneratorImpl {
     @Contract("_ -> new")
-    static <T extends Entity, G extends GenerationContext> @NotNull Builder<T, G> builder(@NotNull Function<G, T> function) {
+    static <T, G extends GenerationContext> @NotNull Builder<T, G> builder(@NotNull Function<G, T> function) {
         return new GeneratorImpl.Builder<>(function);
     }
 
-    static <T extends Entity, G extends GenerationContext> @NotNull List<T> generateAll(
+    static <T, G extends GenerationContext> @NotNull List<T> generateAll(
             @NotNull List<Generator<? extends T, G>> generators, int amount, Supplier<G> contextSupplier) {
 
         final Map<Generator<? extends T, G>, G> contextMap = new HashMap<>();
-        final List<T> entities = new ArrayList<>();
+        final List<T> result = new ArrayList<>();
 
         for (Generator<? extends T, G> generator : generators)
             contextMap.put(generator, contextSupplier.get());
 
-        while (entities.size() < amount) {
+        while (result.size() < amount) {
             final Generator<? extends T, G> generator = generators.get(ThreadLocalRandom.current().nextInt(generators.size()));
             final G context = contextMap.get(generator);
-            final Optional<? extends T> mob = generator.generate(context);
+            final Optional<? extends T> generated = generator.generate(context);
 
-            if (mob.isPresent()) {
-                entities.add(mob.get());
+            if (generated.isPresent()) {
+                result.add(generated.get());
                 context.incrementGenerated();
             }
         }
 
-        return entities;
+        return result;
     }
 
     @NotNull Optional<T> generate(@NotNull G context);
 
-    sealed interface Builder<T extends Entity, G extends GenerationContext> permits GeneratorImpl.Builder {
+    sealed interface Builder<T, G extends GenerationContext> permits GeneratorImpl.Builder {
         @Contract("_ -> this")
         @NotNull Builder<T, G> chance(double chance);
 

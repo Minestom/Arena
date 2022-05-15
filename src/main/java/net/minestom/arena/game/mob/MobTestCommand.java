@@ -1,5 +1,6 @@
 package net.minestom.arena.game.mob;
 
+import net.minestom.arena.Items;
 import net.minestom.arena.game.Arena;
 import net.minestom.arena.game.ArenaManager;
 import net.minestom.arena.utils.CommandUtils;
@@ -40,10 +41,10 @@ public final class MobTestCommand extends Command {
         final ArgumentNumber<Integer> mobType = ArgumentType.Integer("type")
                 .between(0, MobArena.MOB_GENERATORS.size() - 1);
 
-        addSyntax((sender, context) -> arena(sender)
-                .ifPresent(arena -> arena.addCoins(context.get(coinsAmount))), coins, coinsAmount);
-        addSyntax((sender, context) -> arena(sender)
-                .ifPresent(arena -> arena.addCoins(10)), coins);
+        addSyntax((sender, context) -> ((Player) sender).getInventory().addItemStack(Items.COIN
+                .withAmount(context.get(coinsAmount))), coins, coinsAmount);
+        addSyntax((sender, context) -> ((Player) sender).getInventory().addItemStack(Items.COIN
+                .withAmount(10)), coins);
 
         addSyntax((sender, context) -> arena(sender)
                 .ifPresent(MobArena::nextStage), stage);

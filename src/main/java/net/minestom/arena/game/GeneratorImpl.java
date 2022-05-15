@@ -1,6 +1,5 @@
 package net.minestom.arena.game;
 
-import net.minestom.server.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -11,7 +10,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-record GeneratorImpl<T extends Entity, G extends GenerationContext>(Function<G, T> function,
+record GeneratorImpl<T, G extends GenerationContext>(Function<G, T> function,
                                        Predicate<G> shouldGenerate) implements Generator<T, G> {
 
     @Override
@@ -21,7 +20,7 @@ record GeneratorImpl<T extends Entity, G extends GenerationContext>(Function<G, 
                 : Optional.empty();
     }
 
-    static final class Builder<T extends Entity, G extends GenerationContext> implements Generator.Builder<T, G> {
+    static final class Builder<T, G extends GenerationContext> implements Generator.Builder<T, G> {
         final Function<G, T> function;
         final List<Condition<G>> conditions = new ArrayList<>();
         final List<Controller<G>> controllers = new ArrayList<>();
@@ -34,7 +33,7 @@ record GeneratorImpl<T extends Entity, G extends GenerationContext>(Function<G, 
         }
 
         @Override
-        public Generator.@NotNull Builder<T, G> chance(double chance) {
+        public @NotNull Generator.Builder<T, G> chance(double chance) {
             this.chance = chance;
             return this;
         }
@@ -46,7 +45,7 @@ record GeneratorImpl<T extends Entity, G extends GenerationContext>(Function<G, 
         }
 
         @Override
-        public Generator.@NotNull Builder<T, G> controller(@NotNull Controller<G> controller) {
+        public @NotNull Generator.Builder<T, G> controller(@NotNull Controller<G> controller) {
             controllers.add(controller);
             return this;
         }

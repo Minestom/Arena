@@ -19,6 +19,9 @@ public final class Items {
             .displayName(Component.text("Back", NamedTextColor.AQUA))
             .lore(Component.text("Go back to the previous page", NamedTextColor.GRAY))
             .build());
+    public static final ItemStack COIN = ItemUtils.stripItalics(ItemStack.builder(Material.SUNFLOWER)
+            .displayName(Component.text("Coin"))
+            .build());
 
     private Items() {}
 }
