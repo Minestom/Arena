@@ -11,9 +11,10 @@ import net.minestom.server.item.Material;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 record ArenaUpgrade(String name, String description, TextColor color, Material material,
-                    @Nullable BiConsumer<Player, Integer> consumer, int cost) {
+                    @Nullable BiConsumer<Player, Integer> apply, @Nullable Consumer<Player> remove, int cost) {
     public ItemStack itemStack(int level) {
         return ItemUtils.stripItalics(ItemStack.builder(material)
                 .displayName(Component.text(name, color))

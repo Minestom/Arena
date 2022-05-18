@@ -29,7 +29,7 @@ public final class ArenaCommand extends Command {
             "mob", MobArena::new);
 
     public ArenaCommand() {
-        super("arena");
+        super("arena", "play", "join", "game");
         setCondition(CommandUtils::lobbyOnly);
 
         setDefaultExecutor((sender, context) ->

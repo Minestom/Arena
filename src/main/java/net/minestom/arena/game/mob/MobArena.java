@@ -1,7 +1,5 @@
 package net.minestom.arena.game.mob;
 
-import de.articdive.jnoise.JNoise;
-import de.articdive.jnoise.modules.octavation.OctavationModule;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -16,13 +14,12 @@ import net.minestom.arena.feature.Features;
 import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
-import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.arena.utils.ItemUtils;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.attribute.Attribute;
+import net.minestom.server.attribute.AttributeInstance;
 import net.minestom.server.attribute.AttributeModifier;
 import net.minestom.server.attribute.AttributeOperation;
-import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
@@ -35,8 +32,6 @@ import net.minestom.server.event.item.PickupItemEvent;
 import net.minestom.server.event.player.PlayerDeathEvent;
 import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.instance.InstanceContainer;
-import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.particle.Particle;
@@ -44,7 +39,6 @@ import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.timer.TaskSchedule;
-import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -101,7 +95,7 @@ public final class MobArena implements SingleInstanceArena {
     );
 
     private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
-            TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, 10);
+            TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, null, 10);
     private static final UUID HEALTHCARE_UUID = new UUID(9354678, 3425896);
     private static final UUID COMBAT_TRAINING_UUID = new UUID(24539786, 23945687);
 
@@ -116,6 +110,13 @@ public final class MobArena implements SingleInstanceArena {
 
                         player.getAttribute(Attribute.MAX_HEALTH).removeModifier(modifier);
                         player.getAttribute(Attribute.MAX_HEALTH).addModifier(modifier);
+                    }, player -> {
+                        AttributeInstance attribute = player.getAttribute(Attribute.MAX_HEALTH);
+                        for (AttributeModifier modifier : attribute.getModifiers()) {
+                            if (!modifier.getId().equals(HEALTHCARE_UUID)) continue;
+                            attribute.removeModifier(modifier);
+                        }
+                        player.heal();
                     }, 10),
             new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
                     TextColor.color(0xff5c3c), Material.IRON_SWORD,
@@ -127,6 +128,12 @@ public final class MobArena implements SingleInstanceArena {
 
                         player.getAttribute(Attribute.ATTACK_DAMAGE).removeModifier(modifier);
                         player.getAttribute(Attribute.ATTACK_DAMAGE).addModifier(modifier);
+                    }, player -> {
+                        AttributeInstance attribute = player.getAttribute(Attribute.ATTACK_DAMAGE);
+                        for (AttributeModifier modifier : attribute.getModifiers()) {
+                            if (!modifier.getId().equals(COMBAT_TRAINING_UUID)) continue;
+                            attribute.removeModifier(modifier);
+                        }
                     }, 10),
             ALLOYING_UPGRADE
     );
@@ -146,66 +153,12 @@ public final class MobArena implements SingleInstanceArena {
                     .build()
     );
 
-    private static final int SPAWN_RADIUS = 10;
-    private static final int HEIGHT = 16;
+    static final int SPAWN_RADIUS = 10;
+    static final int HEIGHT = 16;
     private final AtomicInteger mobCount = new AtomicInteger();
     private boolean stageInProgress;
     private int initialMobCount;
     private volatile boolean isStopping = false;
-
-    public static final class MobArenaInstance extends InstanceContainer {
-        private final JNoise noise = JNoise.newBuilder()
-                .fastSimplex()
-                .setFrequency(0.0025)
-                .addModule(OctavationModule.newBuilder()
-                        .setOctaves(6)
-                        .build())
-                .build();
-
-        public MobArenaInstance() {
-            super(UUID.randomUUID(), FullbrightDimension.INSTANCE);
-            getWorldBorder().setDiameter(100);
-            setGenerator(unit -> {
-                final Point start = unit.absoluteStart();
-                for (int x = 0; x < unit.size().x(); x++) {
-                    for (int z = 0; z < unit.size().z(); z++) {
-                        Point bottom = start.add(x, 0, z);
-                        // Ensure flat terrain in the fighting area
-                        final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
-                        double height = noise.getNoise(bottom.x(), bottom.z()) * modifier;
-                        height = (height > 0 ? height * 4 : height) * 8 + HEIGHT;
-                        unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(height), Block.SAND);
-                    }
-                }
-            });
-
-            int x = SPAWN_RADIUS;
-            int y = 0;
-            int xChange = 1 - (SPAWN_RADIUS << 1);
-            int yChange = 0;
-            int radiusError = 0;
-
-            while (x >= y) {
-                for (int i = -x; i <= x; i++) {
-                    setBlock(i, 15, y, Block.RED_SAND);
-                    setBlock(i, 15, -y, Block.RED_SAND);
-                }
-                for (int i = -y; i <= y; i++) {
-                    setBlock(i, 15, x, Block.RED_SAND);
-                    setBlock(i, 15, -x, Block.RED_SAND);
-                }
-
-                y++;
-                radiusError += yChange;
-                yChange += 2;
-                if (((radiusError << 1) + xChange) > 0) {
-                    x--;
-                    radiusError += xChange;
-                    xChange += 2;
-                }
-            }
-        }
-    }
 
     private final Group group;
     private final BossBar bossBar;
@@ -269,6 +222,12 @@ public final class MobArena implements SingleInstanceArena {
 
             // Re-add attack indicator
             player.getAttribute(Attribute.ATTACK_SPEED).removeModifier(ATTACK_SPEED_MODIFIER);
+
+            // Remove upgrades
+            for (ArenaUpgrade upgrade : upgrades.keySet()) {
+                if (upgrade.remove() == null) continue;
+                upgrade.remove().accept(player);
+            }
 
             // Hide boss bar
             player.hideBossBar(bossBar);
@@ -367,9 +326,9 @@ public final class MobArena implements SingleInstanceArena {
         group.sendMessage(builder);
 
         for (Map.Entry<ArenaUpgrade, Integer> entry : upgrades.entrySet()) {
-            if (entry.getKey().consumer() != null)
+            if (entry.getKey().apply() != null)
                 for (Player player : arenaInstance.getPlayers()) {
-                    entry.getKey().consumer().accept(player, entry.getValue());
+                    entry.getKey().apply().accept(player, entry.getValue());
                 }
         }
 
@@ -489,9 +448,9 @@ public final class MobArena implements SingleInstanceArena {
     public void addUpgrade(ArenaUpgrade upgrade) {
         final int level = getUpgrade(upgrade) + 1;
         upgrades.put(upgrade, level);
-        if (upgrade.consumer() != null)
+        if (upgrade.apply() != null)
             for (Player player : arenaInstance.getPlayers()) {
-                upgrade.consumer().accept(player, level);
+                upgrade.apply().accept(player, level);
             }
     }
 
