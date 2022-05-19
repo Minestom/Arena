@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id("java")
     id("com.github.johnrengelman.shadow") version "7.1.0"
@@ -18,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Minestom:Minestom:37ba3c7893")
+    implementation("com.github.Minestom:Minestom:f80f653ee0")
     implementation("de.articdive:jnoise:3.0.2")
 }
 
@@ -31,7 +33,7 @@ tasks.getByName<Test>("test") {
 }
 
 tasks {
-    named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
+    named<ShadowJar>("shadowJar") {
         manifest {
             attributes (
                 "Main-Class" to "net.minestom.arena.Main",

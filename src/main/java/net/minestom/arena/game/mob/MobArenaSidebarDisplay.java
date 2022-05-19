@@ -2,6 +2,7 @@ package net.minestom.arena.game.mob;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.minestom.arena.Icons;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.group.Group;
@@ -17,21 +18,29 @@ final class MobArenaSidebarDisplay extends GroupSidebarDisplay {
         this.arena = arena;
     }
 
+    // TODO: Probably a better way to make the whole component gray
     @Override
     protected Sidebar.ScoreboardLine createPlayerLine(Player player, Group group) {
         final ArenaClass arenaClass = arena.playerClass(player);
-        Component icon = Component.text(arenaClass.icon(), arenaClass.color());
+        final boolean dead = !arena.instance().getPlayers().contains(player);
 
+        Component icon = Component.text(arenaClass.icon(), arenaClass.color());
         if (!arena.stageInProgress()) {
             icon = arena.hasContinued(player)
-                ? Component.text(Icons.CHECKMARK, NamedTextColor.GREEN)
-                : Component.text(Icons.CROSS, NamedTextColor.RED);
+                ? Component.text(Icons.CHECKMARK, dead ? NamedTextColor.GRAY : NamedTextColor.GREEN)
+                : Component.text(Icons.CROSS, dead ? NamedTextColor.GRAY : NamedTextColor.RED);
         }
+
+        Component line = icon.append(Component.text(" "))
+                .append(player.getName().color(dead ? NamedTextColor.GRAY : Messenger.ORANGE_COLOR));
+
+        // Strikethrough if player is dead
+        if (dead) line = line.decorate(TextDecoration.STRIKETHROUGH);
 
         return new Sidebar.ScoreboardLine(
                 player.getUuid().toString(),
-                icon.append(Component.text(" ")).append(player.getName().color(Messenger.ORANGE_COLOR)),
-                3
+                line,
+                0
         );
     }
 }

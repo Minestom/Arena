@@ -231,6 +231,9 @@ public final class MobArena implements SingleInstanceArena {
 
             // Hide boss bar
             player.hideBossBar(bossBar);
+
+            // Update scoreboard (for death state)
+            group.display().update();
         }).addListener(PlayerEntityInteractEvent.class, event -> {
             Player player = event.getPlayer();
             Entity target = event.getTarget();
@@ -342,6 +345,9 @@ public final class MobArena implements SingleInstanceArena {
         group().playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.5f, 1), Sound.Emitter.self());
         Messenger.info(group(), "Stage " + stage + " cleared! Talk to the NPC to continue to the next stage");
         new NextStageNPC().setInstance(arenaInstance, new Pos(0.5, HEIGHT, 0.5));
+
+        // Update scoreboard (for death state)
+        group.display().update();
     }
 
     public void continueToNextStage(Player player) {

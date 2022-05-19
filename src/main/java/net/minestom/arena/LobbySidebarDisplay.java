@@ -18,13 +18,13 @@ public final class LobbySidebarDisplay extends GroupSidebarDisplay {
             return new Sidebar.ScoreboardLine(
                     player.getUuid().toString(),
                     Component.text(Icons.STAR + " ").color(NamedTextColor.WHITE).append(player.getName().color(Messenger.ORANGE_COLOR)),
-                    3
+                    1
             );
         } else {
             return new Sidebar.ScoreboardLine(
                     player.getUuid().toString(),
                     player.getName(),
-                    2
+                    0
             );
         }
     }
