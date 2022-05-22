@@ -138,30 +138,36 @@ public final class MobArena implements SingleInstanceArena {
             ALLOYING_UPGRADE
     );
 
+    private static float percentageClass(@NotNull MobGenerationContext context, @NotNull ArenaClass arenaClass) {
+        return context.arena().playerClasses.values().stream()
+                .filter(arenaClass::equals).count() / (float) context.group().members().size();
+    }
+
     static final List<Generator<? extends Entity, MobGenerationContext>> MOB_GENERATORS = List.of(
             Generator.builder(ZombieMob::new)
                     .chance(0.5)
                     .build(),
             Generator.builder(SpiderMob::new)
                     .chance(0.33)
-                    .condition(context -> context.stage() >= 2)
+                    .condition(ctx -> ctx.stage() >= 2)
                     .controller(Generator.Controller.maxCount(2))
                     .build(),
             Generator.builder(SkeletonMob::new)
                     .chance(0.33)
-                    .condition(context -> context.stage() >= 4)
+                    .condition(ctx -> ctx.stage() >= 4)
                     .build(),
             Generator.builder(BlazeMob::new)
                     .chance(0.1)
-                    .condition(context -> context.stage() >= 6)
+                    .condition(ctx -> ctx.stage() >= 6)
                     .controller(Generator.Controller.maxCount(2))
-                    .preference(context -> context.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
+                    .preference(ctx -> ctx.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
+                    .preference(ctx -> 1 - percentageClass(ctx, ARCHER_CLASS) / 2) // Spawn less if more archers
                     .build(),
             Generator.builder(EndermanMob::new)
                     .chance(0.05)
-                    .condition(context -> context.stage() >= 10)
-                    .controller(Generator.Controller.maxCount(context -> context.stage() / 10)) // +1 max every 10 stages
-                    .preference(context -> context.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
+                    .condition(ctx -> ctx.stage() >= 10)
+                    .controller(Generator.Controller.maxCount(ctx -> ctx.stage() / 10)) // +1 max every 10 stages
+                    .preference(ctx -> ctx.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
                     .build()
     );
 
