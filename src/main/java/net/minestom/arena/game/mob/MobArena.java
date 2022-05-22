@@ -150,6 +150,12 @@ public final class MobArena implements SingleInstanceArena {
             Generator.builder(SkeletonMob::new)
                     .chance(0.33)
                     .condition(context -> context.stage() >= 4)
+                    .build(),
+            Generator.builder(BlazeMob::new)
+                    .chance(0.1)
+                    .condition(context -> context.stage() >= 6)
+                    .controller(Generator.Controller.maxCount(2))
+                    .preference(context -> context.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
                     .build()
     );
 
