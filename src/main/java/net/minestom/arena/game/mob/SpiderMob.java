@@ -18,7 +18,6 @@ import net.minestom.server.network.packet.server.play.EntityEquipmentPacket;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ final class SpiderMob extends ArenaMob {
     }
 
     private static class WebProjectile extends EntityProjectile {
-        public WebProjectile(@Nullable Entity shooter) {
+        public WebProjectile(@NotNull Entity shooter) {
             super(shooter, EntityType.ARMOR_STAND);
             ArmorStandMeta meta = (ArmorStandMeta) getEntityMeta();
             meta.setHasNoBasePlate(true);

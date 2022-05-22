@@ -1,5 +1,6 @@
 package net.minestom.arena.game;
 
+import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -86,7 +87,7 @@ record GeneratorImpl<T, G extends GenerationContext>(Function<G, T> function,
                 // Preferences
                 double score = 0;
                 for (Preference<G> preference : preferences) {
-                    score += preference.isPreferred(context) * preference.weight();
+                    score += MathUtils.clamp(preference.isPreferred(context), 0, 1) * preference.weight();
                 }
                 final double chance = score / preferences.stream()
                         .mapToDouble(Preference::weight)

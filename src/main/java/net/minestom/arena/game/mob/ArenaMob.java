@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-abstract class ArenaMob extends EntityCreature {
+class ArenaMob extends EntityCreature {
     private static final int BLOCK_LENGTH = 6;
     private static final List<String> CHARACTERS = List.of(
             "", "▏", "▎", "▍",
@@ -20,8 +20,11 @@ abstract class ArenaMob extends EntityCreature {
     );
     private static final String FULL_BLOCK_CHAR = "█";
 
+    protected final int stage;
+
     public ArenaMob(@NotNull EntityType entityType, int stage) {
         super(entityType);
+        this.stage = stage;
         getAttribute(Attribute.MAX_HEALTH).setBaseValue(getMaxHealth() + stage * 2);
         getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(1 + stage / 4f);
         heal();

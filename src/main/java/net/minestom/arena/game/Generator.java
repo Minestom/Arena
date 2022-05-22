@@ -5,9 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
+import java.util.function.*;
 
 public sealed interface Generator<T, G extends GenerationContext> permits GeneratorImpl {
     @Contract("_ -> new")
@@ -97,8 +95,20 @@ public sealed interface Generator<T, G extends GenerationContext> permits Genera
                     : Control.OK;
         }
 
+        static <G extends GenerationContext> @NotNull Controller<G> minCount(ToIntFunction<G> count) {
+            return context -> context.generated() <= count.applyAsInt(context)
+                    ? Control.ALLOW
+                    : Control.OK;
+        }
+
         static <G extends GenerationContext> @NotNull Controller<G> maxCount(int count) {
             return context -> context.generated() >= count
+                    ? Control.DISALLOW
+                    : Control.OK;
+        }
+
+        static <G extends GenerationContext> @NotNull Controller<G> maxCount(ToIntFunction<G> count) {
+            return context -> context.generated() >= count.applyAsInt(context)
                     ? Control.DISALLOW
                     : Control.OK;
         }
