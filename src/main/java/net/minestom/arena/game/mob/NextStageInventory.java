@@ -155,7 +155,15 @@ final class NextStageInventory extends Inventory {
         }
 
         private void buyUpgrade(ArenaUpgrade upgrade) {
-            if (player.getInventory().takeItemStack(Items.COIN.withAmount(upgrade.cost()), TransactionOption.ALL_OR_NOTHING)) {
+            final int level = arena.getUpgrade(upgrade);
+
+            if (level >= upgrade.maxLevel()) {
+                Messenger.warn(player, "Maximum upgrade level has been reached");
+                player.playSound(Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.NEUTRAL, 1, 1), Sound.Emitter.self());
+                return;
+            }
+
+            if (player.getInventory().takeItemStack(Items.COIN.withAmount(upgrade.cost(level)), TransactionOption.ALL_OR_NOTHING)) {
                 Messenger.info(arena.group(), player.getUsername() + " bought the " + upgrade.name() + " upgrade");
                 arena.addUpgrade(upgrade);
                 draw();

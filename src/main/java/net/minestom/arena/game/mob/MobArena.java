@@ -39,6 +39,7 @@ import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.timer.TaskSchedule;
+import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import net.minestom.server.utils.time.TimeUnit;
 import org.jetbrains.annotations.NotNull;
@@ -94,15 +95,17 @@ public final class MobArena implements SingleInstanceArena {
                     25)
     );
 
-    private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade("Alloying", "Increase armor effectiveness by 25%.",
-            TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, null, 10);
+    private static final ArenaUpgrade ALLOYING_UPGRADE = new ArenaUpgrade(
+            "Alloying", "Increase armor effectiveness by 15%",
+            TextColor.color(0xf9ff87), Material.LAVA_BUCKET, null, null,
+            level -> "Armor effectiveness is currently increased by " + MathUtils.round(Math.pow(1.15, level) * 100 - 100, 2) + "%",
+            10, 1.1f, 20);
     private static final UUID HEALTHCARE_UUID = new UUID(9354678, 3425896);
     private static final UUID COMBAT_TRAINING_UUID = new UUID(24539786, 23945687);
 
     public static final List<ArenaUpgrade> UPGRADES = List.of(
-            new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts.",
-                    TextColor.color(0x63ff52), Material.POTION,
-                    (player, count) -> {
+            new ArenaUpgrade("Improved Healthcare", "Increases max health by two heart.",
+                    TextColor.color(0x63ff52), Material.POTION, (player, count) -> {
                         final AttributeModifier modifier = new AttributeModifier(
                                 HEALTHCARE_UUID, "mobarena-healthcare", 4 * count,
                                 AttributeOperation.ADDITION
@@ -117,12 +120,12 @@ public final class MobArena implements SingleInstanceArena {
                             attribute.removeModifier(modifier);
                         }
                         player.heal();
-                    }, 10),
-            new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage.",
-                    TextColor.color(0xff5c3c), Material.IRON_SWORD,
-                    (player, count) -> {
+                    }, level -> "Currently gives " + level * 2 + " extra hearts",
+                    10, 1.3f, 5),
+            new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage",
+                    TextColor.color(0xff5c3c), Material.IRON_SWORD, (player, count) -> {
                         final AttributeModifier modifier = new AttributeModifier(
-                                COMBAT_TRAINING_UUID, "mobarena-combat-training", 0.1f * count,
+                                COMBAT_TRAINING_UUID, "mobarena-combat-training", (float) (Math.pow(1.1, count) - 1),
                                 AttributeOperation.MULTIPLY_TOTAL
                         );
 
@@ -134,7 +137,8 @@ public final class MobArena implements SingleInstanceArena {
                             if (!modifier.getId().equals(COMBAT_TRAINING_UUID)) continue;
                             attribute.removeModifier(modifier);
                         }
-                    }, 10),
+                    }, level -> "Physical attacks now deal " + MathUtils.round(Math.pow(1.1, level) * 100 - 100, 2) + "% more damage",
+                    10, 1.1f, 20),
             ALLOYING_UPGRADE
     );
 
@@ -538,8 +542,7 @@ public final class MobArena implements SingleInstanceArena {
 
                 // Armor point = 4% damage reduction
                 // 20 armor points = max reduction
-                // 1 armor point + 76 alloying = max reduction
-                final float multi = -0.04f * armorPoints * (1 + 0.25f * getUpgrade(ALLOYING_UPGRADE));
+                final float multi = (float) (-0.04f * armorPoints * Math.pow(1.15, getUpgrade(ALLOYING_UPGRADE)));
 
                 damage *= Math.max(1 + multi, 0.2);
             }
