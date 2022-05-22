@@ -156,6 +156,12 @@ public final class MobArena implements SingleInstanceArena {
                     .condition(context -> context.stage() >= 6)
                     .controller(Generator.Controller.maxCount(2))
                     .preference(context -> context.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
+                    .build(),
+            Generator.builder(EndermanMob::new)
+                    .chance(0.05)
+                    .condition(context -> context.stage() >= 10)
+                    .controller(Generator.Controller.maxCount(context -> context.stage() / 10)) // +1 max every 10 stages
+                    .preference(context -> context.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
                     .build()
     );
 
