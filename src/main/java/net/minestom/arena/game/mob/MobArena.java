@@ -168,6 +168,12 @@ public final class MobArena implements SingleInstanceArena {
                     .condition(ctx -> ctx.stage() >= 10)
                     .controller(Generator.Controller.maxCount(ctx -> ctx.stage() / 10)) // +1 max every 10 stages
                     .preference(ctx -> ctx.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
+                    .build(),
+            Generator.builder(EvokerMob::new)
+                    .chance(0.05)
+                    .condition(ctx -> ctx.stage() >= 14)
+                    .controller(Generator.Controller.maxCount(ctx -> ctx.stage() / 10)) // +1 max every 10 stages
+                    .preference(ctx -> ctx.group().members().size() / 3f) // Prefer a group size of 3 or more
                     .build()
     );
 
@@ -205,9 +211,9 @@ public final class MobArena implements SingleInstanceArena {
         }
 
         arenaInstance.eventNode().addListener(EntityDeathEvent.class, event -> {
-            if (event.getEntity() instanceof ArenaMob) {
-                mobCount.decrementAndGet();
-            }
+            if (!(event.getEntity() instanceof ArenaMob mob) || mob instanceof ArenaMinion) return;
+
+            mobCount.decrementAndGet();
 
             final int mobsLeft = mobCount.get();
 
