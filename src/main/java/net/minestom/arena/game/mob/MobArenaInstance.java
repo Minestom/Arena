@@ -2,9 +2,13 @@ package net.minestom.arena.game.mob;
 
 import de.articdive.jnoise.JNoise;
 import de.articdive.jnoise.modules.octavation.OctavationModule;
+import net.minestom.arena.Metrics;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.entity.Player;
+import net.minestom.server.event.entity.EntitySpawnEvent;
+import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.utils.MathUtils;
@@ -61,6 +65,24 @@ final class MobArenaInstance extends InstanceContainer {
                 radiusError += xChange;
                 xChange += 2;
             }
+        }
+
+        eventNode().addListener(EntitySpawnEvent.class, e -> {
+            if (!(e.getEntity() instanceof Player)) {
+                Metrics.ENTITIES.inc();
+            }
+        }).addListener(RemoveEntityFromInstanceEvent.class, e -> {
+            if (!(e.getEntity() instanceof Player)) {
+                Metrics.ENTITIES.dec();
+            }
+        });
+    }
+
+    @Override
+    protected void setRegistered(boolean registered) {
+        super.setRegistered(registered);
+        if (!registered) {
+            Metrics.ENTITIES.dec(getEntities().size());
         }
     }
 }

@@ -15,10 +15,7 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
-import net.minestom.server.event.player.PlayerChatEvent;
-import net.minestom.server.event.player.PlayerDisconnectEvent;
-import net.minestom.server.event.player.PlayerLoginEvent;
-import net.minestom.server.event.player.PlayerSpawnEvent;
+import net.minestom.server.event.player.*;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
@@ -26,6 +23,8 @@ import net.minestom.server.monitoring.TickMonitor;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,6 +32,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static net.minestom.arena.config.ConfigHandler.CONFIG;
 
 public final class Main {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) {
         MinecraftServer minecraftServer = MinecraftServer.init();
 
@@ -103,7 +104,20 @@ public final class Main {
 
             // Monitoring
             AtomicReference<TickMonitor> lastTick = new AtomicReference<>();
-            handler.addListener(ServerTickMonitorEvent.class, event -> lastTick.set(event.getTickMonitor()));
+            handler.addListener(ServerTickMonitorEvent.class, event -> {
+                final TickMonitor monitor = event.getTickMonitor();
+                Metrics.TICK_TIME.observe(monitor.getTickTime());
+                Metrics.ACQUISITION_TIME.observe(monitor.getAcquisitionTime());
+                lastTick.set(monitor);
+            }).addListener(PlayerPacketEvent.class, e -> Metrics.PACKETS.labels("in").inc())
+                    .addListener(PlayerPacketOutEvent.class, e -> Metrics.PACKETS.labels("out").inc());
+            MinecraftServer.getExceptionManager().setExceptionHandler(e -> {
+                LOGGER.error("Global exception handler", e);
+                Metrics.EXCEPTIONS.labels(e.getClass().getSimpleName()).inc();
+            });
+            if (CONFIG.prometheus().enabled()) {
+                Metrics.init();
+            }
 
             // Header/footer
             MinecraftServer.getSchedulerManager().scheduleTask(() -> {

@@ -2,6 +2,8 @@ package net.minestom.arena.game;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.ArenaType;
+import net.minestom.arena.Metrics;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -19,10 +21,13 @@ public final class ArenaManager {
     private static volatile boolean stopQueued;
 
     static void register(@NotNull Arena arena) {
+        Metrics.GAMES_IN_PROGRESS.labels(ArenaType.typeOf(arena).getDisplayName()).inc();
         ARENAS.add(arena);
     }
 
     static void unregister(@NotNull Arena arena) {
+        Metrics.GAMES_IN_PROGRESS.labels(ArenaType.typeOf(arena).getDisplayName()).dec();
+        Metrics.GAMES_PLAYED.labels(ArenaType.typeOf(arena).getDisplayName()).inc();
         ARENAS.remove(arena);
         if (ARENAS.size() == 0 && stopQueued)
             stopServerNow();

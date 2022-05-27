@@ -22,6 +22,9 @@ repositories {
 dependencies {
     implementation("com.github.Minestom:Minestom:f80f653ee0")
     implementation("de.articdive:jnoise:3.0.2")
+    implementation("io.prometheus:simpleclient:0.15.0")
+    implementation("io.prometheus:simpleclient_hotspot:0.15.0")
+    implementation("io.prometheus:simpleclient_httpserver:0.15.0")
 }
 
 tasks.withType<JavaCompile> {
