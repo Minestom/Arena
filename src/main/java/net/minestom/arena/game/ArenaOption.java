@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public record ArenaOption(@NotNull String name, @NotNull String description,
                           @NotNull TextColor color, @NotNull Material material) {
 
-    public ItemStack item() {
+    public @NotNull ItemStack item() {
         return ItemUtils.stripItalics(ItemStack.builder(material)
                 .displayName(Component.text(name, color))
                 .lore(Component.text(description, NamedTextColor.GRAY))

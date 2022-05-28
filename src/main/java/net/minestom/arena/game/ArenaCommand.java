@@ -19,6 +19,7 @@ import net.minestom.server.item.Enchantment;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.tag.Tag;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.List;
@@ -109,7 +110,7 @@ public final class ArenaCommand extends Command {
         private final List<ArenaOption> availableOptions;
         private final Set<ArenaOption> selectedOptions = new HashSet<>();
 
-        ArenaOptionInventory(Inventory parent, ArenaType type) {
+        ArenaOptionInventory(@NotNull Inventory parent, @NotNull ArenaType type) {
             super(InventoryType.CHEST_4_ROW, Component.text("Arena Options"));
             this.type = type;
             availableOptions = type.availableOptions();

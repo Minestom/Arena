@@ -30,7 +30,7 @@ enum ArenaType {
                 .meta(ItemUtils::hideFlags)
                 .build());
         this.supplier = supplier;
-        this.availableOptions = availableOptions;
+        this.availableOptions = List.copyOf(availableOptions);
     }
 
     public ItemStack item() {
@@ -38,7 +38,7 @@ enum ArenaType {
     }
 
     public List<ArenaOption> availableOptions() {
-        return List.copyOf(availableOptions);
+        return availableOptions;
     }
 
     public Arena createInstance(Group group, Set<ArenaOption> options) {

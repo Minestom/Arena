@@ -616,24 +616,22 @@ public final class MobArena implements SingleInstanceArena {
         }, 1500)));
 
         if (hasOption(MAYHEM_OPTION)) {
-            features.add(node -> {
-                node.addListener(ProjectileCollideWithEntityEvent.class, event -> {
-                    if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
-                    if (!(projectile.getShooter() instanceof Player shooter)) return;
-                    if (!(event.getTarget() instanceof LivingEntity target)) return;
+            features.add(node -> node.addListener(ProjectileCollideWithEntityEvent.class, event -> {
+                if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
+                if (!(projectile.getShooter() instanceof Player shooter)) return;
+                if (!(event.getTarget() instanceof LivingEntity target)) return;
 
-                    final Instance instance = event.getInstance();
-                    final Pos pos = target.getPosition();
-                    explosion(DamageType.fromProjectile(shooter, projectile), instance, pos, 6, 1, 7, 0.3f);
-                }).addListener(EntityAttackEvent.class, event -> {
-                    if (!(event.getEntity() instanceof Player player)) return;
-                    if (!(event.getTarget() instanceof LivingEntity target)) return;
+                final Instance instance = event.getInstance();
+                final Pos pos = target.getPosition();
+                explosion(DamageType.fromProjectile(shooter, projectile), instance, pos, 6, 1, 7, 0.3f);
+            }).addListener(EntityAttackEvent.class, event -> {
+                if (!(event.getEntity() instanceof Player player)) return;
+                if (!(event.getTarget() instanceof LivingEntity target)) return;
 
-                    final Instance instance = event.getInstance();
-                    final Pos pos = target.getPosition();
-                    explosion(DamageType.fromPlayer(player), instance, pos, 3, 1f, 3, 0.3f);
-                });
-            });
+                final Instance instance = event.getInstance();
+                final Pos pos = target.getPosition();
+                explosion(DamageType.fromPlayer(player), instance, pos, 3, 1f, 3, 0.3f);
+            }));
         }
 
         return features;

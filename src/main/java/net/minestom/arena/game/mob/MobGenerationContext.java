@@ -24,7 +24,6 @@ final class MobGenerationContext implements GenerationContext {
         return arena.stage();
     }
 
-
     public Group group() {
         return arena.group();
     }
