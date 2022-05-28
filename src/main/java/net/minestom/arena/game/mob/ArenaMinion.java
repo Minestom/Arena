@@ -7,7 +7,7 @@ class ArenaMinion extends ArenaMob {
     private final ArenaMob owner;
 
     public ArenaMinion(@NotNull EntityType entityType, @NotNull ArenaMob owner) {
-        super(entityType, owner.stage);
+        super(entityType, owner.context);
         this.owner = owner;
     }
 

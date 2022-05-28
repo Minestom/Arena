@@ -16,7 +16,7 @@ final class BlazeMob extends ArenaMob {
     private static final int MAX_HEIGHT = 5;
 
     public BlazeMob(MobGenerationContext context) {
-        super(EntityType.BLAZE, context.stage());
+        super(EntityType.BLAZE, context);
 
         // Custom attack goal, blaze is stationary and shouldn't follow their targets
         BlazeAttackGoal rangedAttackGoal = new BlazeAttackGoal(

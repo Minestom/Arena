@@ -11,6 +11,7 @@ import net.kyori.adventure.title.Title;
 import net.minestom.arena.*;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
+import net.minestom.arena.game.ArenaOption;
 import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
@@ -25,7 +26,9 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.metadata.arrow.ArrowMeta;
+import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.event.item.PickupItemEvent;
@@ -42,7 +45,9 @@ import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import net.minestom.server.utils.time.TimeUnit;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.*;
@@ -51,6 +56,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class MobArena implements SingleInstanceArena {
+    static final ArenaOption DOUBLE_COINS_OPTION = new ArenaOption(
+            "Double Coins", "Double the coins, double the fun",
+            NamedTextColor.GOLD, Material.SUNFLOWER);
+    static final ArenaOption ANGRY_MOBS_OPTION = new ArenaOption(
+            "Tough Mobs", "Mobs have twice as much health and deal double damage",
+            NamedTextColor.RED, Material.RED_DYE);
+    static final ArenaOption MAYHEM_OPTION = new ArenaOption(
+            "Mayhem", "A lot more mobs spawn and all your attacks become explosive",
+            NamedTextColor.DARK_RED, Material.TNT);
+    public static final List<ArenaOption> OPTIONS = List.of(DOUBLE_COINS_OPTION, ANGRY_MOBS_OPTION, MAYHEM_OPTION);
+
     static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
     static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
     static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
@@ -189,6 +205,7 @@ public final class MobArena implements SingleInstanceArena {
     private volatile boolean isStopping = false;
 
     private final Group group;
+    private final Set<ArenaOption> options;
     private final BossBar bossBar;
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
@@ -197,8 +214,9 @@ public final class MobArena implements SingleInstanceArena {
 
     private int stage = 0;
 
-    public MobArena(Group group) {
+    public MobArena(Group group, Set<ArenaOption> options) {
         this.group = group;
+        this.options = Set.copyOf(options);
 
         group.setDisplay(new MobArenaSidebarDisplay(this));
 
@@ -337,13 +355,13 @@ public final class MobArena implements SingleInstanceArena {
             playerClass(player).apply(player);
         }
 
-        TextComponent.Builder builder = Component.text()
+        final TextComponent.Builder builder = Component.text()
                 .append(Component.newline())
                 .append(Component.text("Coins", Messenger.ORANGE_COLOR, TextDecoration.BOLD))
                 .append(Component.newline());
         for (Player member : group.members()) {
             member.getInventory().addItemStack(Items.COIN.withAmount(
-                    (int) Math.ceil(initialMobCount / (double) group.members().size())));
+                    (int) Math.ceil(initialMobCount / (double) group.members().size()) * (hasOption(DOUBLE_COINS_OPTION) ? 2 : 1)));
             final int coins = Arrays.stream(member.getInventory().getItemStacks())
                     .filter(item -> item.isSimilar(Items.COIN))
                     .mapToInt(ItemStack::amount)
@@ -351,7 +369,7 @@ public final class MobArena implements SingleInstanceArena {
 
             builder.append(Component.text(member.getUsername(), NamedTextColor.GRAY))
                     .append(Component.text(" | ", Messenger.PINK_COLOR))
-                    .append(Component.text(coins + " coins", NamedTextColor.GRAY))
+                    .append(Component.text(coins + " coin" + (coins == 1 ? "" : "s"), NamedTextColor.GRAY))
                     .append(Component.newline());
         }
         group.sendMessage(builder);
@@ -423,7 +441,7 @@ public final class MobArena implements SingleInstanceArena {
     public void nextStage() {
         setStageInProgress(true);
         stage++;
-        initialMobCount = (int) (stage * 1.5);
+        initialMobCount = Math.min((int) (stage * 1.5) * (hasOption(MAYHEM_OPTION) ? 10 : 1), 200);
         for (Entity entity : arenaInstance.getEntities()) {
             if (entity instanceof NextStageNPC) {
                 entity.remove();
@@ -495,6 +513,11 @@ public final class MobArena implements SingleInstanceArena {
         return deadPlayers;
     }
 
+    @Contract("null -> false")
+    public boolean hasOption(@Nullable ArenaOption option) {
+        return options.contains(option);
+    }
+
     public @NotNull Group group() {
         return group;
     }
@@ -511,7 +534,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.bow((entity, power) -> {
+        final List<Feature> features = new ArrayList<>(List.of(Features.bow((entity, power) -> {
             final EntityProjectile projectile = new EntityProjectile(entity, EntityType.ARROW);
             final ArrowMeta meta = (ArrowMeta) projectile.getEntityMeta();
             meta.setCritical(power >= 0.9);
@@ -573,28 +596,16 @@ public final class MobArena implements SingleInstanceArena {
                         !instance.getWorldBorder().isInside(pos) ||
                         age >= 30) {
 
-                    arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
-                            Particle.EXPLOSION, pos.x(), pos.y(), pos.z(),
-                            0.5f, 0.5f, 0.5f, 5
-                    ));
-                    arenaInstance.playSound(
-                            Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.NEUTRAL, 1, 1),
-                            pos.x(), pos.y(), pos.z()
-                    );
-                    for (Entity entity : instance.getNearbyEntities(pos, 5)) {
-                        if (entity instanceof LivingEntity livingEntity && !(entity instanceof Player)) {
-                            livingEntity.damage(DamageType.fromPlayer(player), 7);
-                        }
-                    }
+                    explosion(DamageType.fromPlayer(player), instance, pos, 5, 0.5f, 7, 1);
 
                     return TaskSchedule.stop();
                 }
 
-                arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                instance.sendGroupedPacket(ParticleCreator.createParticlePacket(
                         Particle.FIREWORK, true, pos.x(), pos.y(), pos.z(),
                         0.3f, 0.3f, 0.3f, 0.01f, 50, null
                 ));
-                arenaInstance.playSound(
+                instance.playSound(
                         Sound.sound(SoundEvent.ENTITY_AXOLOTL_SWIM, Sound.Source.NEUTRAL, 1, 1),
                         pos.x(), pos.y(), pos.z()
                 );
@@ -602,6 +613,45 @@ public final class MobArena implements SingleInstanceArena {
                 return TaskSchedule.tick(1);
             });
 
-        }, 1500));
+        }, 1500)));
+
+        if (hasOption(MAYHEM_OPTION)) {
+            features.add(node -> {
+                node.addListener(ProjectileCollideWithEntityEvent.class, event -> {
+                    if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
+                    if (!(projectile.getShooter() instanceof Player shooter)) return;
+                    if (!(event.getTarget() instanceof LivingEntity target)) return;
+
+                    final Instance instance = event.getInstance();
+                    final Pos pos = target.getPosition();
+                    explosion(DamageType.fromProjectile(shooter, projectile), instance, pos, 6, 1, 7, 0.3f);
+                }).addListener(EntityAttackEvent.class, event -> {
+                    if (!(event.getEntity() instanceof Player player)) return;
+                    if (!(event.getTarget() instanceof LivingEntity target)) return;
+
+                    final Instance instance = event.getInstance();
+                    final Pos pos = target.getPosition();
+                    explosion(DamageType.fromPlayer(player), instance, pos, 3, 1f, 3, 0.3f);
+                });
+            });
+        }
+
+        return features;
+    }
+
+    private static void explosion(DamageType damageType, Instance instance, Pos pos, int range, float offset, int damage, float volume) {
+        instance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                Particle.EXPLOSION, pos.x(), pos.y(), pos.z(),
+                offset, offset, offset, 5
+        ));
+        instance.playSound(
+                Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.NEUTRAL, volume, 1),
+                pos.x(), pos.y(), pos.z()
+        );
+        for (Entity entity : instance.getNearbyEntities(pos, range)) {
+            if (entity instanceof LivingEntity livingEntity && !(entity instanceof Player)) {
+                livingEntity.damage(damageType, damage);
+            }
+        }
     }
 }

@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 final class ZombieMob extends ArenaMob {
     public ZombieMob(MobGenerationContext context) {
-        super(EntityType.ZOMBIE, context.stage());
+        super(EntityType.ZOMBIE, context);
         addAIGroup(
                 List.of(new MeleeAttackGoal(this, 1.2, 20, TimeUnit.SERVER_TICK)),
                 List.of(new ClosestEntityTarget(this, 32, Player.class))
