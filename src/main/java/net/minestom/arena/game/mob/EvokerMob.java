@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 final class EvokerMob extends ArenaMob {
     public EvokerMob(MobGenerationContext context) {
-        super(EntityType.EVOKER, context.stage());
+        super(EntityType.EVOKER, context);
         addAIGroup(
                 List.of(new ActionGoal(this, Duration.ofSeconds(10), target -> {
                     lookAt(target);

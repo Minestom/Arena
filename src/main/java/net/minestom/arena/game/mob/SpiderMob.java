@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 final class SpiderMob extends ArenaMob {
     public SpiderMob(MobGenerationContext context) {
-        super(EntityType.SPIDER, context.stage());
+        super(EntityType.SPIDER, context);
 
         RangedAttackGoal attackGoal = new RangedAttackGoal(
                 this, Duration.of(10, TimeUnit.SECOND),

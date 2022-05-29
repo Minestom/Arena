@@ -1,7 +1,10 @@
 package net.minestom.arena.game.mob;
 
+import net.minestom.arena.game.ArenaOption;
 import net.minestom.arena.game.GenerationContext;
 import net.minestom.arena.group.Group;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 
 final class MobGenerationContext implements GenerationContext {
     private final MobArena arena;
@@ -10,6 +13,11 @@ final class MobGenerationContext implements GenerationContext {
 
     MobGenerationContext(MobArena arena) {
         this.arena = arena;
+    }
+
+    @Contract("null -> false")
+    public boolean hasOption(@Nullable ArenaOption option) {
+        return arena.hasOption(option);
     }
 
     public int stage() {

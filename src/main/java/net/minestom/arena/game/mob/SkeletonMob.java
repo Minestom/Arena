@@ -17,7 +17,7 @@ import java.util.List;
 
 final class SkeletonMob extends ArenaMob {
     public SkeletonMob(MobGenerationContext context) {
-        super(EntityType.SKELETON, context.stage());
+        super(EntityType.SKELETON, context);
         setItemInMainHand(ItemStack.of(Material.BOW));
 
         RangedAttackGoal rangedAttackGoal = new RangedAttackGoal(
