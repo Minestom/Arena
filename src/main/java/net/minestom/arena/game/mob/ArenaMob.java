@@ -24,7 +24,7 @@ class ArenaMob extends EntityCreature {
     public ArenaMob(@NotNull EntityType entityType, MobGenerationContext context) {
         super(entityType);
         this.context = context;
-        final float multi = context.hasOption(MobArena.ANGRY_MOBS_OPTION) ? 2 : 1;
+        final float multi = context.hasOption(MobArena.TOUGH_MOBS_OPTION) ? 2 : 1;
         getAttribute(Attribute.MAX_HEALTH).setBaseValue((getMaxHealth() + context.stage() * 2) * multi);
         getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue((1 + context.stage() / 4f) * multi);
         heal();
