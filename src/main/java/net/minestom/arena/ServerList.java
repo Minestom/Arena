@@ -12,7 +12,7 @@ import net.minestom.server.ping.ServerListPingType;
 import java.io.InputStream;
 import java.util.Base64;
 
-public final class ServerList {
+final class ServerList {
     private static final String FAVICON;
 
     static {

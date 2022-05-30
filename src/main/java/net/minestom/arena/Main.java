@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static net.minestom.arena.config.ConfigHandler.CONFIG;
 
-public final class Main {
+final class Main {
     public static void main(String[] args) {
         MinecraftServer minecraftServer = MinecraftServer.init();
 
@@ -48,10 +48,8 @@ public final class Main {
             manager.setUnknownCommandCallback((sender, c) -> Messenger.warn(sender, "Command not found."));
             manager.register(new GroupCommand());
             manager.register(new ArenaCommand());
-            manager.register(new StopCommand());
-            manager.register(new LeaveCommand());
             manager.register(new MobTestCommand());
-            manager.register(new PingCommand());
+            SimpleCommands.register(manager);
         }
 
         // Events
