@@ -411,6 +411,10 @@ public final class MobArena implements SingleInstanceArena {
         return stage;
     }
 
+    public void setStage(int stage) {
+        this.stage = stage;
+    }
+
     public boolean stageInProgress() {
         return stageInProgress;
     }
