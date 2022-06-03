@@ -33,28 +33,6 @@ import java.util.function.ToLongFunction;
 record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> damageFunction, ToLongFunction<Entity> invulnerabilityFunction) implements Feature {
     private static final Tag<Long> INVULNERABLE_UNTIL_TAG = Tag.Long("invulnerable_until").defaultValue(0L);
 
-    private void takeKnockback(Entity target, Entity source) {
-        target.takeKnockback(
-                0.3f,
-                Math.sin(source.getPosition().yaw() * (Math.PI / 180)),
-                -Math.cos(source.getPosition().yaw() * (Math.PI / 180))
-        );
-    }
-
-    private void takeKnockbackFromArrow(Entity target, EntityProjectile source) {
-        takeKnockback(target, source.getShooter());
-    }
-
-    private void spawnHologram(Entity target, float damage) {
-        damage = MathUtils.round(damage, 2);
-
-        new DamageHologram(
-                target.getInstance(),
-                target.getPosition().add(0, target.getEyeHeight(), 0),
-                Component.text(damage, NamedTextColor.RED)
-        );
-    }
-
     @Override
     public void hook(@NotNull EventNode<InstanceEvent> node) {
         node.addListener(ProjectileCollideWithEntityEvent.class, event -> {
@@ -75,7 +53,7 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
             target.setTag(INVULNERABLE_UNTIL_TAG, now + invulnerabilityFunction.applyAsLong(target));
 
             takeKnockbackFromArrow(target, projectile);
-            spawnHologram(target, damage);
+            if (damage > 0) spawnHologram(target, damage);
 
             projectile.remove();
         }).addListener(EntityAttackEvent.class, event -> {
@@ -98,12 +76,35 @@ record CombatFeature(boolean playerCombat, ToDoubleBiFunction<Entity, Entity> da
             target.setTag(INVULNERABLE_UNTIL_TAG, now + invulnerabilityFunction.applyAsLong(target));
 
             takeKnockback(target, event.getEntity());
-            spawnHologram(target, damage);
+            if (damage > 0) spawnHologram(target, damage);
         });
     }
 
-    private static class DamageHologram extends Hologram {
-        public DamageHologram(Instance instance, Pos spawnPosition, Component text) {
+    private static void takeKnockback(Entity target, Entity source) {
+        target.takeKnockback(
+                0.3f,
+                Math.sin(source.getPosition().yaw() * (Math.PI / 180)),
+                -Math.cos(source.getPosition().yaw() * (Math.PI / 180))
+        );
+    }
+
+    private static void takeKnockbackFromArrow(Entity target, EntityProjectile source) {
+        if (source.getShooter() == null) return;
+        takeKnockback(target, source.getShooter());
+    }
+
+    private static void spawnHologram(Entity target, float damage) {
+        damage = MathUtils.round(damage, 2);
+
+        new DamageHologram(
+                target.getInstance(),
+                target.getPosition().add(0, target.getEyeHeight(), 0),
+                Component.text(damage, NamedTextColor.RED)
+        );
+    }
+
+    private static final class DamageHologram extends Hologram {
+        private DamageHologram(Instance instance, Pos spawnPosition, Component text) {
             super(instance, spawnPosition, text, true, true);
             getEntity().getEntityMeta().setHasNoGravity(false);
 

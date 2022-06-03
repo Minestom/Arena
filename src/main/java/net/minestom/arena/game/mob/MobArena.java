@@ -11,6 +11,7 @@ import net.kyori.adventure.title.Title;
 import net.minestom.arena.*;
 import net.minestom.arena.feature.Feature;
 import net.minestom.arena.feature.Features;
+import net.minestom.arena.game.ArenaOption;
 import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
@@ -25,7 +26,9 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.metadata.arrow.ArrowMeta;
+import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.entity.EntityDeathEvent;
+import net.minestom.server.event.entity.projectile.ProjectileCollideWithEntityEvent;
 import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.event.item.PickupItemEvent;
@@ -42,7 +45,9 @@ import net.minestom.server.timer.TaskSchedule;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.inventory.PlayerInventoryUtils;
 import net.minestom.server.utils.time.TimeUnit;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.*;
@@ -51,15 +56,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class MobArena implements SingleInstanceArena {
-    static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(0);
+    static final ArenaOption DOUBLE_COINS_OPTION = new ArenaOption(
+            "Double Coins", "Double the coins, double the fun",
+            NamedTextColor.GOLD, Material.SUNFLOWER);
+    static final ArenaOption TOUGH_MOBS_OPTION = new ArenaOption(
+            "Tough Mobs", "Makes mobs a lot tougher to beat",
+            NamedTextColor.RED, Material.RED_DYE);
+    static final ArenaOption MAYHEM_OPTION = new ArenaOption(
+            "Mayhem", "A lot more mobs spawn and all your attacks become explosive",
+            NamedTextColor.DARK_RED, Material.TNT);
+    public static final List<ArenaOption> OPTIONS = List.of(DOUBLE_COINS_OPTION, TOUGH_MOBS_OPTION, MAYHEM_OPTION);
+
+    static final Tag<Integer> MELEE_TAG = Tag.Integer("melee").defaultValue(-10);
     static final Tag<Integer> ARMOR_TAG = Tag.Integer("armor").defaultValue(0);
-    static final Tag<Boolean> BOW_TAG = Tag.Boolean("bow").defaultValue(false);
-    static final Tag<Boolean> WAND_TAG = Tag.Boolean("wand").defaultValue(false);
     private static final AttributeModifier ATTACK_SPEED_MODIFIER = new AttributeModifier("mobarena-attack-speed", 100f, AttributeOperation.ADDITION);
 
     private static final ItemStack WAND = ItemUtils.stripItalics(ItemStack.builder(Material.BLAZE_ROD)
             .displayName(Component.text("Wand"))
-            .set(WAND_TAG, true)
             .build());
 
     private static final ArenaClass KNIGHT_CLASS = new ArenaClass("Knight", "Starter class with mediocre attack and defense.",
@@ -69,7 +82,7 @@ public final class MobArena implements SingleInstanceArena {
             5);
     private static final ArenaClass ARCHER_CLASS = new ArenaClass("Archer", "Easily deal (and take) high damage using your bow.",
             Icons.BOW, TextColor.color(0xf9ff87), Material.BOW,
-            new Kit(List.of(ItemStack.of(Material.BOW).withTag(BOW_TAG, true), ItemStack.of(Material.ARROW)),
+            new Kit(List.of(ItemStack.of(Material.BOW), ItemStack.of(Material.ARROW)),
                     Map.of(EquipmentSlot.CHESTPLATE, ItemStack.of(Material.LEATHER_CHESTPLATE).withTag(ARMOR_TAG, 3))),
             10);
     public static final List<ArenaClass> CLASSES = List.of(
@@ -157,7 +170,7 @@ public final class MobArena implements SingleInstanceArena {
                     .controller(Generator.Controller.maxCount(2))
                     .build(),
             Generator.builder(SkeletonMob::new)
-                    .chance(0.33)
+                    .chance(0.25)
                     .condition(ctx -> ctx.stage() >= 4)
                     .build(),
             Generator.builder(BlazeMob::new)
@@ -169,13 +182,13 @@ public final class MobArena implements SingleInstanceArena {
                     .build(),
             Generator.builder(EndermanMob::new)
                     .chance(0.05)
-                    .condition(ctx -> ctx.stage() >= 10)
+                    .condition(ctx -> ctx.stage() >= 8)
                     .controller(Generator.Controller.maxCount(ctx -> ctx.stage() / 10)) // +1 max every 10 stages
                     .preference(ctx -> ctx.group().members().size() >= 2 ? 1 : 0.5) // Prefer a group size of 2 or more
                     .build(),
             Generator.builder(EvokerMob::new)
-                    .chance(0.05)
-                    .condition(ctx -> ctx.stage() >= 14)
+                    .chance(0.1)
+                    .condition(ctx -> ctx.stage() >= 10)
                     .controller(Generator.Controller.maxCount(ctx -> ctx.stage() / 10)) // +1 max every 10 stages
                     .preference(ctx -> ctx.group().members().size() / 3f) // Prefer a group size of 3 or more
                     .build()
@@ -189,6 +202,7 @@ public final class MobArena implements SingleInstanceArena {
     private volatile boolean isStopping = false;
 
     private final Group group;
+    private final Set<ArenaOption> options;
     private final BossBar bossBar;
     private final Instance arenaInstance = new MobArenaInstance();
     private final Set<Player> continued = new HashSet<>();
@@ -197,8 +211,9 @@ public final class MobArena implements SingleInstanceArena {
 
     private int stage = 0;
 
-    public MobArena(Group group) {
+    public MobArena(Group group, Set<ArenaOption> options) {
         this.group = group;
+        this.options = Set.copyOf(options);
 
         group.setDisplay(new MobArenaSidebarDisplay(this));
 
@@ -337,13 +352,13 @@ public final class MobArena implements SingleInstanceArena {
             playerClass(player).apply(player);
         }
 
-        TextComponent.Builder builder = Component.text()
+        final TextComponent.Builder builder = Component.text()
                 .append(Component.newline())
                 .append(Component.text("Coins", Messenger.ORANGE_COLOR, TextDecoration.BOLD))
                 .append(Component.newline());
         for (Player member : group.members()) {
             member.getInventory().addItemStack(Items.COIN.withAmount(
-                    (int) Math.ceil(initialMobCount / (double) group.members().size())));
+                    (int) Math.ceil(initialMobCount / (double) group.members().size()) * (hasOption(DOUBLE_COINS_OPTION) ? 2 : 1)));
             final int coins = Arrays.stream(member.getInventory().getItemStacks())
                     .filter(item -> item.isSimilar(Items.COIN))
                     .mapToInt(ItemStack::amount)
@@ -351,7 +366,7 @@ public final class MobArena implements SingleInstanceArena {
 
             builder.append(Component.text(member.getUsername(), NamedTextColor.GRAY))
                     .append(Component.text(" | ", Messenger.PINK_COLOR))
-                    .append(Component.text(coins + " coins", NamedTextColor.GRAY))
+                    .append(Component.text(coins + " coin" + (coins == 1 ? "" : "s"), NamedTextColor.GRAY))
                     .append(Component.newline());
         }
         group.sendMessage(builder);
@@ -427,7 +442,7 @@ public final class MobArena implements SingleInstanceArena {
     public void nextStage() {
         setStageInProgress(true);
         stage++;
-        initialMobCount = (int) (stage * 1.5);
+        initialMobCount = Math.min((int) (stage * 1.5) * (hasOption(MAYHEM_OPTION) ? 10 : 1), 200);
         for (Entity entity : arenaInstance.getEntities()) {
             if (entity instanceof NextStageNPC) {
                 entity.remove();
@@ -499,6 +514,11 @@ public final class MobArena implements SingleInstanceArena {
         return deadPlayers;
     }
 
+    @Contract("null -> false")
+    public boolean hasOption(@Nullable ArenaOption option) {
+        return options.contains(option);
+    }
+
     public @NotNull Group group() {
         return group;
     }
@@ -515,7 +535,7 @@ public final class MobArena implements SingleInstanceArena {
 
     @Override
     public @NotNull List<Feature> features() {
-        return List.of(Features.bow((entity, power) -> {
+        final List<Feature> features = new ArrayList<>(List.of(Features.bow((entity, power) -> {
             final EntityProjectile projectile = new EntityProjectile(entity, EntityType.ARROW);
             final ArrowMeta meta = (ArrowMeta) projectile.getEntityMeta();
             meta.setCritical(power >= 0.9);
@@ -532,8 +552,9 @@ public final class MobArena implements SingleInstanceArena {
             }
 
             if (attacker instanceof Player player) {
-                final int tier = player.getItemInMainHand().getTag(MELEE_TAG);
-                final float multi = 0.1f * tier; // 0 (no weapon)
+                final ItemStack item = player.getItemInMainHand();
+                final int tier = item.isAir() ? 0 : item.getTag(MELEE_TAG);
+                final float multi = 0.1f * tier; // no weapon = 0 tier, non damaging item = -10 tier = 0 damage
 
                 damage *= 1 + multi;
             }
@@ -557,55 +578,82 @@ public final class MobArena implements SingleInstanceArena {
             else return 100;
         }), Features.drop(item ->
                 !item.getTag(Kit.KIT_ITEM_TAG)
-        ), Features.functionalItem(item -> item.getTag(WAND_TAG), player -> {
-            Instance instance = player.getInstance();
-            AtomicReference<Pos> atomicPos = new AtomicReference<>(player.getPosition().add(0, player.getEyeHeight(), 0));
-            AtomicInteger atomicAge = new AtomicInteger();
+        ), Features.functionalItem(
+                // Normally you'd use a.isSimilar(b) but the tags are very much different on these items
+                item -> WAND.material() == item.material() && WAND.getDisplayName().equals(item.getDisplayName()),
+                player -> {
+                    final Instance instance = player.getInstance();
+                    final AtomicReference<Pos> atomicPos = new AtomicReference<>(player.getPosition().add(0, player.getEyeHeight(), 0));
+                    final AtomicInteger atomicAge = new AtomicInteger();
 
-            MinecraftServer.getSchedulerManager().submitTask(() -> {
-                if (instance == null) return TaskSchedule.stop();
+                    MinecraftServer.getSchedulerManager().submitTask(() -> {
+                        if (instance == null) return TaskSchedule.stop();
 
-                final Pos playerEyes = player.getPosition().add(0, player.getEyeHeight(), 0);
-                final Pos pos = atomicPos.getAndUpdate(p -> p.withLookAt(playerEyes.add(playerEyes.direction().mul(30)))
-                        .add(p.direction()));
-                final int age = atomicAge.getAndIncrement();
+                        final Pos playerEyes = player.getPosition().add(0, player.getEyeHeight(), 0);
+                        final Pos pos = atomicPos.getAndUpdate(p -> p.withLookAt(playerEyes.add(playerEyes.direction().mul(30)))
+                                .add(p.direction()));
+                        final int age = atomicAge.getAndIncrement();
 
-                if (instance.getNearbyEntities(pos, 2)
-                        .stream()
-                        .anyMatch(entity -> entity instanceof ArenaMob) ||
-                        !instance.getBlock(pos).isAir() ||
-                        !instance.getWorldBorder().isInside(pos) ||
-                        age >= 30) {
+                        if (instance.getNearbyEntities(pos, 2)
+                                .stream()
+                                .anyMatch(entity -> entity instanceof ArenaMob) ||
+                                !instance.getBlock(pos).isAir() ||
+                                !instance.getWorldBorder().isInside(pos) ||
+                                age >= 30) {
 
-                    arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
-                            Particle.EXPLOSION, pos.x(), pos.y(), pos.z(),
-                            0.5f, 0.5f, 0.5f, 5
-                    ));
-                    arenaInstance.playSound(
-                            Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.NEUTRAL, 1, 1),
-                            pos.x(), pos.y(), pos.z()
-                    );
-                    for (Entity entity : instance.getNearbyEntities(pos, 5)) {
-                        if (entity instanceof LivingEntity livingEntity && !(entity instanceof Player)) {
-                            livingEntity.damage(DamageType.fromPlayer(player), 7);
+                            explosion(DamageType.fromPlayer(player), instance, pos, 5, 0.5f, 7, 1);
+
+                            return TaskSchedule.stop();
                         }
-                    }
 
-                    return TaskSchedule.stop();
-                }
+                        instance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                                Particle.FIREWORK, true, pos.x(), pos.y(), pos.z(),
+                                0.3f, 0.3f, 0.3f, 0.01f, 50, null
+                        ));
+                        instance.playSound(
+                                Sound.sound(SoundEvent.ENTITY_AXOLOTL_SWIM, Sound.Source.NEUTRAL, 1, 1),
+                                pos.x(), pos.y(), pos.z()
+                        );
 
-                arenaInstance.sendGroupedPacket(ParticleCreator.createParticlePacket(
-                        Particle.FIREWORK, true, pos.x(), pos.y(), pos.z(),
-                        0.3f, 0.3f, 0.3f, 0.01f, 50, null
-                ));
-                arenaInstance.playSound(
-                        Sound.sound(SoundEvent.ENTITY_AXOLOTL_SWIM, Sound.Source.NEUTRAL, 1, 1),
-                        pos.x(), pos.y(), pos.z()
-                );
+                        return TaskSchedule.tick(1);
+                    });
+                }, 1500)
+        ));
 
-                return TaskSchedule.tick(1);
-            });
+        if (hasOption(MAYHEM_OPTION)) {
+            features.add(node -> node.addListener(ProjectileCollideWithEntityEvent.class, event -> {
+                if (!(event.getEntity() instanceof EntityProjectile projectile)) return;
+                if (!(projectile.getShooter() instanceof Player shooter)) return;
+                if (!(event.getTarget() instanceof LivingEntity target)) return;
 
-        }, 1500));
+                final Instance instance = event.getInstance();
+                final Pos pos = target.getPosition();
+                explosion(DamageType.fromProjectile(shooter, projectile), instance, pos, 6, 1, 7, 0.3f);
+            }).addListener(EntityAttackEvent.class, event -> {
+                if (!(event.getEntity() instanceof Player player)) return;
+                if (!(event.getTarget() instanceof LivingEntity target)) return;
+
+                final Instance instance = event.getInstance();
+                final Pos pos = target.getPosition();
+                explosion(DamageType.fromPlayer(player), instance, pos, 3, 1f, 3, 0.3f);
+            }));
+        }
+
+        return features;
+    }
+
+    private static void explosion(DamageType damageType, Instance instance, Pos pos, int range, float offset, int damage, float volume) {
+        instance.sendGroupedPacket(ParticleCreator.createParticlePacket(
+                Particle.EXPLOSION, pos.x(), pos.y(), pos.z(),
+                offset, offset, offset, 5
+        ));
+        instance.playSound(
+                Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.NEUTRAL, volume, 1),
+                pos.x(), pos.y(), pos.z()
+        );
+        for (Entity entity : instance.getNearbyEntities(pos, range)) {
+            if (entity instanceof LivingEntity livingEntity && !(entity instanceof Player))
+                livingEntity.damage(damageType, damage);
+        }
     }
 }

@@ -19,14 +19,14 @@ class ArenaMob extends EntityCreature {
             "▌", "▋", "▊", "▉"
     );
     private static final String FULL_BLOCK_CHAR = "█";
+    protected final MobGenerationContext context;
 
-    protected final int stage;
-
-    public ArenaMob(@NotNull EntityType entityType, int stage) {
+    public ArenaMob(@NotNull EntityType entityType, MobGenerationContext context) {
         super(entityType);
-        this.stage = stage;
-        getAttribute(Attribute.MAX_HEALTH).setBaseValue(getMaxHealth() + stage * 2);
-        getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue(1 + stage / 4f);
+        this.context = context;
+        final float multi = context.hasOption(MobArena.TOUGH_MOBS_OPTION) ? 2 : 1;
+        getAttribute(Attribute.MAX_HEALTH).setBaseValue((getMaxHealth() + context.stage() * 2) * multi);
+        getAttribute(Attribute.ATTACK_DAMAGE).setBaseValue((1 + context.stage() / 4f) * multi);
         heal();
         setCustomName(generateHealthBar(getMaxHealth(), getHealth()));
         setCustomNameVisible(true);

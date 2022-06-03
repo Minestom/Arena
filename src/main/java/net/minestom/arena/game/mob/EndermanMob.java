@@ -18,7 +18,7 @@ import java.util.List;
 
 final class EndermanMob extends ArenaMob {
     public EndermanMob(MobGenerationContext context) {
-        super(EntityType.ENDERMAN, context.stage());
+        super(EntityType.ENDERMAN, context);
         addAIGroup(
                 List.of(
                         new TeleportGoal(this, Duration.ofSeconds(10), 8),
