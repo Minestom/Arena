@@ -107,8 +107,11 @@ final class Main {
                 Metrics.TICK_TIME.observe(monitor.getTickTime());
                 Metrics.ACQUISITION_TIME.observe(monitor.getAcquisitionTime());
                 lastTick.set(monitor);
-            }).addListener(PlayerPacketEvent.class, e -> Metrics.PACKETS.labels("in").inc())
-                    .addListener(PlayerPacketOutEvent.class, e -> Metrics.PACKETS.labels("out").inc());
+            })
+                    .addListener(PlayerPacketEvent.class, e -> Metrics.PACKETS.labels("in").inc())
+                    .addListener(PlayerPacketOutEvent.class, e -> Metrics.PACKETS.labels("out").inc())
+                    .addListener(PlayerLoginEvent.class, e -> Metrics.ONLINE_PLAYERS.inc())
+                    .addListener(PlayerDisconnectEvent.class, e -> Metrics.ONLINE_PLAYERS.dec());
             MinecraftServer.getExceptionManager().setExceptionHandler(e -> {
                 LOGGER.error("Global exception handler", e);
                 Metrics.EXCEPTIONS.labels(e.getClass().getSimpleName()).inc();
