@@ -1,5 +1,6 @@
 package net.minestom.arena;
 
+import com.sun.management.OperatingSystemMXBean;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Info;
@@ -20,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 
 public final class Metrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(Metrics.class);
@@ -45,19 +47,23 @@ public final class Metrics {
             .help("Network usage").register();
     private static final Info GENERIC_INFO = Info.build().name("generic").help("Generic system information")
             .register();
+    private static final Gauge CPU_USAGE = Gauge.build().name("cpu").help("CPU Usage").register();
 
 
     public static void init() {
         try {
             final String unknown = "unknown";
+            final OperatingSystemMXBean systemMXBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
             GENERIC_INFO.info(
                     "java_version", System.getProperty("java.version", unknown),
                     "java_vendor", System.getProperty("java.vendor", unknown),
                     "os_arch", System.getProperty("os.arch", unknown),
                     "os_name", System.getProperty("os.name", unknown),
-                    "os_version", System.getProperty("os.version", unknown)
-                    );
+                    "os_version", System.getProperty("os.version", unknown),
+                    "available_processors", ""+systemMXBean.getAvailableProcessors()
+            );
 
+            // Packets & players
             MinecraftServer.getGlobalEventHandler()
                     .addListener(PlayerPacketEvent.class, e -> Metrics.PACKETS.labels("in").inc())
                     .addListener(PlayerPacketOutEvent.class, e -> Metrics.PACKETS.labels("out").inc())
@@ -68,12 +74,17 @@ public final class Metrics {
             if (NetworkUsage.checkEnabledOrExtract()) {
                 NetworkUsage.resetCounters();
                 MinecraftServer.getSchedulerManager()
-                        .scheduleTask(() -> NETWORK_IO.labels("out").set(NetworkUsage.getBytesSent()),
-                                TaskSchedule.seconds(0), TaskSchedule.seconds(1));
-                MinecraftServer.getSchedulerManager()
-                        .scheduleTask(() -> NETWORK_IO.labels("in").set(NetworkUsage.getBytesReceived()),
-                                TaskSchedule.seconds(0), TaskSchedule.seconds(1));
+                        .scheduleTask(() -> {
+                                    NETWORK_IO.labels("out").set(NetworkUsage.getBytesSent());
+                                    NETWORK_IO.labels("in").set(NetworkUsage.getBytesReceived());
+                                }, TaskSchedule.seconds(0), TaskSchedule.seconds(2));
             }
+
+            // CPU
+            MinecraftServer.getSchedulerManager()
+                    .scheduleTask(() -> {
+                        CPU_USAGE.set(systemMXBean.getProcessCpuLoad());
+                    }, TaskSchedule.seconds(0), TaskSchedule.seconds(2));
 
             new HTTPServer(ConfigHandler.CONFIG.prometheus().port());
             new MemoryPoolsExports().register();
