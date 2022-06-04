@@ -36,6 +36,7 @@ final class Main {
 
     public static void main(String[] args) {
         MinecraftServer minecraftServer = MinecraftServer.init();
+        if (CONFIG.prometheus().enabled()) Metrics.init();
 
         try {
             ResourceUtils.extractResource("lobby");
@@ -112,9 +113,6 @@ final class Main {
                 LOGGER.error("Global exception handler", e);
                 Metrics.EXCEPTIONS.labels(e.getClass().getSimpleName()).inc();
             });
-            if (CONFIG.prometheus().enabled()) {
-                Metrics.init();
-            }
 
             // Header/footer
             MinecraftServer.getSchedulerManager().scheduleTask(() -> {
