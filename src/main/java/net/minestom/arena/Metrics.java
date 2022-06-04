@@ -12,6 +12,9 @@ import io.prometheus.client.hotspot.MemoryPoolsExports;
 import net.minestom.arena.config.ConfigHandler;
 import net.minestom.arena.utils.NetworkUsage;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.entity.Player;
+import net.minestom.server.event.entity.EntitySpawnEvent;
+import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerPacketEvent;
@@ -67,7 +70,12 @@ public final class Metrics {
                     .addListener(PlayerPacketEvent.class, e -> Metrics.PACKETS.labels("in").inc())
                     .addListener(PlayerPacketOutEvent.class, e -> Metrics.PACKETS.labels("out").inc())
                     .addListener(PlayerLoginEvent.class, e -> Metrics.ONLINE_PLAYERS.inc())
-                    .addListener(PlayerDisconnectEvent.class, e -> Metrics.ONLINE_PLAYERS.dec());
+                    .addListener(PlayerDisconnectEvent.class, e -> Metrics.ONLINE_PLAYERS.dec())
+                    .addListener(EntitySpawnEvent.class, e -> {
+                        if (!(e.getEntity() instanceof Player)) Metrics.ENTITIES.inc();
+                    }).addListener(RemoveEntityFromInstanceEvent.class, e -> {
+                        if (!(e.getEntity() instanceof Player)) Metrics.ENTITIES.dec();
+                    });
 
             // Network usage
             if (NetworkUsage.checkEnabledOrExtract()) {

@@ -66,16 +66,6 @@ final class MobArenaInstance extends InstanceContainer {
                 xChange += 2;
             }
         }
-
-        eventNode().addListener(EntitySpawnEvent.class, e -> {
-            if (!(e.getEntity() instanceof Player)) {
-                Metrics.ENTITIES.inc();
-            }
-        }).addListener(RemoveEntityFromInstanceEvent.class, e -> {
-            if (!(e.getEntity() instanceof Player)) {
-                Metrics.ENTITIES.dec();
-            }
-        });
     }
 
     @Override
