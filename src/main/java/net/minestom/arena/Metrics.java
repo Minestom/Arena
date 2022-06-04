@@ -11,6 +11,10 @@ import io.prometheus.client.hotspot.MemoryPoolsExports;
 import net.minestom.arena.config.ConfigHandler;
 import net.minestom.arena.utils.NetworkUsage;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.event.player.PlayerDisconnectEvent;
+import net.minestom.server.event.player.PlayerLoginEvent;
+import net.minestom.server.event.player.PlayerPacketEvent;
+import net.minestom.server.event.player.PlayerPacketOutEvent;
 import net.minestom.server.timer.TaskSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +37,11 @@ public final class Metrics {
             .maxAgeSeconds(5).unit("ms").register();
     public static final Counter EXCEPTIONS = Counter.build().name("exceptions")
             .help("Number of exceptions").labelNames("simple_name").register();
-    public static final Counter PACKETS = Counter.build().name("packets").help("Number of packets by direction")
+    private static final Counter PACKETS = Counter.build().name("packets").help("Number of packets by direction")
             .labelNames("direction").register();
-    public static final Gauge ONLINE_PLAYERS = Gauge.build().name("online_players")
+    private static final Gauge ONLINE_PLAYERS = Gauge.build().name("online_players")
             .help("Number of currently online players").register();
-    public static final Gauge NETWORK_IO = Gauge.build().name("network_io").unit("bytes").labelNames("direction")
+    private static final Gauge NETWORK_IO = Gauge.build().name("network_io").unit("bytes").labelNames("direction")
             .help("Network usage").register();
     private static final Info GENERIC_INFO = Info.build().name("generic").help("Generic system information")
             .register();
@@ -53,6 +57,12 @@ public final class Metrics {
                     "os_name", System.getProperty("os.name", unknown),
                     "os_version", System.getProperty("os.version", unknown)
                     );
+
+            MinecraftServer.getGlobalEventHandler()
+                    .addListener(PlayerPacketEvent.class, e -> Metrics.PACKETS.labels("in").inc())
+                    .addListener(PlayerPacketOutEvent.class, e -> Metrics.PACKETS.labels("out").inc())
+                    .addListener(PlayerLoginEvent.class, e -> Metrics.ONLINE_PLAYERS.inc())
+                    .addListener(PlayerDisconnectEvent.class, e -> Metrics.ONLINE_PLAYERS.dec());
 
             // Network usage
             if (NetworkUsage.executablesPresent()) {
