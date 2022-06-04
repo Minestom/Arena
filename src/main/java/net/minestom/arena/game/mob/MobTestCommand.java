@@ -8,7 +8,6 @@ import net.minestom.server.command.CommandSender;
 import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.arguments.ArgumentLiteral;
 import net.minestom.server.command.builder.arguments.ArgumentType;
-import net.minestom.server.command.builder.arguments.number.ArgumentInteger;
 import net.minestom.server.command.builder.arguments.number.ArgumentNumber;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
@@ -41,8 +40,6 @@ public final class MobTestCommand extends Command {
                 .between(0, MobArena.CLASSES.size() - 1);
         final ArgumentNumber<Integer> mobType = ArgumentType.Integer("type")
                 .between(0, MobArena.MOB_GENERATORS.size() - 1);
-
-        final ArgumentInteger stageNum = ArgumentType.Integer("stage");
 
         addSyntax((sender, context) -> ((Player) sender).getInventory().addItemStack(Items.COIN
                 .withAmount(context.get(coinsAmount))), coins, coinsAmount);
@@ -87,10 +84,6 @@ public final class MobTestCommand extends Command {
         ), strong);
 
         addSyntax((sender, context) -> ((Player) sender).damage(DamageType.VOID, 10), damageme);
-
-        addSyntax(((sender, context) -> arena(sender).ifPresent(arena -> {
-            arena.setStage(context.get(stageNum));
-        })), stage, stageNum);
     }
 
     private static @NotNull Optional<MobArena> arena(CommandSender sender) {

@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
 public final class Metrics {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Metrics.class);
     public static final Gauge ENTITIES = Gauge.build().name("entities")
             .help("Total entities alive (excluding players)").register();
     public static final Gauge GAMES_IN_PROGRESS = Gauge.build().name("games_in_progress")
