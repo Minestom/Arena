@@ -65,7 +65,7 @@ public final class Metrics {
                     .addListener(PlayerDisconnectEvent.class, e -> Metrics.ONLINE_PLAYERS.dec());
 
             // Network usage
-            if (NetworkUsage.executablesPresent()) {
+            if (NetworkUsage.checkEnabledOrExtract()) {
                 NetworkUsage.resetCounters();
                 MinecraftServer.getSchedulerManager()
                         .scheduleTask(() -> NETWORK_IO.labels("out").set(NetworkUsage.getBytesSent()),
@@ -73,8 +73,6 @@ public final class Metrics {
                 MinecraftServer.getSchedulerManager()
                         .scheduleTask(() -> NETWORK_IO.labels("in").set(NetworkUsage.getBytesReceived()),
                                 TaskSchedule.seconds(0), TaskSchedule.seconds(1));
-            } else {
-                LOGGER.warn("No executables found for network metrics");
             }
 
             new HTTPServer(ConfigHandler.CONFIG.prometheus().port());
