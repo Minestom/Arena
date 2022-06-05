@@ -50,7 +50,11 @@ public final class NetworkUsage {
     private static String execute(String command) {
         try {
             final String line = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream())).readLine();
-            if (line.length() == 1) return "0"; else return line;
+            if (line == null || line.length() < 2 && !line.equals("0")) {
+                LOGGER.error("Command returned without value! Did you persist iptables?");
+                return "0";
+            }
+            return line;
         } catch (IOException e) {
             return "0";
         }
