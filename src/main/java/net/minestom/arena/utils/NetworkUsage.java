@@ -1,6 +1,5 @@
 package net.minestom.arena.utils;
 
-import net.minestom.arena.Metrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

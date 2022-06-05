@@ -5,7 +5,6 @@ import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Info;
 import io.prometheus.client.Summary;
-import io.prometheus.client.exemplars.Exemplar;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.GarbageCollectorExports;
 import io.prometheus.client.hotspot.MemoryPoolsExports;
@@ -20,8 +19,6 @@ import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerPacketEvent;
 import net.minestom.server.event.player.PlayerPacketOutEvent;
 import net.minestom.server.timer.TaskSchedule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
