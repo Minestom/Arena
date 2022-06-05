@@ -61,9 +61,6 @@ public record Config(Server server, Proxy proxy, Permissions permissions, Promet
         }
     }
 
-    public record Prometheus(Integer port) {
-        public Prometheus() {
-            this(null);
-        }
+    public record Prometheus(int port) {
     }
 }
