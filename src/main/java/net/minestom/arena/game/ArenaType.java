@@ -22,7 +22,7 @@ enum ArenaType {
     private final List<ArenaOption> availableOptions;
 
     private final Class<? extends Arena> clazz;
-    private final String metricsDisplayName;
+    private final String name;
     private static final Map<Class<? extends Arena>, ArenaType> classToType = new HashMap<>();
 
     static {
@@ -40,7 +40,7 @@ enum ArenaType {
                 .meta(ItemUtils::hideFlags)
                 .build());
         this.supplier = supplier;
-        this.metricsDisplayName = name.toLowerCase(Locale.ROOT).replace(' ', '_');
+        this.name = name;
         this.clazz = clazz;
         this.availableOptions = List.copyOf(availableOptions);
     }
@@ -63,6 +63,6 @@ enum ArenaType {
 
     public static String getMetricsDisplayName(Arena arena) {
         final ArenaType type = ArenaType.typeOf(arena);
-        return type == null ? "unknown" : type.metricsDisplayName;
+        return type == null ? "unknown" : type.name;
     }
 }
