@@ -36,7 +36,7 @@ final class Main {
 
     public static void main(String[] args) {
         MinecraftServer minecraftServer = MinecraftServer.init();
-        if (CONFIG.prometheus().enabled()) Metrics.init();
+        if (CONFIG.prometheusPort() != null) Metrics.init();
 
         try {
             ResourceUtils.extractResource("lobby");
