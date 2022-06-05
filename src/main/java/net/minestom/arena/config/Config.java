@@ -4,11 +4,12 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
 
-public record Config(Server server, Proxy proxy, Permissions permissions, Integer prometheusPort) {
+public record Config(Server server, Proxy proxy, Permissions permissions, Prometheus prometheus) {
     public Config {
         if (server == null) server = new Server();
         if (proxy == null) proxy = new Proxy();
         if (permissions == null) permissions = new Permissions();
+        if (prometheus == null) prometheus = new Prometheus();
     }
 
     public Config() {
@@ -58,6 +59,16 @@ public record Config(Server server, Proxy proxy, Permissions permissions, Intege
 
         public Permissions() {
             this(null);
+        }
+    }
+
+    public record Prometheus(Integer port) {
+        public Prometheus() {
+            this(null);
+        }
+
+        public boolean enabled() {
+            return port != null;
         }
     }
 }

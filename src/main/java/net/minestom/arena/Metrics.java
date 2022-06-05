@@ -78,7 +78,7 @@ public final class Metrics {
             }
 
             CPUGauge.build().name("cpu").help("CPU Usage").register();
-            new HTTPServer(ConfigHandler.CONFIG.prometheusPort());
+            new HTTPServer(ConfigHandler.CONFIG.prometheus().port());
             new MemoryPoolsExports().register();
             new GarbageCollectorExports().register();
         } catch (IOException e) {
