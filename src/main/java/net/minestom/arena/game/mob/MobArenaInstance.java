@@ -2,6 +2,7 @@ package net.minestom.arena.game.mob;
 
 import de.articdive.jnoise.JNoise;
 import de.articdive.jnoise.modules.octavation.OctavationModule;
+import net.minestom.arena.Metrics;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
@@ -61,6 +62,14 @@ final class MobArenaInstance extends InstanceContainer {
                 radiusError += xChange;
                 xChange += 2;
             }
+        }
+    }
+
+    @Override
+    protected void setRegistered(boolean registered) {
+        super.setRegistered(registered);
+        if (!registered) {
+            Metrics.ENTITIES.dec(getEntities().size());
         }
     }
 }
