@@ -1,10 +1,7 @@
 package net.minestom.arena;
 
 import com.sun.management.OperatingSystemMXBean;
-import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
-import io.prometheus.client.Info;
-import io.prometheus.client.Summary;
+import io.prometheus.client.*;
 import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.hotspot.GarbageCollectorExports;
 import io.prometheus.client.hotspot.MemoryPoolsExports;
@@ -18,10 +15,12 @@ import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerPacketEvent;
 import net.minestom.server.event.player.PlayerPacketOutEvent;
-import net.minestom.server.timer.TaskSchedule;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class Metrics {
     public static final Gauge ENTITIES = Gauge.build().name("entities")
@@ -42,17 +41,14 @@ public final class Metrics {
             .labelNames("direction").register();
     private static final Gauge ONLINE_PLAYERS = Gauge.build().name("online_players")
             .help("Number of currently online players").register();
-    private static final Gauge NETWORK_IO = Gauge.build().name("network_io").unit("bytes").labelNames("direction")
-            .help("Network usage").register();
     private static final Info GENERIC_INFO = Info.build().name("generic").help("Generic system information")
             .register();
-    private static final Gauge CPU_USAGE = Gauge.build().name("cpu").help("CPU Usage").register();
+    private static final OperatingSystemMXBean systemMXBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
 
 
     public static void init() {
         try {
             final String unknown = "unknown";
-            final OperatingSystemMXBean systemMXBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
             GENERIC_INFO.info(
                     "java_version", System.getProperty("java.version", unknown),
                     "java_vendor", System.getProperty("java.vendor", unknown),
@@ -77,24 +73,84 @@ public final class Metrics {
             // Network usage
             if (NetworkUsage.checkEnabledOrExtract()) {
                 NetworkUsage.resetCounters();
-                MinecraftServer.getSchedulerManager()
-                        .scheduleTask(() -> {
-                                    NETWORK_IO.labels("out").set(NetworkUsage.getBytesSent());
-                                    NETWORK_IO.labels("in").set(NetworkUsage.getBytesReceived());
-                                }, TaskSchedule.seconds(0), TaskSchedule.seconds(2));
+                NetworkCounter.build().name("network_io").help("Network usage").unit("bytes").labelNames("direction")
+                        .register();
             }
 
-            // CPU
-            MinecraftServer.getSchedulerManager()
-                    .scheduleTask(() -> {
-                        CPU_USAGE.set(systemMXBean.getProcessCpuLoad());
-                    }, TaskSchedule.seconds(0), TaskSchedule.seconds(2));
-
+            CPUGauge.build().name("cpu").help("CPU Usage").register();
             new HTTPServer(ConfigHandler.CONFIG.prometheus().port());
             new MemoryPoolsExports().register();
             new GarbageCollectorExports().register();
         } catch (IOException e) {
             MinecraftServer.getExceptionManager().handleException(e);
+        }
+    }
+
+    private static class NetworkCounter extends SimpleCollector<Counter.Child> {
+        private final double created = System.currentTimeMillis()/1000f;
+        private final static List<String> outLabels = List.of("out");
+        private final static List<String> inLabels = List.of("in");
+
+        protected NetworkCounter(Builder b) {
+            super(b);
+        }
+
+        public static class Builder extends SimpleCollector.Builder<NetworkCounter.Builder, NetworkCounter> {
+
+            @Override
+            public NetworkCounter create() {
+                return new NetworkCounter(this);
+            }
+        }
+
+        public static Builder build() {
+            return new Builder();
+        }
+
+        @Override
+        protected Counter.Child newChild() {
+            return null;
+        }
+
+        @Override
+        public List<MetricFamilySamples> collect() {
+            List<MetricFamilySamples.Sample> samples = new ArrayList<MetricFamilySamples.Sample>();
+            samples.add(new MetricFamilySamples.Sample(fullname + "_total", labelNames, outLabels, NetworkUsage.getBytesSent()));
+            samples.add(new MetricFamilySamples.Sample(fullname + "_created", labelNames, outLabels, created));
+            samples.add(new MetricFamilySamples.Sample(fullname + "_total", labelNames, inLabels, NetworkUsage.getBytesReceived()));
+            samples.add(new MetricFamilySamples.Sample(fullname + "_created", labelNames, inLabels, created));
+            return familySamplesList(Type.COUNTER, samples);
+        }
+    }
+
+    private static class CPUGauge extends SimpleCollector<Gauge.Child> {
+
+        protected CPUGauge(Builder b) {
+            super(b);
+        }
+
+        public static class Builder extends SimpleCollector.Builder<CPUGauge.Builder, CPUGauge> {
+
+            @Override
+            public CPUGauge create() {
+                return new CPUGauge(this);
+            }
+        }
+
+        public static Builder build() {
+            return new Builder();
+        }
+
+        @Override
+        protected Gauge.Child newChild() {
+            return new Gauge.Child();
+        }
+
+        @Override
+        public List<MetricFamilySamples> collect() {
+            List<MetricFamilySamples.Sample> samples = new ArrayList<MetricFamilySamples.Sample>(1);
+            samples.add(new MetricFamilySamples.Sample(fullname, labelNames, Collections.emptyList(), systemMXBean.getProcessCpuLoad()));
+            return familySamplesList(Type.GAUGE, samples);
         }
     }
 }
