@@ -3,7 +3,7 @@ package net.minestom.arena;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minestom.arena.config.ConfigHandler;
-import net.minestom.arena.config.ConfigurationChangeEvent;
+import net.minestom.arena.config.ConfigurationChangedEvent;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
@@ -38,7 +38,7 @@ final class ServerList {
                 responseData.setFavicon(FAVICON);
             responseData.setMaxPlayer(100);
             responseData.addEntries(MinecraftServer.getConnectionManager().getOnlinePlayers());
-        }).addListener(ConfigurationChangeEvent.class, e -> parseMotd());
+        }).addListener(ConfigurationChangedEvent.class, e -> parseMotd());
     }
 
     private static void parseMotd() {

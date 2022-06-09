@@ -43,7 +43,7 @@ public final class ConfigHandler {
         CONFIG = config == null ? new Config() : config;
 
         if (reload) {
-            MinecraftServer.getGlobalEventHandler().call(new ConfigurationChangeEvent(old, CONFIG));
+            MinecraftServer.getGlobalEventHandler().call(new ConfigurationChangedEvent(old, CONFIG));
             LOGGER.info("Configuration reloaded!");
         } else {
             reload = true;
