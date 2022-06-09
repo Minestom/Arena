@@ -8,6 +8,9 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import net.minestom.server.MinecraftServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -19,13 +22,16 @@ import java.util.List;
 import java.util.Map;
 
 public final class ConfigHandler {
-    public static Config CONFIG;
+    public volatile static Config CONFIG;
+    private static boolean reload = false;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigHandler.class);
 
     static {
         loadConfig();
     }
 
     public static void loadConfig() {
+        Config old = CONFIG;
         Config config = null;
         try (JsonReader reader = new JsonReader(new FileReader("config.json"))) {
             config = new GsonBuilder()
@@ -34,8 +40,14 @@ public final class ConfigHandler {
                     .fromJson(reader, Config.class);
         } catch (IOException ignored) {}
 
-        if (config == null) CONFIG = new Config();
-        else CONFIG = config;
+        CONFIG = config == null ? new Config() : config;
+
+        if (reload) {
+            MinecraftServer.getGlobalEventHandler().call(new ConfigurationChangeEvent(old, CONFIG));
+            LOGGER.info("Configuration reloaded!");
+        } else {
+            reload = true;
+        }
     }
 
     private ConfigHandler() {}

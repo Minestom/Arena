@@ -1,5 +1,7 @@
 package net.minestom.arena.config;
 
+import org.jetbrains.annotations.UnmodifiableView;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
@@ -15,16 +17,17 @@ public record Config(Server server, Proxy proxy, Permissions permissions, Promet
         this(null, null, null, null);
     }
 
-    public record Server(String host, Integer port, String[] motd) {
+    public record Server(String host, int port, @UnmodifiableView List<String> motd) {
         public Server {
             if (host == null) host = "0.0.0.0";
-            if (port == null) port = 25565;
-            if (motd.length == 1) motd = new String[] {motd[0], ""};
-            if (motd.length == 0) motd = new String[] {"", ""};
+            if (port == 0) port = 25565;
+            if (motd.size() > 1) motd = List.of(motd.get(0), motd.get(1));
+            if (motd.size() == 1) motd = List.of(motd.get(0), "");
+            if (motd.size() == 0) motd = List.of("", "");
         }
 
         public Server() {
-            this(null, 0, new String[]{"",""});
+            this(null, 0, List.of("", ""));
         }
 
         public SocketAddress address() {
