@@ -12,19 +12,25 @@ import net.minestom.server.MinecraftServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.RecordComponent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class ConfigHandler {
     public volatile static Config CONFIG;
     private static boolean reload = false;
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigHandler.class);
+    private static final Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeAdapterFactory(new RecordTypeAdapterFactory())
+            .create();
+    private static final File configFile = new File("config.json");
 
     static {
         loadConfig();
@@ -32,15 +38,24 @@ public final class ConfigHandler {
 
     public static void loadConfig() {
         Config old = CONFIG;
-        Config config = null;
-        try (JsonReader reader = new JsonReader(new FileReader("config.json"))) {
-            config = new GsonBuilder()
-                    .registerTypeAdapterFactory(new RecordTypeAdapterFactory())
-                    .create()
-                    .fromJson(reader, Config.class);
-        } catch (IOException ignored) {}
 
-        CONFIG = config == null ? new Config() : config;
+        if (configFile.exists()) {
+            try (JsonReader reader = new JsonReader(new FileReader(configFile))) {
+                CONFIG = gson.fromJson(reader, Config.class);
+            } catch (IOException exception) {
+                LOGGER.error("Failed to load configuration.", exception);
+            }
+        } else {
+            CONFIG = gson.fromJson("{}", Config.class);
+            try {
+                final FileWriter writer = new FileWriter(configFile);
+                gson.toJson(CONFIG, writer);
+                writer.flush();
+                writer.close();
+            } catch (IOException exception) {
+                LOGGER.error("Failed to write default configuration.", exception);
+            }
+        }
 
         if (reload) {
             MinecraftServer.getGlobalEventHandler().call(new ConfigurationChangedEvent(old, CONFIG));
@@ -88,6 +103,23 @@ public final class ConfigHandler {
                         }
                         reader.endObject();
 
+                        Arrays.stream(recordComponents).filter(x -> !argsMap.containsKey(x.getName())).forEach(x -> {
+                            final String name = x.getName();
+                            final Class<?> argClazz = x.getType();
+                            final Default def = x.getAnnotation(Default.class);
+                            if (def == null) {
+                                argsMap.put(name, instantiateWithDefaults(argClazz));
+                                return;
+                            }
+                            try {
+                                if (argClazz == String.class) {
+                                    argsMap.put(name, def.value());
+                                } else {
+                                    argsMap.put(name, gson.getAdapter(typeMap.get(name)).fromJson(def.value()));
+                                }
+                            } catch (IOException ignored) {}
+                        });
+
                         final List<Object> args = new ArrayList<>();
                         final List<Class<?>> argTypes = new ArrayList<>();
                         for (RecordComponent component : recordComponents) {
@@ -102,6 +134,33 @@ public final class ConfigHandler {
                         } catch (ReflectiveOperationException e) {
                             return null;
                         }
+                    }
+                }
+
+                private Object instantiateWithDefaults(Class<?> clazz) {
+                    final List<Object> args = new ArrayList<>();
+                    final Constructor<?> constructor = clazz.getDeclaredConstructors()[0];
+                    for (Parameter param : constructor.getParameters()) {
+                        final Class<?> paramClazz = param.getType();
+                        final Default def = param.getAnnotation(Default.class);
+                        if (def == null) {
+                            args.add(instantiateWithDefaults(paramClazz));
+                            continue;
+                        }
+                        try {
+                            if (paramClazz == String.class) {
+                                args.add(def.value());
+                            } else {
+                                args.add(gson.getAdapter(TypeToken.get(param.getType())).fromJson(def.value()));
+                            }
+                        } catch (IOException ignored) {
+                            args.add(null);
+                        }
+                    }
+                    try {
+                        return constructor.newInstance(args.toArray(Object[]::new));
+                    } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
+                        return null;
                     }
                 }
             };
