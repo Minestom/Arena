@@ -36,7 +36,7 @@ public final class ConfigHandler {
         loadConfig();
     }
 
-    public static void loadConfig() {
+    public synchronized static void loadConfig() {
         Config old = CONFIG;
 
         if (configFile.exists()) {
@@ -66,7 +66,7 @@ public final class ConfigHandler {
         }
     }
 
-    private static void loadDefaults() {
+    private synchronized static void loadDefaults() {
         CONFIG = gson.fromJson("{}", Config.class);
     }
 
