@@ -43,10 +43,11 @@ public final class ConfigHandler {
             try (JsonReader reader = new JsonReader(new FileReader(configFile))) {
                 CONFIG = gson.fromJson(reader, Config.class);
             } catch (IOException exception) {
-                LOGGER.error("Failed to load configuration.", exception);
+                LOGGER.error("Failed to load configuration file, using defaults.", exception);
+                loadDefaults();
             }
         } else {
-            CONFIG = gson.fromJson("{}", Config.class);
+            loadDefaults();
             try {
                 final FileWriter writer = new FileWriter(configFile);
                 gson.toJson(CONFIG, writer);
@@ -58,11 +59,15 @@ public final class ConfigHandler {
         }
 
         if (reload) {
-            MinecraftServer.getGlobalEventHandler().call(new ConfigurationChangedEvent(old, CONFIG));
+            MinecraftServer.getGlobalEventHandler().call(new ConfigurationReloadedEvent(old, CONFIG));
             LOGGER.info("Configuration reloaded!");
         } else {
             reload = true;
         }
+    }
+
+    private static void loadDefaults() {
+        CONFIG = gson.fromJson("{}", Config.class);
     }
 
     private ConfigHandler() {}
