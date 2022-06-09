@@ -1,13 +1,13 @@
 package net.minestom.arena;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.minestom.arena.config.ConfigHandler;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.server.ServerListPingEvent;
 import net.minestom.server.ping.ResponseData;
-import net.minestom.server.ping.ServerListPingType;
 
 import java.io.InputStream;
 import java.util.Base64;
@@ -29,9 +29,10 @@ final class ServerList {
     public static void hook(EventNode<Event> eventNode) {
         eventNode.addListener(ServerListPingEvent.class, event -> {
             final ResponseData responseData = event.getResponseData();
-            final boolean rgb = event.getPingType() == ServerListPingType.MODERN_FULL_RGB;
-
-            responseData.setDescription(Component.text("Minestom Arena").color(rgb ? Messenger.ORANGE_COLOR : NamedTextColor.GOLD));
+            final MiniMessage miniMessage = MiniMessage.miniMessage();
+            responseData.setDescription(miniMessage.deserialize(ConfigHandler.CONFIG.server().motd()[0])
+                    .append(Component.newline())
+                    .append(miniMessage.deserialize(ConfigHandler.CONFIG.server().motd()[1])));
             if (FAVICON != null)
                 responseData.setFavicon(FAVICON);
             responseData.setMaxPlayer(100);

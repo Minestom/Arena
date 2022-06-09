@@ -19,9 +19,13 @@ import java.util.List;
 import java.util.Map;
 
 public final class ConfigHandler {
-    public static final Config CONFIG;
+    public static Config CONFIG;
 
     static {
+        loadConfig();
+    }
+
+    public static void loadConfig() {
         Config config = null;
         try (JsonReader reader = new JsonReader(new FileReader("config.json"))) {
             config = new GsonBuilder()

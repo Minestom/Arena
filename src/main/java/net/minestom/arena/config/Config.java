@@ -15,14 +15,16 @@ public record Config(Server server, Proxy proxy, Permissions permissions, Promet
         this(null, null, null, null);
     }
 
-    public record Server(String host, int port) {
+    public record Server(String host, Integer port, String[] motd) {
         public Server {
             if (host == null) host = "0.0.0.0";
-            if (port == 0) port = 25565;
+            if (port == null) port = 25565;
+            if (motd.length == 1) motd = new String[] {motd[0], ""};
+            if (motd.length == 0) motd = new String[] {"", ""};
         }
 
         public Server() {
-            this(null, 0);
+            this(null, 0, new String[]{"",""});
         }
 
         public SocketAddress address() {

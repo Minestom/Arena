@@ -25,6 +25,7 @@ dependencies {
     implementation("io.prometheus:simpleclient:0.15.0")
     implementation("io.prometheus:simpleclient_hotspot:0.15.0")
     implementation("io.prometheus:simpleclient_httpserver:0.15.0")
+    implementation("net.kyori:adventure-text-minimessage:4.11.0")
 }
 
 tasks.withType<JavaCompile> {

@@ -1,5 +1,6 @@
 package net.minestom.arena;
 
+import net.minestom.arena.config.ConfigHandler;
 import net.minestom.arena.game.ArenaManager;
 import net.minestom.arena.utils.CommandUtils;
 import net.minestom.server.command.CommandManager;
@@ -40,6 +41,10 @@ final class SimpleCommands {
             player.setHealth(player.getMaxHealth());
         });
 
-        return List.of(stop, ping, leave);
+        final Command reload = new Command("reload");
+        reload.setCondition(CommandUtils::consoleOnly);
+        reload.setDefaultExecutor(((sender, context) -> ConfigHandler.loadConfig()));
+
+        return List.of(stop, ping, leave, reload);
     }
 }
