@@ -1,14 +1,20 @@
 {
   "server": {
     "host": "0.0.0.0",
-    "port": 25565
+    "port": 25565,
+    "motd": ["Line1", "Line2"]
   },
   "proxy": {
-    "secret": "none"
+    "enabled": false,
+    "secret": "forwarding-secret"
   },
   "permissions": {
     "operators": [
       "Your username here"
     ]
+  },
+  "prometheus": {
+    "enabled": false,
+    "port": 9090
   }
 }
