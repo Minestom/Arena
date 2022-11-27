@@ -65,7 +65,7 @@ public final class GroupCommand extends Command {
                     Messenger.warn(sender, player.getName().append(Component.text(" is already in this group.")));
                 }
 
-                if (!group.members().contains(player)) {
+                if (!group.members().contains(player) && !group.getPendingInvites().contains(player)) {
                     Component invite = group.getInviteMessage();
                     group.addPendingInvite(player);
                     Messenger.info(player, invite);
@@ -114,19 +114,23 @@ public final class GroupCommand extends Command {
                     if (toKick == player) {
                         GroupManager.removePlayer(player);
                     } else {
-                        group.removeMember(toKick);
-                        group.members().forEach(p -> {
-                            if (p == player) {
-                                Messenger.info(p, Component.text("You kicked ")
-                                        .append(toKick.getName()).append(Component.text(" from the group")));
-                            } else {
-                                Messenger.info(p, toKick.getName().append(Component.text(" was kicked from your group")));
-                            }
-                        });
+                        if (group.removeMember(toKick)) {
+                            group.members().forEach(p -> {
+                                if (p == player) {
+                                    Messenger.info(p, Component.text("You kicked ")
+                                            .append(toKick.getName()).append(Component.text(" from the group")));
+                                } else {
+                                    Messenger.info(p, toKick.getName().append(Component.text(" was kicked from your group")));
+                                }
+                            });
 
-                        Messenger.info(toKick, Component.text("You have been kicked from ")
-                                .append(player.getName())
-                                .append(Component.text("'s group")));
+                            Messenger.info(toKick, Component.text("You have been kicked rom ")
+                                    .append(player.getName())
+                                    .append(Component.text("'s group")));
+                        } else {
+                            Messenger.warn(sender, "They are not in your group");
+                        }
+
                     }
                 } else {
                     Messenger.warn(player, "You are not the leader of this group");

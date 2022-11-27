@@ -63,11 +63,13 @@ final class GroupImpl implements Group {
         }
     }
 
-    public void removeMember(@NotNull Player player) {
+    public boolean removeMember(@NotNull Player player) {
         if (players.remove(player)) {
             players.forEach(p -> Messenger.info(p, player.getName().append(Component.text(" has left your group"))));
             display.update();
+            return true;
         }
+        return false;
     }
 
     public @NotNull Component getInviteMessage() {
