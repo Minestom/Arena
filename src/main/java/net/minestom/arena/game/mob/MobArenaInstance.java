@@ -1,7 +1,10 @@
 package net.minestom.arena.game.mob;
 
-import de.articdive.jnoise.JNoise;
+import de.articdive.jnoise.core.api.pipeline.NoiseSource;
+import de.articdive.jnoise.generators.noisegen.opensimplex.FastSimplexNoiseGenerator;
+import de.articdive.jnoise.generators.noisegen.perlin.PerlinNoiseGenerator;
 import de.articdive.jnoise.modules.octavation.OctavationModule;
+import de.articdive.jnoise.pipeline.JNoise;
 import net.minestom.arena.Metrics;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.coordinate.Point;
@@ -14,11 +17,9 @@ import java.util.UUID;
 
 final class MobArenaInstance extends InstanceContainer {
     private final JNoise noise = JNoise.newBuilder()
-            .fastSimplex()
-            .setFrequency(0.0025)
-            .addModule(OctavationModule.newBuilder()
-                    .setOctaves(6)
-                    .build())
+            .fastSimplex(FastSimplexNoiseGenerator.newBuilder().build())
+            .scale(0.03)//0.0025
+            .octavation(OctavationModule.newBuilder().setOctaves(6).setNoiseSource(PerlinNoiseGenerator.newBuilder().build()).build())
             .build();
 
     MobArenaInstance() {
@@ -31,7 +32,7 @@ final class MobArenaInstance extends InstanceContainer {
                     Point bottom = start.add(x, 0, z);
                     // Ensure flat terrain in the fighting area
                     final double modifier = MathUtils.clamp((bottom.distance(Pos.ZERO.withY(bottom.y())) - 75) / 50, 0, 1);
-                    double y = noise.getNoise(bottom.x(), bottom.z()) * modifier;
+                    double y = noise.evaluateNoise(bottom.x(), bottom.z()) * modifier;
                     y = (y > 0 ? y * 4 : y) * 8 + MobArena.HEIGHT;
                     unit.modifier().fill(bottom, bottom.add(1, 0, 1).withY(y), Block.SAND);
                 }

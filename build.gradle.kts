@@ -20,11 +20,11 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Minestom:Minestom:a04012d9bf")
-    implementation("de.articdive:jnoise:3.0.2")
-    implementation("io.prometheus:simpleclient:0.15.0")
-    implementation("io.prometheus:simpleclient_hotspot:0.15.0")
-    implementation("io.prometheus:simpleclient_httpserver:0.15.0")
+    implementation("com.github.Minestom:Minestom:d37f40a1bb")
+    implementation("de.articdive:jnoise-pipeline:4.0.0")
+    implementation("io.prometheus:simpleclient:0.16.0")
+    implementation("io.prometheus:simpleclient_hotspot:0.16.0")
+    implementation("io.prometheus:simpleclient_httpserver:0.16.0")
     implementation("net.kyori:adventure-text-minimessage:4.11.0")
 }
 
