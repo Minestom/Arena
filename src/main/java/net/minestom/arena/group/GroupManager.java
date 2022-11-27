@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-final class GroupManager {
+public final class GroupManager {
     private static final Map<Player, GroupImpl> groups = new HashMap<>();
 
     public static @NotNull GroupImpl getGroup(@NotNull Player player) {
