@@ -40,7 +40,7 @@ final class EvokerMob extends ArenaMob {
                             ArenaMob silverfish = new ArenaMinion(EntityType.SILVERFISH, this);
                             silverfish.addAIGroup(
                                     List.of(new MeleeAttackGoal(silverfish, 1.2, 20, TimeUnit.SERVER_TICK)),
-                                    List.of(new ClosestEntityTarget(silverfish, 32, Player.class))
+                                    List.of(new ClosestEntityTarget(silverfish, 32, entity -> entity instanceof Player))
                             );
                             silverfish.getAttribute(Attribute.MAX_HEALTH).setBaseValue(silverfish.getMaxHealth() / 4);
                             silverfish.heal();
@@ -58,7 +58,7 @@ final class EvokerMob extends ArenaMob {
                         ((EvokerMeta) getEntityMeta()).setSpell(SpellcasterIllagerMeta.Spell.NONE);
                     }, TaskSchedule.seconds(2), TaskSchedule.stop());
                 })),
-                List.of(new ClosestEntityTarget(this, 32, Player.class))
+                List.of(new ClosestEntityTarget(this, 32, entity -> entity instanceof Player))
         );
     }
 
@@ -77,7 +77,7 @@ final class EvokerMob extends ArenaMob {
         @Override
         public boolean shouldStart() {
             Entity target = entityCreature.getTarget();
-            if (target == null) target = findTarget();
+            if (target == null || target.getInstance() != entityCreature.getInstance()) target = findTarget();
             if (target == null) return false;
             if (Cooldown.hasCooldown(System.currentTimeMillis(), lastSummon, cooldown)) return false;
             this.target = target;

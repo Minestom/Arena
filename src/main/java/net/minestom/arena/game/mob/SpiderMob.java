@@ -38,7 +38,7 @@ final class SpiderMob extends ArenaMob {
 
         addAIGroup(
                 List.of(attackGoal),
-                List.of(new ClosestEntityTarget(this, 32, Player.class))
+                List.of(new ClosestEntityTarget(this, 32, entity -> entity instanceof Player))
         );
     }
 
