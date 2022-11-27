@@ -413,9 +413,10 @@ public final class MobArena implements SingleInstanceArena {
                     .thenRun(this::nextStage)
                     .thenRun(continued::clear);
         } else {
-            Messenger.info(group(), player.getUsername() + " has continued. " + untilStart + " more players must continue to start the next wave.");
-
             final String playerOrPlayers = "player" + (untilStart == 1 ? "" : "s");
+
+            Messenger.info(group(), player.getUsername() + " has continued. " + untilStart + " more " + playerOrPlayers + " must continue to start the next wave.");
+
             bossBar.name(Component.text("Stage cleared! Waiting for " + untilStart + " more " + playerOrPlayers + " to continue"));
             bossBar.progress((float) continuedCount / haveToContinue);
             bossBar.color(BossBar.Color.GREEN);

@@ -5,7 +5,7 @@ import java.net.SocketAddress;
 import java.util.List;
 
 public record Config(Server server, Proxy proxy, Permissions permissions, Prometheus prometheus) {
-    public record Server(@Default("0.0.0.0") String host, @Default("25565") int port, @Default("[\"Line1\",\"Line2\"]") List<String> motd) {
+    public record Server(@Default("0.0.0.0") String host, @Default("25565") int port, @Default("true") boolean mojangAuth, @Default("[\"Line1\",\"Line2\"]") List<String> motd) {
         public SocketAddress address() {
             return new InetSocketAddress(host, port);
         }

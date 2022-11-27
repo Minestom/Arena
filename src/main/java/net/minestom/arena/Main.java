@@ -17,6 +17,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.*;
 import net.minestom.server.event.server.ServerTickMonitorEvent;
+import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.extras.lan.OpenToLAN;
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.monitoring.TickMonitor;
@@ -143,6 +144,7 @@ final class Main {
             VelocityProxy.enable(CONFIG.proxy().secret());
         } else {
             OpenToLAN.open();
+            if (CONFIG.server().mojangAuth()) MojangAuth.init();
         }
 
         minecraftServer.start(CONFIG.server().address());
