@@ -2,6 +2,7 @@ package net.minestom.arena;
 
 import net.minestom.arena.config.ConfigHandler;
 import net.minestom.arena.game.ArenaManager;
+import net.minestom.arena.group.GroupManager;
 import net.minestom.arena.utils.CommandUtils;
 import net.minestom.server.command.CommandManager;
 import net.minestom.server.command.ConsoleSender;
@@ -39,6 +40,7 @@ final class SimpleCommands {
             final Player player = (Player) sender;
             player.setInstance(Lobby.INSTANCE);
             player.setHealth(player.getMaxHealth());
+            GroupManager.removePlayer(player);
         });
 
         final Command reload = new Command("reload");

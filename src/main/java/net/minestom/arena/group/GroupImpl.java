@@ -8,13 +8,14 @@ import net.minestom.arena.group.displays.GroupDisplay;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
 final class GroupImpl implements Group {
-    private final Set<Player> players = new HashSet<>();
+    private final List<Player> players = new ArrayList<>();
     private final Set<Player> pendingInvites = Collections.newSetFromMap(new WeakHashMap<>());
 
     private Player leader;
@@ -31,8 +32,8 @@ final class GroupImpl implements Group {
     }
 
     @Override
-    public @NotNull Set<Player> members() {
-        return Set.copyOf(players);
+    public @NotNull List<Player> members() {
+        return List.copyOf(players);
     }
 
     @Override
@@ -58,7 +59,11 @@ final class GroupImpl implements Group {
     public void addMember(@NotNull Player player) {
         if (players.add(player)) {
             pendingInvites.remove(player);
-            players.forEach(p -> Messenger.info(p, player.getName().append(Component.text(" has joined your group"))));
+            players.forEach(p -> {
+                if (p != player) {
+                    Messenger.info(p, player.getName().append(Component.text(" has joined your group")));
+                }
+            });
             display.update();
         }
     }

@@ -24,7 +24,7 @@ final class EndermanMob extends ArenaMob {
                         new TeleportGoal(this, Duration.ofSeconds(10), 8),
                         new MeleeAttackGoal(this, 1.2, 20, TimeUnit.SERVER_TICK)
                 ),
-                List.of(new ClosestEntityTarget(this, 32, Player.class))
+                List.of(new ClosestEntityTarget(this, 32, entity -> entity instanceof Player))
         );
         getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(getAttributeValue(Attribute.MOVEMENT_SPEED) * 2);
     }

@@ -1,5 +1,6 @@
 package net.minestom.arena.group;
 
+import net.minestom.arena.LobbySidebarDisplay;
 import net.minestom.arena.Messenger;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -8,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-final class GroupManager {
+public final class GroupManager {
     private static final Map<Player, GroupImpl> groups = new HashMap<>();
 
     public static @NotNull GroupImpl getGroup(@NotNull Player player) {
@@ -19,6 +20,7 @@ final class GroupManager {
 
     public static @NotNull GroupImpl createGroup(@NotNull Player player) {
         GroupImpl group = new GroupImpl(player);
+        group.setDisplay(new LobbySidebarDisplay(group));
         groups.put(player, group);
         return group;
     }

@@ -32,7 +32,7 @@ final class SkeletonMob extends ArenaMob {
 
         addAIGroup(
                 List.of(rangedAttackGoal),
-                List.of(new ClosestEntityTarget(this, 32, Player.class))
+                List.of(new ClosestEntityTarget(this, 32, entity -> entity instanceof Player))
         );
     }
 
