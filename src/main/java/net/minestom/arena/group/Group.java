@@ -6,6 +6,7 @@ import net.minestom.arena.group.displays.GroupDisplay;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Set;
 
 public sealed interface Group extends ForwardingAudience permits GroupImpl {
@@ -15,7 +16,7 @@ public sealed interface Group extends ForwardingAudience permits GroupImpl {
 
     @NotNull Player leader();
 
-    @NotNull Set<@NotNull Player> members();
+    @NotNull List<@NotNull Player> members();
 
     @NotNull GroupDisplay display();
 

@@ -1,5 +1,6 @@
 package net.minestom.arena.group;
 
+import net.minestom.arena.LobbySidebarDisplay;
 import net.minestom.arena.Messenger;
 import net.minestom.server.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +20,7 @@ public final class GroupManager {
 
     public static @NotNull GroupImpl createGroup(@NotNull Player player) {
         GroupImpl group = new GroupImpl(player);
+        group.setDisplay(new LobbySidebarDisplay(group));
         groups.put(player, group);
         return group;
     }

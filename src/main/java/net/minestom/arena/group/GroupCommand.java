@@ -87,10 +87,10 @@ public final class GroupCommand extends Command {
                 if (group == null) {
                     GroupManager.getGroup(newLeader);
                     Messenger.info(sender, "Group created");
-                } else if (group.leader() == newLeader) {
-                    Messenger.warn(sender, "You are already the leader");
                 } else if (group.leader() != player) {
                     Messenger.warn(sender, "You are not the leader of this group");
+                } else if (group.leader() == newLeader) {
+                    Messenger.warn(sender, "You are already the leader");
                 } else {
                     group.setLeader(newLeader);
                 }
@@ -153,7 +153,7 @@ public final class GroupCommand extends Command {
                     GroupManager.removePlayer(invitee); // Remove from old group
                     group.addMember(invitee);
                     Component accepted = group.getAcceptedMessage();
-                    invitee.sendMessage(accepted);
+                    Messenger.info(invitee, accepted);
                 } else if (group.members().contains(invitee)) {
                     Messenger.warn(invitee, "You are already in this group");
                 } else {
