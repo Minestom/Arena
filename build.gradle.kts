@@ -20,12 +20,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Minestom:Minestom:d37f40a1bb")
+    implementation("com.github.Minestom:Minestom:eb06ba8664")
     implementation("de.articdive:jnoise-pipeline:4.0.0")
     implementation("io.prometheus:simpleclient:0.16.0")
     implementation("io.prometheus:simpleclient_hotspot:0.16.0")
     implementation("io.prometheus:simpleclient_httpserver:0.16.0")
-    implementation("net.kyori:adventure-text-minimessage:4.11.0")
+    implementation("net.kyori:adventure-text-minimessage:4.12.0")
 }
 
 tasks.withType<JavaCompile> {
