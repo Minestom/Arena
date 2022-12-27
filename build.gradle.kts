@@ -32,10 +32,6 @@ tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
 
-tasks.getByName<Test>("test") {
-    useJUnitPlatform()
-}
-
 tasks {
     named<ShadowJar>("shadowJar") {
         manifest {
