@@ -3,6 +3,7 @@ package net.minestom.arena;
 import net.minestom.arena.config.ConfigHandler;
 import net.minestom.arena.game.ArenaManager;
 import net.minestom.arena.group.GroupManager;
+import net.minestom.arena.lobby.Lobby;
 import net.minestom.arena.utils.CommandUtils;
 import net.minestom.server.command.CommandManager;
 import net.minestom.server.command.ConsoleSender;

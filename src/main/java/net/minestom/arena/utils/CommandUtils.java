@@ -1,6 +1,6 @@
 package net.minestom.arena.utils;
 
-import net.minestom.arena.Lobby;
+import net.minestom.arena.lobby.Lobby;
 import net.minestom.server.command.CommandSender;
 import net.minestom.server.command.ConsoleSender;
 import net.minestom.server.entity.Player;

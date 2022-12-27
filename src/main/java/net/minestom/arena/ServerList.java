@@ -12,23 +12,11 @@ import net.minestom.server.ping.ResponseData;
 
 import java.io.InputStream;
 import java.util.Base64;
+import java.util.List;
 
-@SuppressWarnings("SpellCheckingInspection")
 final class ServerList {
-    private static final String FAVICON;
-    private static Component motd;
-
-    static {
-        String favicon = null;
-        try (InputStream stream = Main.class.getResourceAsStream("/favicon.png")) {
-            if (stream != null)
-                favicon = "data:image/png;base64," + Base64.getEncoder().encodeToString(stream.readAllBytes());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        FAVICON = favicon;
-        parseMotd();
-    }
+    private static final String FAVICON = favicon();
+    private static Component motd = motd();
 
     public static void hook(EventNode<Event> eventNode) {
         eventNode.addListener(ServerListPingEvent.class, event -> {
@@ -38,13 +26,26 @@ final class ServerList {
                 responseData.setFavicon(FAVICON);
             responseData.setMaxPlayer(100);
             responseData.addEntries(MinecraftServer.getConnectionManager().getOnlinePlayers());
-        }).addListener(ConfigurationReloadedEvent.class, e -> parseMotd());
+        }).addListener(ConfigurationReloadedEvent.class, e -> motd = motd());
     }
 
-    private static void parseMotd() {
+    private static String favicon() {
+        String favicon = null;
+        try (InputStream stream = Main.class.getResourceAsStream("/favicon.png")) {
+            if (stream != null)
+                favicon = "data:image/png;base64," + Base64.getEncoder().encodeToString(stream.readAllBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return favicon;
+    }
+
+    private static Component motd() {
         final MiniMessage miniMessage = MiniMessage.miniMessage();
-        motd = miniMessage.deserialize(ConfigHandler.CONFIG.server().motd().get(0))
-                .append(Component.newline())
-                .append(miniMessage.deserialize(ConfigHandler.CONFIG.server().motd().get(1)));
+        final List<String> motd = ConfigHandler.CONFIG.server().motd();
+        return motd.stream()
+            .map(miniMessage::deserialize)
+            .reduce(Component.empty(), (a, b) -> a.append(b).appendNewline());
     }
 }

@@ -3,7 +3,7 @@ package net.minestom.arena.game;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.Items;
-import net.minestom.arena.Lobby;
+import net.minestom.arena.lobby.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.CommandUtils;
@@ -30,15 +30,17 @@ public final class ArenaCommand extends Command {
         super("arena", "play", "join", "game");
         setCondition(CommandUtils::lobbyOnly);
 
-        setDefaultExecutor((sender, context) ->
-                ((Player) sender).openInventory(new ArenaInventory()));
-
+        setDefaultExecutor((sender, context) -> open((Player) sender));
         addSyntax((sender, context) ->
                 play((Player) sender, context.get("type"), Set.of()),
         ArgumentType.Enum("type", ArenaType.class).setFormat(ArgumentEnum.Format.LOWER_CASED));
     }
 
-    private static void play(Player player, ArenaType type, Set<ArenaOption> options) {
+    public static void open(@NotNull Player player) {
+        player.openInventory(new ArenaInventory());
+    }
+
+    private static void play(@NotNull Player player, @NotNull ArenaType type, @NotNull Set<ArenaOption> options) {
         if (player.getInstance() != Lobby.INSTANCE) {
             Messenger.warn(player, "You are not in the lobby! Join the lobby first.");
             return;
