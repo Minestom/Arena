@@ -1,8 +1,16 @@
-package net.minestom.arena;
+package net.minestom.arena.lobby;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import net.kyori.adventure.sound.Sound;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.minestom.arena.Messenger;
+import net.minestom.arena.game.ArenaCommand;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
+import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.*;
 import net.minestom.server.entity.ai.GoalSelector;
 import net.minestom.server.entity.ai.target.ClosestEntityTarget;
@@ -17,6 +25,8 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -128,5 +138,37 @@ final class NPC extends EntityCreature {
 
         @Override
         public void end() {}
+    }
+
+    public static List<NPC> spawnNPCs(@NotNull Instance instance) {
+        try {
+            final java.util.Map<String, PlayerSkin> skins = new HashMap<>();
+            final Gson gson = new Gson();
+            final JsonObject root = gson.fromJson(new String(Lobby.class.getResourceAsStream("/skins.json")
+                    .readAllBytes()), JsonObject.class);
+
+            for (JsonElement skin : root.getAsJsonArray("skins")) {
+                final JsonObject object = skin.getAsJsonObject();
+                final String owner = object.get("owner").getAsString();
+                final String value = object.get("value").getAsString();
+                final String signature = object.get("signature").getAsString();
+                skins.put(owner, new PlayerSkin(value, signature));
+            }
+
+            return List.of(
+                    new NPC("Discord", skins.get("Discord"), instance, new Pos(8.5, 15, 8.5),
+                            player -> Messenger.info(player, Component.text("Click here to join the Discord server")
+                                    .clickEvent(ClickEvent.openUrl("https://discord.gg/minestom")))),
+                    new NPC("Website", skins.get("Website"), instance, new Pos(-7.5, 15, 8.5),
+                            player -> Messenger.info(player, Component.text("Click here to go to the Minestom website")
+                                    .clickEvent(ClickEvent.openUrl("https://minestom.net")))),
+                    new NPC("GitHub", skins.get("GitHub"), instance, new Pos(8.5, 15, -7.5),
+                            player -> Messenger.info(player, Component.text("Click here to go to the Arena GitHub repository")
+                                    .clickEvent(ClickEvent.openUrl("https://github.com/Minestom/Arena")))),
+                    new NPC("Play", skins.get("Play"), instance, new Pos(-7.5, 15, -7.5), ArenaCommand::open)
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

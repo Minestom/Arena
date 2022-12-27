@@ -1,6 +1,6 @@
 package net.minestom.arena.game;
 
-import net.minestom.arena.LobbySidebarDisplay;
+import net.minestom.arena.lobby.LobbySidebarDisplay;
 import net.minestom.arena.feature.Feature;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Pos;

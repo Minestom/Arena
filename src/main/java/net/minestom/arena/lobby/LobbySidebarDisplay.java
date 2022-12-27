@@ -1,7 +1,9 @@
-package net.minestom.arena;
+package net.minestom.arena.lobby;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.arena.Icons;
+import net.minestom.arena.Messenger;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.group.displays.GroupSidebarDisplay;
 import net.minestom.server.entity.Player;

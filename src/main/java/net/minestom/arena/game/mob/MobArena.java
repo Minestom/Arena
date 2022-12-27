@@ -15,6 +15,8 @@ import net.minestom.arena.game.ArenaOption;
 import net.minestom.arena.game.Generator;
 import net.minestom.arena.game.SingleInstanceArena;
 import net.minestom.arena.group.Group;
+import net.minestom.arena.lobby.Lobby;
+import net.minestom.arena.lobby.LobbySidebarDisplay;
 import net.minestom.arena.utils.ItemUtils;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.attribute.Attribute;

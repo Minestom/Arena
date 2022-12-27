@@ -3,7 +3,7 @@ package net.minestom.arena.game;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.arena.Items;
-import net.minestom.arena.Lobby;
+import net.minestom.arena.lobby.Lobby;
 import net.minestom.arena.Messenger;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.CommandUtils;
