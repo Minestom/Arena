@@ -1,5 +1,11 @@
 package net.minestom.arena;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.minestom.arena.game.ArenaCommand;
 import net.minestom.arena.group.Group;
 import net.minestom.arena.utils.FullbrightDimension;
 import net.minestom.server.MinecraftServer;
@@ -7,11 +13,12 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
+import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.entity.metadata.other.ItemFrameMeta;
-import net.minestom.server.event.EventNode;
+import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.instance.AddEntityToInstanceEvent;
 import net.minestom.server.event.item.ItemDropEvent;
-import net.minestom.server.event.trait.InstanceEvent;
+import net.minestom.server.event.player.PlayerEntityInteractEvent;
 import net.minestom.server.instance.AnvilLoader;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -28,6 +35,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class Lobby extends InstanceContainer {
@@ -36,6 +46,11 @@ public final class Lobby extends InstanceContainer {
 
     static {
         MinecraftServer.getInstanceManager().registerInstance(INSTANCE);
+
+        for (NPC npc : spawnNPCs()) {
+            INSTANCE.eventNode().addListener(EntityAttackEvent.class, npc::handle)
+                    .addListener(PlayerEntityInteractEvent.class, npc::handle);
+        }
 
         createMaps();
         try {
@@ -55,8 +70,7 @@ public final class Lobby extends InstanceContainer {
         setChunkLoader(new AnvilLoader(Path.of("lobby")));
         setTimeRate(0);
 
-        EventNode<InstanceEvent> eventNode = eventNode();
-        eventNode.addListener(AddEntityToInstanceEvent.class, event -> {
+        eventNode().addListener(AddEntityToInstanceEvent.class, event -> {
             final Entity entity = event.getEntity();
             if (entity instanceof Player player) {
                 final Instance instance = player.getInstance();
@@ -94,7 +108,7 @@ public final class Lobby extends InstanceContainer {
 
             Entity itemFrame = new Entity(EntityType.ITEM_FRAME);
             ItemFrameMeta meta = (ItemFrameMeta) itemFrame.getEntityMeta();
-            itemFrame.setInstance(Lobby.INSTANCE, new Pos(x, y, z, 180, 0));
+            itemFrame.setInstance(INSTANCE, new Pos(x, y, z, 180, 0));
             meta.setNotifyAboutChanges(false);
             meta.setOrientation(ItemFrameMeta.Orientation.NORTH);
             meta.setInvisible(true);
@@ -116,5 +130,37 @@ public final class Lobby extends InstanceContainer {
             packets[i] = framebuffer.createSubView(x * 128, y * 128).preparePacket(i);
         }
         return packets;
+    }
+
+    private static List<NPC> spawnNPCs() {
+        try {
+            final Map<String, PlayerSkin> skins = new HashMap<>();
+            final Gson gson = new Gson();
+            final JsonObject root = gson.fromJson(new String(Lobby.class.getResourceAsStream("/skins.json")
+                    .readAllBytes()), JsonObject.class);
+
+            for (JsonElement skin : root.getAsJsonArray("skins")) {
+                final JsonObject object = skin.getAsJsonObject();
+                final String owner = object.get("owner").getAsString();
+                final String value = object.get("value").getAsString();
+                final String signature = object.get("signature").getAsString();
+                skins.put(owner, new PlayerSkin(value, signature));
+            }
+
+            return List.of(
+                new NPC("Discord", skins.get("Discord"), INSTANCE, new Pos(8.5, 15, 8.5),
+                        player -> Messenger.info(player, Component.text("Click here to join the Discord server")
+                                .clickEvent(ClickEvent.openUrl("https://discord.gg/minestom")))),
+                new NPC("Website", skins.get("Website"), INSTANCE, new Pos(-7.5, 15, 8.5),
+                        player -> Messenger.info(player, Component.text("Click here to go to the Minestom website")
+                                .clickEvent(ClickEvent.openUrl("https://minestom.net")))),
+                new NPC("GitHub", skins.get("GitHub"), INSTANCE, new Pos(8.5, 15, -7.5),
+                        player -> Messenger.info(player, Component.text("Click here to go to the Arena GitHub repository")
+                                .clickEvent(ClickEvent.openUrl("https://github.com/Minestom/Arena")))),
+                new NPC("Play", skins.get("Play"), INSTANCE, new Pos(-7.5, 15, -7.5), ArenaCommand::open)
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
