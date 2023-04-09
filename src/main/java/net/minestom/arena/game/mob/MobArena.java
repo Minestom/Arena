@@ -119,7 +119,7 @@ public final class MobArena implements SingleInstanceArena {
     private static final UUID COMBAT_TRAINING_UUID = new UUID(24539786, 23945687);
 
     public static final List<ArenaUpgrade> UPGRADES = List.of(
-            new ArenaUpgrade("Improved Healthcare", "Increases max health by two heart.",
+            new ArenaUpgrade("Improved Healthcare", "Increases max health by two hearts, and healing by one heart.",
                     TextColor.color(0x63ff52), Material.POTION, (player, count) -> {
                         final AttributeModifier modifier = new AttributeModifier(
                                 HEALTHCARE_UUID, "mobarena-healthcare", 4 * count,
@@ -135,7 +135,7 @@ public final class MobArena implements SingleInstanceArena {
                             attribute.removeModifier(modifier);
                         }
                         player.heal();
-                    }, level -> "Currently gives " + level * 2 + " extra hearts",
+                    }, level -> "Currently gives " + level * 2 + " extra hearts and heals " + level + " extra heart" + (level == 1 ? "" : "s") + ".",
                     10, 1.3f, 5),
             new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage",
                     TextColor.color(0xff5c3c), Material.IRON_SWORD, (player, count) -> {
@@ -450,7 +450,7 @@ public final class MobArena implements SingleInstanceArena {
         }
 
         for (Player member : group.members()) {
-            member.setHealth(member.getHealth() + 4); // Heal 2 hearts
+            member.setHealth(member.getHealth() + 4 + (getUpgrade(UPGRADES.get(0)) * 2)); // Heal 2 hearts + 1 heart for each healthcare level
             playerClass(member).apply(member);
         }
 
