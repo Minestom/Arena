@@ -135,7 +135,7 @@ public final class MobArena implements SingleInstanceArena {
                             attribute.removeModifier(modifier);
                         }
                         player.heal();
-                    }, level -> "Currently gives " + level * 2 + " extra hearts and heals " + level + " extra heart" + (level == 1 ? "" : "s") + ".",
+                    }, level -> "Currently gives " + level * 2 + " extra hearts and heals " + level + " extra heart" + (level == 1 ? "" : "s"),
                     10, 1.3f, 5),
             new ArenaUpgrade("Combat Training", "All physical attacks deal 10% more damage",
                     TextColor.color(0xff5c3c), Material.IRON_SWORD, (player, count) -> {
