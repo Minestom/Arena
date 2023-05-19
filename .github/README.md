@@ -6,7 +6,7 @@
 Arena is a demo server made with [Minestom](https://github.com/Minestom/Minestom), as both a showcase for what Minestom is 
 capable of and as a way to teach developers how to work with Minestom.
 
-The demo server is hosted at play.minestom.net, or you can follow below guide to get it up and running yourself.
+The demo server is hosted at arena.minestom.net, or you can follow below guide to get it up and running yourself.
 
 # Table of contents
 - [Install](#install)
